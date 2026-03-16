@@ -1,0 +1,150 @@
+.data-deletion-container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  padding: 20px;
+}
+
+.data-deletion-content {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
+.data-deletion-content h1 {
+  color: #1e293b;
+  border-bottom: 3px solid #3b82f6;
+  padding-bottom: 10px;
+  margin-bottom: 30px;
+}
+
+.data-deletion-content h2 {
+  color: #374151;
+  margin-top: 30px;
+  margin-bottom: 15px;
+}
+
+.data-deletion-content h3 {
+  color: #4b5563;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.last-updated {
+  background: #f1f5f9;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  border-left: 4px solid #3b82f6;
+}
+
+.contact-info {
+  background: #f0f9ff;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 30px;
+  border: 1px solid #bae6fd;
+}
+
+.process-box {
+  background: #f0f9ff;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+  border-left: 4px solid #3b82f6;
+}
+
+.warning-box {
+  background: #fef2f2;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+  border-left: 4px solid #ef4444;
+}
+
+.success-box {
+  background: #f0fdf4;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+  border-left: 4px solid #22c55e;
+}
+
+.data-deletion-content ul {
+  padding-left: 20px;
+  margin-bottom: 15px;
+}
+
+.data-deletion-content li {
+  margin-bottom: 8px;
+}
+
+.data-deletion-content p {
+  margin-bottom: 15px;
+}
+
+.data-deletion-content strong {
+  color: #1e293b;
+}
+
+.data-deletion-content em {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.step-number {
+  background: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.code-block {
+  background: #f8fafc;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-family: 'Courier New', monospace;
+  margin: 15px 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .data-deletion-container {
+    padding: 10px;
+  }
+  
+  .data-deletion-content {
+    padding: 20px;
+  }
+  
+  .data-deletion-content h1 {
+    font-size: 1.8rem;
+  }
+  
+  .data-deletion-content h2 {
+    font-size: 1.4rem;
+  }
+  
+  .data-deletion-content h3 {
+    font-size: 1.2rem;
+  }
+  
+  .step-number {
+    width: 25px;
+    height: 25px;
+    font-size: 12px;
+  }
+}
