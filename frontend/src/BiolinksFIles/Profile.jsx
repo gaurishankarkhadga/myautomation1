@@ -92,7 +92,7 @@ const Profile = () => {
 
       const headers = getBioLinkAuthHeaders();
 
-      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/data`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/data?latest=true`, {
         headers
       });
       const list = Array.isArray(response.data?.biolinks)
