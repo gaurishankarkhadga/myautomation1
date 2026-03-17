@@ -1,5 +1,3 @@
-/* BioLink Edit Panel - Using Base.css Variables */
-@import '../Base.css';
 
 .biolink-edit-panel {
   background: var(--bg-color);

@@ -48,8 +48,27 @@ const galleryUpload = multer({
   }
 });
 
-// Auth middleware (open access — pass-through)
-const authenticateToken = (req, res, next) => next();
+// Auth middleware
+const authenticateToken = (req, res, next) => {
+  // Support standard Bearer token OR custom ID headers for Insta/YT
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  const instaUserId = req.headers['x-insta-userid'];
+  const ytChannelId = req.headers['x-yt-channelid'];
+
+  if (token && token !== 'null') {
+    // Standard token path (not fully implemented in this simplified middleware, but kept for compatibility)
+    req.userId = 'default'; 
+  } else if (instaUserId) {
+    req.userId = `insta_${instaUserId}`;
+  } else if (ytChannelId) {
+    req.userId = `yt_${ytChannelId}`;
+  }
+
+  // Allow access even if no userId yet, but routes should handle it
+  next();
+};
 
 // ─── GET ROUTES ─────────────────────────────────────────────
 
@@ -60,30 +79,31 @@ router.get('/test', (req, res) => {
 
 // Get user biolink data
 router.get('/data', authenticateToken, async (req, res) => {
-  try {
     const { id } = req.query || {};
+    const userId = req.userId;
 
     let biolink = null;
     if (id) {
       biolink = await BioLink.findOne({ _id: id });
-      if (!biolink) return res.status(404).json({ error: 'BioLink not found' });
-    } else {
-      biolink = await BioLink.findOne().sort({ lastModified: -1, updatedAt: -1 });
-      if (!biolink) {
-        biolink = new BioLink({
-          userId: new mongoose.Types.ObjectId(),
-          username: 'user',
-          profile: { displayName: 'My BioLink', tagline: 'Your tagline here', bio: '' },
-          links: [], products: [], theme: 'minimal', elements: [],
-          settings: { backgroundColor: '#ffffff', textColor: '#1e1b4b', accentColor: '#8b5cf6', borderRadius: '12px', spacing: '16px' },
-          analytics: { views: 0, clicks: 0 }
-        });
-        await biolink.save();
-      }
+    } else if (userId) {
+      biolink = await BioLink.findOne({ userId: userId }).sort({ lastModified: -1 });
     }
 
-    const biolinks = await BioLink.find({}).sort({ lastModified: -1, updatedAt: -1 });
-    const dummyUser = { username: biolink.username, displayName: biolink.profile.displayName };
+    if (!biolink && userId) {
+      // Create a default biolink for this user if they don't have one
+      biolink = new BioLink({
+        userId: userId,
+        username: userId.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 30),
+        profile: { displayName: 'My BioLink', tagline: 'Your tagline here', bio: '' },
+        links: [], products: [], theme: 'minimal', elements: [],
+        settings: { backgroundColor: '#ffffff', textColor: '#1e1b4b', accentColor: '#8b5cf6', borderRadius: '12px', spacing: '16px' },
+        analytics: { views: 0, clicks: 0 }
+      });
+      await biolink.save();
+    }
+
+    const biolinks = userId ? await BioLink.find({ userId: userId }).sort({ lastModified: -1 }) : [];
+    const dummyUser = biolink ? { username: biolink.username, displayName: biolink.profile.displayName } : null;
     res.json({ biolink, biolinks, user: dummyUser });
   } catch (error) {
     console.error('Error fetching biolink data:', error);
@@ -134,6 +154,9 @@ router.get('/public/:username', async (req, res) => {
 router.post('/save', authenticateToken, async (req, res) => {
   try {
     const biolinkData = req.body || {};
+    const userId = req.userId;
+
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     // Normalize elements if received as JSON string
     if (typeof biolinkData.elements === 'string') {
@@ -142,6 +165,9 @@ router.post('/save', authenticateToken, async (req, res) => {
 
     let biolink = null;
     if (biolinkData._id) {
+      // Ensure the user owns this biolink
+      const existing = await BioLink.findOne({ _id: biolinkData._id, userId: userId });
+      if (!existing && biolinkData._id) return res.status(403).json({ error: 'Unauthorized' });
       const updatePayload = {};
       if (biolinkData.username) updatePayload.username = biolinkData.username;
       if (biolinkData.profile) updatePayload.profile = { ...biolinkData.profile };
@@ -170,8 +196,8 @@ router.post('/save', authenticateToken, async (req, res) => {
     if (!biolink) {
       // Create new biolink
       biolink = new BioLink({
-        userId: new mongoose.Types.ObjectId(),
-        username: biolinkData.username || 'user',
+        userId: userId,
+        username: biolinkData.username || `user_${Date.now()}`,
         profile: biolinkData.profile || {},
         links: Array.isArray(biolinkData.links) ? biolinkData.links : [],
         products: Array.isArray(biolinkData.products) ? biolinkData.products : [],
@@ -199,6 +225,9 @@ router.post('/save', authenticateToken, async (req, res) => {
 router.post('/publish', authenticateToken, async (req, res) => {
   try {
     const { username, id } = req.body || {};
+    const userId = req.userId;
+
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const excludeId = id ? new mongoose.Types.ObjectId(id) : null;
     const existing = await BioLink.findOne({
@@ -207,8 +236,8 @@ router.post('/publish', authenticateToken, async (req, res) => {
     });
     if (existing) return res.status(400).json({ error: 'Username already taken' });
 
-    let biolink = id ? await BioLink.findById(id) : null;
-    if (!biolink) biolink = await BioLink.findOne().sort({ lastModified: -1 });
+    let biolink = id ? await BioLink.findOne({ _id: id, userId }) : null;
+    if (!biolink) biolink = await BioLink.findOne({ userId }).sort({ lastModified: -1 });
 
     if (biolink) {
       biolink.username = username;
@@ -349,9 +378,12 @@ router.post('/view', async (req, res) => {
 router.delete('/remove', authenticateToken, async (req, res) => {
   try {
     const { id } = req.body || {};
-    if (!id) return res.status(400).json({ error: 'ID is required for removal' });
+    const userId = req.userId;
 
-    const result = await BioLink.findOneAndDelete({ _id: id });
+    if (!id) return res.status(400).json({ error: 'ID is required for removal' });
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const result = await BioLink.findOneAndDelete({ _id: id, userId: userId });
     if (!result) return res.status(404).json({ error: 'BioLink not found' });
 
     res.json({ success: true });

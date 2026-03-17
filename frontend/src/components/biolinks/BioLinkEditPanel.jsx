@@ -445,16 +445,23 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   const fetchUserProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        console.log('No token found, skipping profile fetch');
+      const instaUserId = localStorage.getItem('insta_user_id');
+      const ytChannelId = localStorage.getItem('yt_channel_id');
+
+      if (!token && !instaUserId && !ytChannelId) {
+        console.log('No authentication found, skipping profile fetch');
         setIsLoading(false);
         return;
       }
 
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/profile/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const headers = { 
+        'Authorization': `Bearer ${token}`
+      };
+      if (instaUserId) headers['X-Insta-UserId'] = instaUserId;
+      if (ytChannelId) headers['X-YT-ChannelId'] = ytChannelId;
+
+      const response = await fetch(`${backendUrl}/api/profile/me`, { headers });
 
       if (response.ok) {
         const data = await response.json();
@@ -481,16 +488,23 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   const loadBiolinkData = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        console.log('No token found, skipping biolink data load');
+      const instaUserId = localStorage.getItem('insta_user_id');
+      const ytChannelId = localStorage.getItem('yt_channel_id');
+
+      if (!token && !instaUserId && !ytChannelId) {
+        console.log('No authentication found, skipping biolink data load');
         setIsLoading(false);
         return;
       }
 
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/biolinks/data`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const headers = { 
+        'Authorization': `Bearer ${token}`
+      };
+      if (instaUserId) headers['X-Insta-UserId'] = instaUserId;
+      if (ytChannelId) headers['X-YT-ChannelId'] = ytChannelId;
+
+      const response = await fetch(`${backendUrl}/api/biolinks/data`, { headers });
 
       if (response.ok) {
         const data = await response.json();
@@ -512,11 +526,18 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   const loadBiolinkById = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) return;
+      const instaUserId = localStorage.getItem('insta_user_id');
+      const ytChannelId = localStorage.getItem('yt_channel_id');
+      if (!token && !instaUserId && !ytChannelId) return;
+
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/biolinks/data?id=${encodeURIComponent(id)}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const headers = { 
+        'Authorization': `Bearer ${token}`
+      };
+      if (instaUserId) headers['X-Insta-UserId'] = instaUserId;
+      if (ytChannelId) headers['X-YT-ChannelId'] = ytChannelId;
+
+      const response = await fetch(`${backendUrl}/api/biolinks/data?id=${encodeURIComponent(id)}`, { headers });
       if (response.ok) {
         const data = await response.json();
         if (data.user) setUser(data.user);
@@ -545,10 +566,19 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
     try {
       const token = localStorage.getItem('token');
+      const instaUserId = localStorage.getItem('insta_user_id');
+      const ytChannelId = localStorage.getItem('yt_channel_id');
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+      const headers = { 
+        'Authorization': `Bearer ${token}`
+      };
+      if (instaUserId) headers['X-Insta-UserId'] = instaUserId;
+      if (ytChannelId) headers['X-YT-ChannelId'] = ytChannelId;
+
       const response = await fetch(`${backendUrl}/api/biolinks/avatar`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers,
         body: formData
       });
 
@@ -564,7 +594,10 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   const publishBiolink = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
+      const instaUserId = localStorage.getItem('insta_user_id');
+      const ytChannelId = localStorage.getItem('yt_channel_id');
+
+      if (!token && !instaUserId && !ytChannelId) {
         alert('Please login to publish your BioLink');
         return;
       }
@@ -600,12 +633,19 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       while (attempts < 3) {
         const publishData = { id: biolinkData._id, username: username };
         console.log('Publishing with data:', publishData);
+
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        };
+        const iid = localStorage.getItem('insta_user_id');
+        const yid = localStorage.getItem('yt_channel_id');
+        if (iid) headers['X-Insta-UserId'] = iid;
+        if (yid) headers['X-YT-ChannelId'] = yid;
+
         const response = await fetch(`${backendUrl}/api/biolinks/publish`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
+          headers,
           body: JSON.stringify(publishData)
         });
 
@@ -674,9 +714,15 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       });
 
       const token = localStorage.getItem('token');
+      const iid = localStorage.getItem('insta_user_id');
+      const yid = localStorage.getItem('yt_channel_id');
+      const headers = { 'Authorization': `Bearer ${token}` };
+      if (iid) headers['X-Insta-UserId'] = iid;
+      if (yid) headers['X-YT-ChannelId'] = yid;
+
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/biolinks/gallery/upload`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers,
         body: formData
       });
 
@@ -711,9 +757,15 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       formData.append('video', file);
 
       const token = localStorage.getItem('token');
+      const iid = localStorage.getItem('insta_user_id');
+      const yid = localStorage.getItem('yt_channel_id');
+      const headers = { 'Authorization': `Bearer ${token}` };
+      if (iid) headers['X-Insta-UserId'] = iid;
+      if (yid) headers['X-YT-ChannelId'] = yid;
+
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/biolinks/video`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers,
         body: formData
       });
 
@@ -750,8 +802,11 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     savingRef.current = true;
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        console.log('No token found, skipping auto-save');
+      const instaUserId = localStorage.getItem('insta_user_id');
+      const ytChannelId = localStorage.getItem('yt_channel_id');
+
+      if (!token && !instaUserId && !ytChannelId) {
+        console.log('No authentication found, skipping auto-save');
         return;
       }
 
@@ -767,12 +822,16 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
       console.log('Auto-saving with payload:', { _id: currentId, isNew });
 
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+      if (instaUserId) headers['X-Insta-UserId'] = instaUserId;
+      if (ytChannelId) headers['X-YT-ChannelId'] = ytChannelId;
+
       const response = await fetch(`${backendUrl}/api/biolinks/save`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify(payload)
       });
 
