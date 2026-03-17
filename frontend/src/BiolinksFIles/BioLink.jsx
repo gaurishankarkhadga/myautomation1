@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Plus, User, Briefcase, BookOpen, MessageCircle, Info, Folder, Edit, Mail, Globe, Youtube, Twitter, Instagram, Linkedin, Trash2, ExternalLink } from 'lucide-react';
 import BioLinkEditPanel from '../subpages/BioLinkEditPanel';
+import { getBioLinkAuthHeaders } from './config';
 import './BioLink.css';
 
 const BioLink = () => {
@@ -20,14 +21,18 @@ const BioLink = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
+      const instaToken = localStorage.getItem('insta_token');
+      const ytChannelId = localStorage.getItem('yt_channel_id');
+      
+      if (!token && !instaToken && !ytChannelId) {
         navigate('/login');
         return;
       }
 
+      const headers = getBioLinkAuthHeaders();
       const backendUrl = import.meta.env.VITE_API_BASE_URL;
       const response = await fetch(`${backendUrl}/api/biolinks/data`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers
       });
       
       if (response.ok) {
@@ -54,11 +59,11 @@ const BioLink = () => {
   const handleDeleteBiolink = async (id) => {
     if (!window.confirm('Are you sure you want to delete this BioLink?')) return;
     try {
-      const token = localStorage.getItem('token');
+      const headers = { ...getBioLinkAuthHeaders(), 'Content-Type': 'application/json' };
       const backendUrl = import.meta.env.VITE_API_BASE_URL;
       const res = await fetch(`${backendUrl}/api/biolinks/remove`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ id })
       });
       if (res.ok) {

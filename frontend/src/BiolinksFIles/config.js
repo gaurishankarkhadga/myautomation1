@@ -47,6 +47,15 @@ export const config = {
     return token ? { 'Authorization': `Bearer ${token}` } : {};
   },
   
+  getBioLinkAuthHeaders() {
+    const headers = {};
+    const instaUserId = localStorage.getItem('insta_user_id');
+    const ytChannelId = localStorage.getItem('yt_channel_id');
+    if (instaUserId) headers['X-Insta-UserId'] = instaUserId;
+    if (ytChannelId) headers['X-YT-ChannelId'] = ytChannelId;
+    return headers;
+  },
+  
   // Environment Detection
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
@@ -70,6 +79,7 @@ export const {
   businessName,
   getImageUrl,
   getAuthHeaders,
+  getBioLinkAuthHeaders,
   isDevelopment,
   isProduction,
   log

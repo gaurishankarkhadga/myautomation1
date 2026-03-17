@@ -7,7 +7,7 @@ const linkSchema = new mongoose.Schema({
   },
   title: {
     type: String,
-    required: true,
+    required: false,
     trim: true,
     maxlength: 100
   },
@@ -16,7 +16,7 @@ const linkSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator: function(v) {
-        return /^https?:\/\/.+/.test(v);
+        return !v || /^https?:\/\/.*/.test(v);
       },
       message: 'URL must start with http:// or https://'
     }
@@ -46,7 +46,7 @@ const productSchema = new mongoose.Schema({
   },
   name: {
     type: String,
-    required: true,
+    required: false,
     trim: true,
     maxlength: 100
   },
@@ -67,7 +67,7 @@ const productSchema = new mongoose.Schema({
     type: String,
     validate: {
       validator: function(v) {
-        return !v || /^https?:\/\/.+/.test(v);
+        return !v || /^https?:\/\/.*/.test(v);
       },
       message: 'URL must start with http:// or https://'
     }
@@ -193,7 +193,7 @@ const biolinkSchema = new mongoose.Schema({
     type: {
       type: String,
       required: true,
-      enum: ['text', 'image', 'video', 'button', 'social', 'gallery', 'form']
+      enum: ['text', 'image', 'video', 'button', 'social', 'gallery', 'form', 'separator', 'cta', 'ticket']
     },
     content: {
       type: mongoose.Schema.Types.Mixed,

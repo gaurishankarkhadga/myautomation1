@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, AtSign, Camera, Plus, Link, Pencil, Trash2, ExternalLink } from 'lucide-react';
 import axios from 'axios';
+import { getBioLinkAuthHeaders } from './config';
 import './Profile.css';
 
 const Profile = () => {
@@ -28,65 +29,56 @@ const Profile = () => {
 
   const fetchUserProfile = async () => {
     try {
-      // Get token from local storage
-      const token = localStorage.getItem('token');
+      const instaToken = localStorage.getItem('insta_token');
+      const instaUserId = localStorage.getItem('insta_user_id');
+      const ytChannelId = localStorage.getItem('yt_channel_id');
       
-      if (!token) {
-        throw new Error('No authentication token found');
+      if (!instaToken && !ytChannelId) {
+        throw new Error('No social account connected. Please connect Instagram or YouTube first.');
       }
 
-      // Configure axios request with authorization header
-      const config = {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      };
+      let name = 'Creator';
+      let email = 'No email provided';
+      let username = 'creator';
+      let profileImage = '/default-avatar.png';
 
-      // Fetch profile data from backend
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/profile/me`, 
-        config
-      );
-
-      // Retrieve email from local storage as fallback
-      const storedUserData = JSON.parse(localStorage.getItem('user') || '{}');
+      if (instaToken) {
+        try {
+          const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/instagram/profile?token=${instaToken}`);
+          if (res.data.success) {
+            const data = res.data.data;
+            name = data.username || 'Instagram User';
+            username = data.username || 'user';
+            profileImage = data.profile_picture_url || '/default-avatar.png';
+          }
+        } catch (e) { console.error('IG profile fetch error', e); }
+      } else if (ytChannelId) {
+        try {
+          const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/youtube/profile?channelId=${ytChannelId}`);
+          if (res.data.success && res.data.data) {
+            const data = res.data.data;
+            name = data.title || 'YouTube Creator';
+            username = data.title?.toLowerCase().replace(/\s+/g, '_') || 'user';
+            profileImage = data.thumbnailUrl || '/default-avatar.png';
+          }
+        } catch (e) { console.error('YT profile fetch error', e); }
+      }
       
-      // Get linktree links from response or initialize empty array
-      const linktreeLinks = response.data.linktreeLinks || [];
-      // Update profile data state
+      // Fallback to local storage if available
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       setProfileData({
-        name: response.data.name || storedUserData.name || 'User',
-        email: response.data.email || storedUserData.email || 'No email',
-        username: response.data.username || storedUserData.username || 'username',
-        profileImage: response.data.profileImage 
-          ? (response.data.profileImage.startsWith('http') ? response.data.profileImage : `${import.meta.env.VITE_API_BASE_URL}${response.data.profileImage}`)
-          : '/default-avatar.png',
-        linktreeLinks: linktreeLinks
+        name: name || storedUser.name || 'User',
+        email: email || storedUser.email || 'No email',
+        username: username || storedUser.username || 'username',
+        profileImage: profileImage,
+        linktreeLinks: [] 
       });
 
       setIsLoading(false);
     } catch (err) {
       console.error('Profile fetch error:', err);
-      
-      // Try to use stored user data if available
-      const storedUserData = JSON.parse(localStorage.getItem('user') || '{}');
-      
-      if (storedUserData.email) {
-        setProfileData({
-          name: storedUserData.name || 'User',
-          email: storedUserData.email,
-          username: storedUserData.username || 'username',
-          profileImage: '/default-avatar.png',
-          linktreeLinks: []
-        });
-      }
-
-      setError(
-        err.response?.data?.error || 
-        err.message || 
-        'Failed to load profile. Please log in again.'
-      );
+      setError(err.message || 'Failed to load profile. Please connect an account.');
       setIsLoading(false);
     }
   };
@@ -98,9 +90,7 @@ const Profile = () => {
       const ytChannelId = localStorage.getItem('yt_channel_id');
       if (!instaUserId && !ytChannelId) return;
 
-      const headers = {};
-      if (instaUserId) headers['X-Insta-UserId'] = instaUserId;
-      if (ytChannelId) headers['X-YT-ChannelId'] = ytChannelId;
+      const headers = getBioLinkAuthHeaders();
 
       const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/data`, {
         headers
@@ -125,12 +115,7 @@ const Profile = () => {
     const confirmDelete = window.confirm('Are you sure you want to delete this BioLink?');
     if (!confirmDelete) return;
     try {
-      const instaUserId = localStorage.getItem('insta_user_id');
-      const ytChannelId = localStorage.getItem('yt_channel_id');
-      
-      const headers = { 'Content-Type': 'application/json' };
-      if (instaUserId) headers['X-Insta-UserId'] = instaUserId;
-      if (ytChannelId) headers['X-YT-ChannelId'] = ytChannelId;
+      const headers = { ...getBioLinkAuthHeaders(), 'Content-Type': 'application/json' };
 
       await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/remove`, {
         headers,
@@ -157,26 +142,13 @@ const Profile = () => {
     }
 
     try {
-      // Get token from local storage
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      // Configure axios request with authorization header
-      const config = {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      };
+      const headers = { ...getBioLinkAuthHeaders(), 'Content-Type': 'application/json' };
 
       // Create new linktree link
       const response = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/api/profile/linktree`, 
         { linkName: newLinktree },
-        config
+        { headers }
       );
 
       // Update profile data with new linktree links
