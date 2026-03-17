@@ -299,19 +299,6 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
   useEffect(() => {
     const editId = location?.state?.id;
-    const isReset = !!(location?.state?.new || location?.state?.reset);
-
-    if (isReset) {
-      console.log('Resetting BioLink editor for new document');
-      editIdRef.current = null;
-      setBiolinkData(normalizeBiolink(null));
-      setIsNew(true);
-      setIsLoading(false);
-      // Fetch profile in background for defaults
-      fetchUserProfile();
-      return;
-    }
-
     if (editId) {
       // Always load the specific biolink when an id is provided
       editIdRef.current = editId;
@@ -319,7 +306,6 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       loadBiolinkById(editId);
       return;
     }
-
     if (biolinkProp) {
       const normalized = normalizeBiolink(biolinkProp);
       isHydratingRef.current = true;
@@ -327,10 +313,18 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       setBiolinkData({ ...normalized, _id: biolinkProp._id });
       setIsNew(false);
       setIsLoading(false);
-    } else {
-      // No specific ID or prop, check if we should load the last one or stay fresh
+    } else if (!userProp) {
+      // Only fetch if no props provided
       fetchUserProfile();
-      loadBiolinkData();
+      if (location?.state?.new || location?.state?.reset) {
+        setIsNew(true);
+        setBiolinkData(normalizeBiolink(null));
+        setIsLoading(false);
+      } else {
+        loadBiolinkData();
+      }
+    } else {
+      setIsLoading(false);
     }
   }, [biolinkProp, userProp, location?.state?.id]);
 

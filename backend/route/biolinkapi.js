@@ -76,24 +76,30 @@ router.get('/data', authenticateToken, async (req, res) => {
     const { id } = req.query || {};
 
     let biolink = null;
-    if (id && id !== 'undefined' && id !== 'null') {
+    if (id) {
       biolink = await BioLink.findOne({ _id: id });
-    } else if (req.query.latest === 'true') {
+      if (!biolink) return res.status(404).json({ error: 'BioLink not found' });
+    } else {
       const query = req.userId ? { userId: req.userId } : {};
       biolink = await BioLink.findOne(query).sort({ lastModified: -1, updatedAt: -1 });
+      if (!biolink) {
+        const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+        biolink = new BioLink({
+          userId: req.userId || 'anonymous',
+          username: `user_${uniqueSuffix}`,
+          profile: { displayName: 'My BioLink', tagline: 'Your tagline here', bio: '' },
+          links: [], products: [], theme: 'minimal', elements: [],
+          settings: { backgroundColor: '#ffffff', textColor: '#1e1b4b', accentColor: '#8b5cf6', borderRadius: '12px', spacing: '16px' },
+          analytics: { views: 0, clicks: 0 }
+        });
+        await biolink.save();
+      }
     }
 
-    // Default response fields
     const listQuery = req.userId ? { userId: req.userId } : {};
     const biolinks = await BioLink.find(listQuery).sort({ lastModified: -1, updatedAt: -1 });
-    
-    // Safe user object builder
-    const safeUser = biolink ? { 
-      username: biolink.username, 
-      displayName: biolink.profile?.displayName || biolink.username 
-    } : (req.user || { username: 'user' });
-
-    res.json({ biolink, biolinks, user: safeUser });
+    const dummyUser = { username: biolink.username, displayName: biolink.profile.displayName };
+    res.json({ biolink, biolinks, user: dummyUser });
   } catch (error) {
     console.error('Error fetching biolink data:', error);
     res.status(500).json({ error: 'Failed to fetch biolink data' });
@@ -174,8 +180,29 @@ router.post('/save', authenticateToken, async (req, res) => {
         { $set: updatePayload },
         { new: true }
       );
-    // If no _id is present, we will fall through to the creation block below.
-    // We removed the 'findOne({ username })' update logic to prevent accidental overwrites.
+    } else if (biolinkData.username && biolinkData.username !== 'user') {
+      // If no ID but username exists, check if we can update an existing one instead of creating new
+      const existing = await BioLink.findOne({ username: biolinkData.username });
+      if (existing) {
+        // Only allow update if it belongs to the same user or was anonymous
+        if (!existing.userId || existing.userId === 'anonymous' || existing.userId === req.userId) {
+          const updatePayload = {};
+          if (biolinkData.profile) updatePayload.profile = { ...biolinkData.profile };
+          if (Array.isArray(biolinkData.links)) updatePayload.links = biolinkData.links;
+          if (Array.isArray(biolinkData.products)) updatePayload.products = biolinkData.products;
+          if (Array.isArray(biolinkData.elements)) updatePayload.elements = biolinkData.elements;
+          if (biolinkData.theme) updatePayload.theme = biolinkData.theme;
+          if (biolinkData.settings) updatePayload.settings = { ...(biolinkData.settings || {}) };
+          updatePayload.lastModified = new Date();
+
+          biolink = await BioLink.findOneAndUpdate(
+            { _id: existing._id },
+            { $set: updatePayload },
+            { new: true }
+          );
+        }
+      }
+    }
 
     if (!biolink) {
       // Create new biolink

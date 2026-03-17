@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Plus, User, Briefcase, BookOpen, MessageCircle, Info, Folder, Edit, Mail, Globe, Youtube, Twitter, Instagram, Linkedin, Trash2, ExternalLink } from 'lucide-react';
-import BioLinkEditPanel from './BioLinkEditPanel';
+import BioLinkEditPanel from '../subpages/BioLinkEditPanel';
 import { getBioLinkAuthHeaders } from './config';
 import './BioLink.css';
 
@@ -31,7 +31,7 @@ const BioLink = () => {
 
       const headers = getBioLinkAuthHeaders();
       const backendUrl = import.meta.env.VITE_API_BASE_URL;
-      const response = await fetch(`${backendUrl}/api/biolinks/data?latest=true`, {
+      const response = await fetch(`${backendUrl}/api/biolinks/data`, {
         headers
       });
       

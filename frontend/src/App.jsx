@@ -3,8 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Connect from './pages/Connect';
 import AdvancedSettings from './pages/AdvancedSettings';
 import ChatHub from './components/ChatHub';
-import BioLink from './BiolinksFIles/BioLink';
-import PublicBioLink from './BiolinksFIles/PublicBioLink';
+import BioLink from './components/biolinks/BioLink';
+import PublicBioLink from './components/biolinks/PublicBioLink';
 import Profile from './BiolinksFIles/Profile';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
