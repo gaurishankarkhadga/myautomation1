@@ -38,7 +38,7 @@ const BioLinkElement = ({ element, isPreview = false, settings = {} }) => {
         return imageUrl;
       } else {
         // Relative URL, add backend URL
-        return `${import.meta.env.VITE_BACKEND_URL}${imageUrl}`;
+        return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`;
       }
     };
     
@@ -217,7 +217,7 @@ const BioLinkElement = ({ element, isPreview = false, settings = {} }) => {
       if (!maybeRelative) return '';
       if (maybeRelative.startsWith('http')) return maybeRelative;
       try {
-        return `${import.meta.env.VITE_BACKEND_URL || ''}${maybeRelative}`;
+        return `${import.meta.env.VITE_API_BASE_URL || ''}${maybeRelative}`;
       } catch {
         return maybeRelative;
       }

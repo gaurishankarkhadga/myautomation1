@@ -16,7 +16,7 @@ const PublicBioLink = () => {
         setError(null);
         console.log('Loading biolink for username:', username);
         
-        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+        const backendUrl = import.meta.env.VITE_API_BASE_URL;
         const url = `${backendUrl}/api/biolinks/public/${encodeURIComponent(username)}`;
         console.log('Fetching from:', url);
         
@@ -36,7 +36,7 @@ const PublicBioLink = () => {
         if (json.biolink?.profile?.avatar) {
           const avatarUrl = json.biolink.profile.avatar.startsWith('http') 
             ? json.biolink.profile.avatar 
-            : `${import.meta.env.VITE_BACKEND_URL}${json.biolink.profile.avatar}`;
+            : `${import.meta.env.VITE_API_BASE_URL}${json.biolink.profile.avatar}`;
           console.log('Avatar URL will be:', avatarUrl);
         }
         
@@ -126,7 +126,7 @@ const PublicBioLink = () => {
   const styleType = settings.styleType || (theme === 'glass' ? 'glass' : theme === 'modern' ? 'timeline' : theme === 'creative' ? 'perspective' : 'default');
 
   const pageBg = settings.backgroundImage
-    ? `url(${settings.backgroundImage.startsWith('http') ? settings.backgroundImage : (import.meta.env.VITE_BACKEND_URL || '') + settings.backgroundImage}) center / cover`
+    ? `url(${settings.backgroundImage.startsWith('http') ? settings.backgroundImage : (import.meta.env.VITE_API_BASE_URL || '') + settings.backgroundImage}) center / cover`
     : '#0b1220';
 
   const phoneBg = (settings.backgroundColor || '#000').includes('gradient')
@@ -308,7 +308,7 @@ const PublicBioLink = () => {
           <div style={{ width: 80, height: 80, margin: '0 auto 16px', borderRadius: '9999px', overflow: 'hidden', border: '3px solid rgba(255,255,255,0.3)' }}>
             {profile.avatar ? (
               <img
-                src={profile.avatar.startsWith('http') ? profile.avatar : `${import.meta.env.VITE_BACKEND_URL}${profile.avatar}`}
+                src={profile.avatar.startsWith('http') ? profile.avatar : `${import.meta.env.VITE_API_BASE_URL}${profile.avatar}`}
                 alt="avatar"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', borderRadius: 'inherit' }}
                 onError={(e) => {
@@ -452,7 +452,7 @@ const PublicBioLink = () => {
                   }}>
                     {product.image ? (
                       <img
-                        src={product.image.startsWith('http') ? product.image : `${import.meta.env.VITE_BACKEND_URL}${product.image}`}
+                        src={product.image.startsWith('http') ? product.image : `${import.meta.env.VITE_API_BASE_URL}${product.image}`}
                         alt={product.name}
                         style={{
                           width: '100%',

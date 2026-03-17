@@ -20,7 +20,7 @@ const Profile = () => {
           setLoading(false);
           return;
         }
-        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+        const backendUrl = import.meta.env.VITE_API_BASE_URL;
 
         const [userRes, biolinkRes] = await Promise.all([
           fetch(`${backendUrl}/api/profile/me`, { headers: { 'Authorization': `Bearer ${token}` } }),
@@ -50,7 +50,7 @@ const Profile = () => {
   if (error) return <div className="up-error">{error}</div>;
 
   const avatarUrl = (user?.avatar)
-    ? (user.avatar.startsWith('http') ? user.avatar : `${import.meta.env.VITE_BACKEND_URL}${user.avatar}`)
+    ? (user.avatar.startsWith('http') ? user.avatar : `${import.meta.env.VITE_API_BASE_URL}${user.avatar}`)
     : null;
 
   return (
@@ -92,7 +92,7 @@ const Profile = () => {
                   <div className="up-biolink-thumb">
                     {b?.profile?.avatar ? (
                       <img 
-                        src={b.profile.avatar.startsWith('http') ? b.profile.avatar : `${import.meta.env.VITE_BACKEND_URL}${b.profile.avatar}`} 
+                        src={b.profile.avatar.startsWith('http') ? b.profile.avatar : `${import.meta.env.VITE_API_BASE_URL}${b.profile.avatar}`} 
                         alt="avatar"
                         onError={(e) => {
                           console.error('BioLink avatar failed to load:', e.target.src);
@@ -117,7 +117,7 @@ const Profile = () => {
                     if (!window.confirm('Delete this BioLink?')) return;
                     try {
                       const token = localStorage.getItem('token');
-                      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+                      const backendUrl = import.meta.env.VITE_API_BASE_URL;
                       await fetch(`${backendUrl}/api/biolinks/remove`, {
                         method: 'DELETE',
                         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },

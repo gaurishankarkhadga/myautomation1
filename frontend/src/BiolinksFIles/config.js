@@ -1,7 +1,7 @@
 // Environment Configuration Utility
 export const config = {
   // Backend Configuration
-  backendUrl: import.meta.env.VITE_BACKEND_URL,
+  backendUrl: import.meta.env.VITE_API_BASE_URL,
   
   // App Configuration
   appName: import.meta.env.VITE_APP_NAME || 'MYVYTEX',

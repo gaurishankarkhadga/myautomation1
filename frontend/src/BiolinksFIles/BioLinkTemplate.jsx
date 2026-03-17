@@ -52,7 +52,7 @@ const BioLinkTemplate = ({ isPreview = false, biolink = null, user = null }) => 
   const fetchUserProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/profile/me`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/profile/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -143,7 +143,7 @@ const BioLinkTemplate = ({ isPreview = false, biolink = null, user = null }) => 
             }}>
               {profile.avatar && (
                 <img 
-                  src={profile.avatar.startsWith('http') ? profile.avatar : `${import.meta.env.VITE_BACKEND_URL}${profile.avatar}`} 
+                  src={profile.avatar.startsWith('http') ? profile.avatar : `${import.meta.env.VITE_API_BASE_URL}${profile.avatar}`} 
                   alt="avatar" 
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                 />

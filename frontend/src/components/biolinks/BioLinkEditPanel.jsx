@@ -461,7 +461,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       }
 
       // Profile fetch is optional — BioLink works without it
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = import.meta.env.VITE_API_BASE_URL;
       const authHeaders = getBioLinkAuthHeaders();
       const response = await fetch(`${backendUrl}/api/biolinks/data`, {
         headers: { ...authHeaders }
@@ -500,7 +500,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       }
 
       const authHeaders = getBioLinkAuthHeaders();
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = import.meta.env.VITE_API_BASE_URL;
       const response = await fetch(`${backendUrl}/api/biolinks/data`, {
         headers: { ...authHeaders }
       });
@@ -526,7 +526,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     try {
       if (!hasPlatformAuth()) return;
       const authHeaders = getBioLinkAuthHeaders();
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = import.meta.env.VITE_API_BASE_URL;
       const response = await fetch(`${backendUrl}/api/biolinks/data?id=${encodeURIComponent(id)}`, {
         headers: { ...authHeaders }
       });
@@ -558,7 +558,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
     try {
       const authHeaders = getBioLinkAuthHeaders();
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = import.meta.env.VITE_API_BASE_URL;
       const response = await fetch(`${backendUrl}/api/biolinks/avatar`, {
         method: 'POST',
         headers: { ...authHeaders },
@@ -606,7 +606,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       }
 
       const authHeaders = getBioLinkAuthHeaders();
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = import.meta.env.VITE_API_BASE_URL;
 
       // Attempt to publish - retry with a new username if taken
       let attempts = 0;
@@ -687,7 +687,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       });
 
       const authHeaders = getBioLinkAuthHeaders();
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/biolinks/gallery/upload`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/gallery/upload`, {
         method: 'POST',
         headers: { ...authHeaders },
         body: formData
@@ -695,7 +695,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
       if (response.ok) {
         const data = await response.json();
-        const imageUrls = data.images.map(url => `${import.meta.env.VITE_BACKEND_URL}${url}`);
+        const imageUrls = data.images.map(url => `${import.meta.env.VITE_API_BASE_URL}${url}`);
 
         const element = biolinkData.elements.find(el => el.id === elementId);
         if (element) {
@@ -724,7 +724,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       formData.append('video', file);
 
       const authHeaders = getBioLinkAuthHeaders();
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/biolinks/video`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/video`, {
         method: 'POST',
         headers: { ...authHeaders },
         body: formData
@@ -732,7 +732,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
       if (response.ok) {
         const data = await response.json();
-        const videoUrl = data.videoUrl.startsWith('http') ? data.videoUrl : `${import.meta.env.VITE_BACKEND_URL}${data.videoUrl}`;
+        const videoUrl = data.videoUrl.startsWith('http') ? data.videoUrl : `${import.meta.env.VITE_API_BASE_URL}${data.videoUrl}`;
 
         updateElement(elementId, {
           content: {
@@ -768,7 +768,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       }
 
       const authHeaders = getBioLinkAuthHeaders();
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = import.meta.env.VITE_API_BASE_URL;
       // Use editIdRef as the source of truth for _id (it updates synchronously)
       const currentId = biolinkData._id || editIdRef.current;
       const payload = {
@@ -915,7 +915,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
     try {
       const authHeaders = getBioLinkAuthHeaders();
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/biolinks/product-image`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/product-image`, {
         method: 'POST',
         headers: { ...authHeaders },
         body: formData
@@ -923,7 +923,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
       if (response.ok) {
         const data = await response.json();
-        const imageUrl = `${import.meta.env.VITE_BACKEND_URL}${data.imageUrl}`;
+        const imageUrl = `${import.meta.env.VITE_API_BASE_URL}${data.imageUrl}`;
 
         updateProduct(index, 'image', imageUrl);
       } else {
@@ -1335,7 +1335,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
               <div className="avatar-preview">
                 {biolinkData.profile.avatar ? (
                   <img
-                    src={biolinkData.profile.avatar.startsWith('http') ? biolinkData.profile.avatar : `${import.meta.env.VITE_BACKEND_URL}${biolinkData.profile.avatar}`}
+                    src={biolinkData.profile.avatar.startsWith('http') ? biolinkData.profile.avatar : `${import.meta.env.VITE_API_BASE_URL}${biolinkData.profile.avatar}`}
                     alt="Profile"
                     className="avatar-image"
                     onError={(e) => {
@@ -1668,7 +1668,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       });
 
       const authHeaders = getBioLinkAuthHeaders();
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/biolinks/gallery/upload`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/gallery/upload`, {
         method: 'POST',
         headers: { ...authHeaders },
         body: formData
@@ -1676,7 +1676,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
       if (response.ok) {
         const data = await response.json();
-        const imageUrls = data.images.map(url => `${import.meta.env.VITE_BACKEND_URL}${url}`);
+        const imageUrls = data.images.map(url => `${import.meta.env.VITE_API_BASE_URL}${url}`);
 
         // Create a new gallery element with the uploaded images
         const newElement = {
@@ -1826,7 +1826,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                         <div className="video-grid-2x2" style={{ maxHeight: '150px', height: '150px' }}>
                           <div className="video-item-2x2">
                             <video
-                              src={element.content.url.startsWith('http') ? element.content.url : `${import.meta.env.VITE_BACKEND_URL}${element.content.url}`}
+                              src={element.content.url.startsWith('http') ? element.content.url : `${import.meta.env.VITE_API_BASE_URL}${element.content.url}`}
                               controls
                               style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
                             />
@@ -1837,7 +1837,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                         </div>
                       ) : (
                         <video
-                          src={element.content.url.startsWith('http') ? element.content.url : `${import.meta.env.VITE_BACKEND_URL}${element.content.url}`}
+                          src={element.content.url.startsWith('http') ? element.content.url : `${import.meta.env.VITE_API_BASE_URL}${element.content.url}`}
                           controls
                           style={{ width: '100%', maxHeight: '150px', borderRadius: '8px' }}
                         />
@@ -2089,7 +2089,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                   return (
                     <div className="mobile-avatar" style={avatarStyle}>
                       {biolinkData.profile.avatar ? (
-                        <img src={biolinkData.profile.avatar.startsWith('http') ? biolinkData.profile.avatar : `${import.meta.env.VITE_BACKEND_URL}${biolinkData.profile.avatar}`}
+                        <img src={biolinkData.profile.avatar.startsWith('http') ? biolinkData.profile.avatar : `${import.meta.env.VITE_API_BASE_URL}${biolinkData.profile.avatar}`}
                           alt="Profile" />
                       ) : (
                         <div className="avatar-placeholder"></div>
@@ -2186,7 +2186,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                             <div className="preview-shop-image">
                               {product.image ? (
                                 <img
-                                  src={product.image.startsWith('http') ? product.image : `${import.meta.env.VITE_BACKEND_URL}${product.image}`}
+                                  src={product.image.startsWith('http') ? product.image : `${import.meta.env.VITE_API_BASE_URL}${product.image}`}
                                   alt={product.name}
                                   onError={(e) => { e.target.style.display = 'none'; }}
                                 />

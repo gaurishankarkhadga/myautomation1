@@ -25,7 +25,7 @@ const BioLink = () => {
         return;
       }
 
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = import.meta.env.VITE_API_BASE_URL;
       const response = await fetch(`${backendUrl}/api/biolinks/data`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -55,7 +55,7 @@ const BioLink = () => {
     if (!window.confirm('Are you sure you want to delete this BioLink?')) return;
     try {
       const token = localStorage.getItem('token');
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const backendUrl = import.meta.env.VITE_API_BASE_URL;
       const res = await fetch(`${backendUrl}/api/biolinks/remove`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -241,7 +241,7 @@ const BioLink = () => {
                 <div className="mobile-avatar">
                   {biolink?.profile?.avatar ? (
                     <img 
-                      src={biolink.profile.avatar.startsWith('http') ? biolink.profile.avatar : `${import.meta.env.VITE_BACKEND_URL}${biolink.profile.avatar}`} 
+                      src={biolink.profile.avatar.startsWith('http') ? biolink.profile.avatar : `${import.meta.env.VITE_API_BASE_URL}${biolink.profile.avatar}`} 
                       alt="Avatar"
                       onError={(e) => {
                         console.error('Avatar preview failed to load:', e.target.src);
@@ -293,7 +293,7 @@ const BioLink = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                     <div style={{ width: '44px', height: '44px', borderRadius: '50%', overflow: 'hidden', background: '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {bl.profile?.avatar ? (
-                        <img src={bl.profile.avatar.startsWith('http') ? bl.profile.avatar : `${import.meta.env.VITE_BACKEND_URL}${bl.profile.avatar}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                        <img src={bl.profile.avatar.startsWith('http') ? bl.profile.avatar : `${import.meta.env.VITE_API_BASE_URL}${bl.profile.avatar}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
                       ) : <User size={20} color="#9ca3af" />}
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>

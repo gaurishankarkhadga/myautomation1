@@ -45,7 +45,7 @@ const Profile = () => {
 
       // Fetch profile data from backend
       const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/profile/me`, 
+        `${import.meta.env.VITE_API_BASE_URL}/api/profile/me`, 
         config
       );
 
@@ -60,7 +60,7 @@ const Profile = () => {
         email: response.data.email || storedUserData.email || 'No email',
         username: response.data.username || storedUserData.username || 'username',
         profileImage: response.data.profileImage 
-          ? (response.data.profileImage.startsWith('http') ? response.data.profileImage : `${import.meta.env.VITE_BACKEND_URL}${response.data.profileImage}`)
+          ? (response.data.profileImage.startsWith('http') ? response.data.profileImage : `${import.meta.env.VITE_API_BASE_URL}${response.data.profileImage}`)
           : '/default-avatar.png',
         linktreeLinks: linktreeLinks
       });
@@ -96,7 +96,7 @@ const Profile = () => {
       setIsBiolinksLoading(true);
       const token = localStorage.getItem('token');
       if (!token) return;
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/biolinks/data`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/data`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const list = Array.isArray(response.data?.biolinks)
@@ -121,7 +121,7 @@ const Profile = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/biolinks/remove`, {
+      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/remove`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         data: { id }
       });
@@ -163,7 +163,7 @@ const Profile = () => {
 
       // Create new linktree link
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/profile/linktree`, 
+        `${import.meta.env.VITE_API_BASE_URL}/api/profile/linktree`, 
         { linkName: newLinktree },
         config
       );
@@ -296,7 +296,7 @@ const Profile = () => {
                       <div className="biolink-avatar">
                         {b?.profile?.avatar ? (
                           <img 
-                            src={b.profile.avatar.startsWith('http') ? b.profile.avatar : `${import.meta.env.VITE_BACKEND_URL}${b.profile.avatar}`} 
+                            src={b.profile.avatar.startsWith('http') ? b.profile.avatar : `${import.meta.env.VITE_API_BASE_URL}${b.profile.avatar}`} 
                             alt="Avatar"
                             onError={(e) => {
                               console.error('BioLink avatar failed to load:', e.target.src);
