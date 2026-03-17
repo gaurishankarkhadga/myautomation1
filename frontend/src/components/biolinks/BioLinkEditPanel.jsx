@@ -794,7 +794,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         if (data?.biolink?._id) {
           // Store _id in ref immediately (synchronous) so next save uses it
           editIdRef.current = data.biolink._id;
-          setBiolinkData(prev => ({ ...prev, _id: data.biolink._id }));
+          setBiolinkData(prev => ({ ...prev, _id: data.biolink._id, username: data.biolink.username || prev.username }));
           setIsNew(false);
         }
         setAutoSaveStatus('saved');

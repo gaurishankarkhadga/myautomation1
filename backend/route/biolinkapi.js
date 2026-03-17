@@ -158,7 +158,7 @@ router.post('/save', authenticateToken, async (req, res) => {
     let biolink = null;
     if (biolinkData._id) {
       const updatePayload = {};
-      if (biolinkData.username) updatePayload.username = biolinkData.username;
+      if (biolinkData.username && biolinkData.username !== 'user') updatePayload.username = biolinkData.username;
       if (biolinkData.profile) updatePayload.profile = { ...biolinkData.profile };
       if (Array.isArray(biolinkData.links)) updatePayload.links = biolinkData.links;
       if (Array.isArray(biolinkData.products)) updatePayload.products = biolinkData.products;
