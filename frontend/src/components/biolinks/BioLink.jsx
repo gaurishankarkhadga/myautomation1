@@ -17,27 +17,19 @@ const BioLink = () => {
     fetchData();
   }, []);
 
+  const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const instaToken = localStorage.getItem('insta_token');
-      const instaUserId = localStorage.getItem('insta_user_id');
-      const ytChannelId = localStorage.getItem('yt_channel_id');
-
-      if (!token && !instaToken && !ytChannelId) {
+      if (!token) {
         navigate('/login');
         return;
       }
 
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const headers = { 
-        'Authorization': `Bearer ${token}`
-      };
+      const response = await fetch(`${backendUrl}/api/biolinks/data`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
 
-      if (instaUserId) headers['X-Insta-UserId'] = instaUserId;
-      if (ytChannelId) headers['X-YT-ChannelId'] = ytChannelId;
-
-      const response = await fetch(`${backendUrl}/api/biolinks/data`, { headers });
-      
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
@@ -63,20 +55,10 @@ const BioLink = () => {
     if (!window.confirm('Are you sure you want to delete this BioLink?')) return;
     try {
       const token = localStorage.getItem('token');
-      const instaUserId = localStorage.getItem('insta_user_id');
-      const ytChannelId = localStorage.getItem('yt_channel_id');
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-      const headers = { 
-        'Authorization': `Bearer ${token}`, 
-        'Content-Type': 'application/json' 
-      };
-      if (instaUserId) headers['X-Insta-UserId'] = instaUserId;
-      if (ytChannelId) headers['X-YT-ChannelId'] = ytChannelId;
-
       const res = await fetch(`${backendUrl}/api/biolinks/remove`, {
         method: 'DELETE',
-        headers,
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       });
       if (res.ok) {
@@ -258,8 +240,8 @@ const BioLink = () => {
               <div className="mobile-header">
                 <div className="mobile-avatar">
                   {biolink?.profile?.avatar ? (
-                    <img 
-                      src={biolink.profile.avatar.startsWith('http') ? biolink.profile.avatar : `${import.meta.env.VITE_BACKEND_URL}${biolink.profile.avatar}`} 
+                    <img
+                      src={biolink.profile.avatar.startsWith('http') ? biolink.profile.avatar : `${import.meta.env.VITE_BACKEND_URL}${biolink.profile.avatar}`}
                       alt="Avatar"
                       onError={(e) => {
                         console.error('Avatar preview failed to load:', e.target.src);
@@ -279,15 +261,15 @@ const BioLink = () => {
                     <span>{link.title || link.platform}</span>
                   </div>
                 )) || (
-                  <>
-                    <div className="mobile-link">
-                      <span>Instagram</span>
-                    </div>
-                    <div className="mobile-link">
-                      <span>YouTube</span>
-                    </div>
-                  </>
-                )}
+                    <>
+                      <div className="mobile-link">
+                        <span>Instagram</span>
+                      </div>
+                      <div className="mobile-link">
+                        <span>YouTube</span>
+                      </div>
+                    </>
+                  )}
               </div>
               <button className="quick-add-btn" onClick={handleCreateNew}>
                 <Plus size={20} />
@@ -345,4 +327,5 @@ const BioLink = () => {
   );
 };
 
+export default BioLink;
 export default BioLink;
