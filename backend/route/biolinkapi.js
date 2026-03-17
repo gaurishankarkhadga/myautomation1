@@ -83,9 +83,10 @@ router.get('/data', authenticateToken, async (req, res) => {
       const query = req.userId ? { userId: req.userId } : {};
       biolink = await BioLink.findOne(query).sort({ lastModified: -1, updatedAt: -1 });
       if (!biolink) {
+        const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
         biolink = new BioLink({
           userId: req.userId || 'anonymous',
-          username: 'user',
+          username: `user_${uniqueSuffix}`,
           profile: { displayName: 'My BioLink', tagline: 'Your tagline here', bio: '' },
           links: [], products: [], theme: 'minimal', elements: [],
           settings: { backgroundColor: '#ffffff', textColor: '#1e1b4b', accentColor: '#8b5cf6', borderRadius: '12px', spacing: '16px' },
@@ -183,9 +184,14 @@ router.post('/save', authenticateToken, async (req, res) => {
 
     if (!biolink) {
       // Create new biolink
+      const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+      const generatedUsername = biolinkData.username && biolinkData.username !== 'user' 
+        ? biolinkData.username 
+        : `user_${uniqueSuffix}`;
+        
       biolink = new BioLink({
         userId: req.userId || 'anonymous',
-        username: biolinkData.username || 'user',
+        username: generatedUsername,
         profile: biolinkData.profile || {},
         links: Array.isArray(biolinkData.links) ? biolinkData.links : [],
         products: Array.isArray(biolinkData.products) ? biolinkData.products : [],
