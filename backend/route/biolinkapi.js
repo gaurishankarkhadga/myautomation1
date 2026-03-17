@@ -48,8 +48,20 @@ const galleryUpload = multer({
   }
 });
 
-// Auth middleware (open access — pass-through)
-const authenticateToken = (req, res, next) => next();
+// Auth middleware — reads platform headers and sets req.userId
+const authenticateToken = (req, res, next) => {
+  const instaUserId = req.headers['x-insta-userid'];
+  const ytChannelId = req.headers['x-yt-channelid'];
+
+  if (instaUserId) {
+    req.userId = `insta_${instaUserId}`;
+  } else if (ytChannelId) {
+    req.userId = `yt_${ytChannelId}`;
+  } else {
+    req.userId = null; // Allow through for flexible open access
+  }
+  next();
+};
 
 // ─── GET ROUTES ─────────────────────────────────────────────
 
@@ -68,10 +80,11 @@ router.get('/data', authenticateToken, async (req, res) => {
       biolink = await BioLink.findOne({ _id: id });
       if (!biolink) return res.status(404).json({ error: 'BioLink not found' });
     } else {
-      biolink = await BioLink.findOne().sort({ lastModified: -1, updatedAt: -1 });
+      const query = req.userId ? { userId: req.userId } : {};
+      biolink = await BioLink.findOne(query).sort({ lastModified: -1, updatedAt: -1 });
       if (!biolink) {
         biolink = new BioLink({
-          userId: new mongoose.Types.ObjectId(),
+          userId: req.userId || 'anonymous',
           username: 'user',
           profile: { displayName: 'My BioLink', tagline: 'Your tagline here', bio: '' },
           links: [], products: [], theme: 'minimal', elements: [],
@@ -82,7 +95,8 @@ router.get('/data', authenticateToken, async (req, res) => {
       }
     }
 
-    const biolinks = await BioLink.find({}).sort({ lastModified: -1, updatedAt: -1 });
+    const listQuery = req.userId ? { userId: req.userId } : {};
+    const biolinks = await BioLink.find(listQuery).sort({ lastModified: -1, updatedAt: -1 });
     const dummyUser = { username: biolink.username, displayName: biolink.profile.displayName };
     res.json({ biolink, biolinks, user: dummyUser });
   } catch (error) {
@@ -170,7 +184,7 @@ router.post('/save', authenticateToken, async (req, res) => {
     if (!biolink) {
       // Create new biolink
       biolink = new BioLink({
-        userId: new mongoose.Types.ObjectId(),
+        userId: req.userId || 'anonymous',
         username: biolinkData.username || 'user',
         profile: biolinkData.profile || {},
         links: Array.isArray(biolinkData.links) ? biolinkData.links : [],
@@ -217,7 +231,7 @@ router.post('/publish', authenticateToken, async (req, res) => {
       biolink.lastModified = new Date();
     } else {
       biolink = new BioLink({
-        userId: new mongoose.Types.ObjectId(),
+        userId: req.userId || 'anonymous',
         username,
         profile: { displayName: username, tagline: 'Your tagline here', bio: '' },
         links: [], products: [], theme: 'minimal', elements: [],

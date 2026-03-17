@@ -4,6 +4,16 @@ import { Plus, User, Briefcase, BookOpen, MessageCircle, Info, Folder, Edit, Mai
 import BioLinkEditPanel from './BioLinkEditPanel';
 import './BioLink.css';
 
+// Helper: build auth headers from platform credentials
+const getBioLinkAuthHeaders = () => {
+  const headers = {};
+  const instaUserId = localStorage.getItem('insta_user_id');
+  const ytChannelId = localStorage.getItem('yt_channel_id');
+  if (instaUserId) headers['X-Insta-UserId'] = instaUserId;
+  if (ytChannelId) headers['X-YT-ChannelId'] = ytChannelId;
+  return headers;
+};
+
 const BioLink = () => {
   const { subPageId = 'home' } = useParams();
   const navigate = useNavigate();
@@ -19,15 +29,18 @@ const BioLink = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/login');
+      const instaToken = localStorage.getItem('insta_token');
+      const ytChannelId = localStorage.getItem('yt_channel_id');
+
+      if (!instaToken && !ytChannelId) {
+        navigate('/');
         return;
       }
 
+      const authHeaders = getBioLinkAuthHeaders();
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       const response = await fetch(`${backendUrl}/api/biolinks/data`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { ...authHeaders }
       });
 
       if (response.ok) {
@@ -54,11 +67,11 @@ const BioLink = () => {
   const handleDeleteBiolink = async (id) => {
     if (!window.confirm('Are you sure you want to delete this BioLink?')) return;
     try {
-      const token = localStorage.getItem('token');
+      const authHeaders = getBioLinkAuthHeaders();
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       const res = await fetch(`${backendUrl}/api/biolinks/remove`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { ...authHeaders, 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       });
       if (res.ok) {
@@ -327,5 +340,4 @@ const BioLink = () => {
   );
 };
 
-export default BioLink;
 export default BioLink;

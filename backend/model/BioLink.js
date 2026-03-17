@@ -144,8 +144,9 @@ const ticketSchema = new mongoose.Schema({
 
 const biolinkSchema = new mongoose.Schema({
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: false
+    type: String,
+    required: false,
+    index: true
   },
   username: {
     type: String,
@@ -182,8 +183,7 @@ const biolinkSchema = new mongoose.Schema({
   tickets: [ticketSchema],
   theme: {
     type: String,
-    default: 'minimal',
-    enum: ['minimal', 'modern', 'creative', 'glass', 'timeline', '3d']
+    default: 'minimal'
   },
   elements: [{
     id: {
@@ -211,18 +211,15 @@ const biolinkSchema = new mongoose.Schema({
   settings: {
     backgroundColor: {
       type: String,
-      default: '#ffffff',
-      match: /^#[0-9A-Fa-f]{6}$/
+      default: '#ffffff'
     },
     textColor: {
       type: String,
-      default: '#1e1b4b',
-      match: /^#[0-9A-Fa-f]{6}$/
+      default: '#1e1b4b'
     },
     accentColor: {
       type: String,
-      default: '#8b5cf6',
-      match: /^#[0-9A-Fa-f]{6}$/
+      default: '#8b5cf6'
     },
     borderRadius: {
       type: String,

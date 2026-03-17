@@ -9,9 +9,19 @@ import {
 import BioLinkElement from './BioLinkElement';
 import './BioLinkEditPanel.css';
 
+// Helper: build auth headers from platform credentials
+const getBioLinkAuthHeaders = () => {
+  const headers = {};
+  const instaUserId = localStorage.getItem('insta_user_id');
+  const ytChannelId = localStorage.getItem('yt_channel_id');
+  if (instaUserId) headers['X-Insta-UserId'] = instaUserId;
+  if (ytChannelId) headers['X-YT-ChannelId'] = ytChannelId;
+  return headers;
+};
 
-
-
+const hasPlatformAuth = () => {
+  return !!(localStorage.getItem('insta_token') || localStorage.getItem('yt_channel_id'));
+};
 
 const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, onUpdate }) => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -444,30 +454,33 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
   const fetchUserProfile = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.log('No token found, skipping profile fetch');
+      if (!hasPlatformAuth()) {
+        console.log('No platform auth found, skipping profile fetch');
         setIsLoading(false);
         return;
       }
 
+      // Profile fetch is optional — BioLink works without it
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/profile/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const authHeaders = getBioLinkAuthHeaders();
+      const response = await fetch(`${backendUrl}/api/biolinks/data`, {
+        headers: { ...authHeaders }
       });
 
       if (response.ok) {
         const data = await response.json();
-        setUser(data);
-        setBiolinkData(prev => ({
-          ...prev,
-          profile: {
-            ...prev.profile,
-            displayName: prev.profile?.displayName || data.name || data.username,
-            tagline: prev.profile?.tagline || 'Your tagline here'
-          },
-          username: prev.username || data.username
-        }));
+        if (data.user) {
+          setUser(data.user);
+          setBiolinkData(prev => ({
+            ...prev,
+            profile: {
+              ...prev.profile,
+              displayName: prev.profile?.displayName || data.user.displayName || data.user.username,
+              tagline: prev.profile?.tagline || 'Your tagline here'
+            },
+            username: prev.username || data.user.username
+          }));
+        }
       } else {
         console.log('Profile fetch failed:', response.status);
       }
@@ -480,16 +493,16 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
   const loadBiolinkData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.log('No token found, skipping biolink data load');
+      if (!hasPlatformAuth()) {
+        console.log('No platform auth, skipping biolink data load');
         setIsLoading(false);
         return;
       }
 
+      const authHeaders = getBioLinkAuthHeaders();
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       const response = await fetch(`${backendUrl}/api/biolinks/data`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { ...authHeaders }
       });
 
       if (response.ok) {
@@ -511,11 +524,11 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
   const loadBiolinkById = async (id) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!hasPlatformAuth()) return;
+      const authHeaders = getBioLinkAuthHeaders();
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       const response = await fetch(`${backendUrl}/api/biolinks/data?id=${encodeURIComponent(id)}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { ...authHeaders }
       });
       if (response.ok) {
         const data = await response.json();
@@ -544,11 +557,11 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const authHeaders = getBioLinkAuthHeaders();
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       const response = await fetch(`${backendUrl}/api/biolinks/avatar`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { ...authHeaders },
         body: formData
       });
 
@@ -563,9 +576,8 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
   const publishBiolink = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Please login to publish your BioLink');
+      if (!hasPlatformAuth()) {
+        alert('Please connect Instagram or YouTube to publish your BioLink');
         return;
       }
 
@@ -593,6 +605,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         return;
       }
 
+      const authHeaders = getBioLinkAuthHeaders();
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
       // Attempt to publish - retry with a new username if taken
@@ -603,7 +616,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         const response = await fetch(`${backendUrl}/api/biolinks/publish`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            ...authHeaders,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(publishData)
@@ -673,10 +686,10 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         formData.append('images', file);
       });
 
-      const token = localStorage.getItem('token');
+      const authHeaders = getBioLinkAuthHeaders();
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/biolinks/gallery/upload`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { ...authHeaders },
         body: formData
       });
 
@@ -710,10 +723,10 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       const formData = new FormData();
       formData.append('video', file);
 
-      const token = localStorage.getItem('token');
+      const authHeaders = getBioLinkAuthHeaders();
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/biolinks/video`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { ...authHeaders },
         body: formData
       });
 
@@ -749,12 +762,12 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     }
     savingRef.current = true;
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.log('No token found, skipping auto-save');
+      if (!hasPlatformAuth()) {
+        console.log('No platform auth, skipping auto-save');
         return;
       }
 
+      const authHeaders = getBioLinkAuthHeaders();
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       // Use editIdRef as the source of truth for _id (it updates synchronously)
       const currentId = biolinkData._id || editIdRef.current;
@@ -770,7 +783,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       const response = await fetch(`${backendUrl}/api/biolinks/save`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          ...authHeaders,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
@@ -901,10 +914,10 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     formData.append('productImage', file);
 
     try {
-      const token = localStorage.getItem('token');
+      const authHeaders = getBioLinkAuthHeaders();
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/biolinks/product-image`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { ...authHeaders },
         body: formData
       });
 
@@ -1654,10 +1667,10 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         formData.append('images', file);
       });
 
-      const token = localStorage.getItem('token');
+      const authHeaders = getBioLinkAuthHeaders();
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/biolinks/gallery/upload`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { ...authHeaders },
         body: formData
       });
 
