@@ -5,6 +5,7 @@ import AdvancedSettings from './pages/AdvancedSettings';
 import ChatHub from './components/ChatHub';
 import BioLink from './components/biolinks/BioLink';
 import PublicBioLink from './components/biolinks/PublicBioLink';
+import Profile from './BiolinksFIles/Profile';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import DataDeletion from './pages/DataDeletion';
@@ -58,6 +59,7 @@ function App() {
         <Route path="/biolink" element={<BioLink />} />
         <Route path="/biolink/:subPageId" element={<BioLink />} />
         <Route path="/p/:username" element={<PublicBioLink />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<AdvancedSettings />} />
 
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />

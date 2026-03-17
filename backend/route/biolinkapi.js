@@ -180,6 +180,28 @@ router.post('/save', authenticateToken, async (req, res) => {
         { $set: updatePayload },
         { new: true }
       );
+    } else if (biolinkData.username && biolinkData.username !== 'user') {
+      // If no ID but username exists, check if we can update an existing one instead of creating new
+      const existing = await BioLink.findOne({ username: biolinkData.username });
+      if (existing) {
+        // Only allow update if it belongs to the same user or was anonymous
+        if (!existing.userId || existing.userId === 'anonymous' || existing.userId === req.userId) {
+          const updatePayload = {};
+          if (biolinkData.profile) updatePayload.profile = { ...biolinkData.profile };
+          if (Array.isArray(biolinkData.links)) updatePayload.links = biolinkData.links;
+          if (Array.isArray(biolinkData.products)) updatePayload.products = biolinkData.products;
+          if (Array.isArray(biolinkData.elements)) updatePayload.elements = biolinkData.elements;
+          if (biolinkData.theme) updatePayload.theme = biolinkData.theme;
+          if (biolinkData.settings) updatePayload.settings = { ...(biolinkData.settings || {}) };
+          updatePayload.lastModified = new Date();
+
+          biolink = await BioLink.findOneAndUpdate(
+            { _id: existing._id },
+            { $set: updatePayload },
+            { new: true }
+          );
+        }
+      }
     }
 
     if (!biolink) {

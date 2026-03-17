@@ -24,6 +24,11 @@ const hasPlatformAuth = () => {
 };
 
 const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, onUpdate }) => {
+  const safeColor = (color) => {
+    if (!color || typeof color !== 'string') return '#000000';
+    if (color.startsWith('#')) return color.substring(0, 7);
+    return '#000000'; // Fallback for gradients or complex values
+  };
   const [currentStep, setCurrentStep] = useState(0);
   const [previewActiveView, setPreviewActiveView] = useState('links');
   const [showPreview, setShowPreview] = useState(false);
@@ -304,6 +309,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     if (biolinkProp) {
       const normalized = normalizeBiolink(biolinkProp);
       isHydratingRef.current = true;
+      editIdRef.current = biolinkProp._id;
       setBiolinkData({ ...normalized, _id: biolinkProp._id });
       setIsNew(false);
       setIsLoading(false);
@@ -510,6 +516,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         if (data.user) setUser(data.user);
         if (data.biolink) {
           const normalized = normalizeBiolink(data.biolink);
+          editIdRef.current = data.biolink._id;
           setBiolinkData(normalized);
         }
       } else {
@@ -535,6 +542,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         if (data.user) setUser(data.user);
         if (data.biolink) {
           const normalized = normalizeBiolink(data.biolink);
+          editIdRef.current = data.biolink._id;
           setBiolinkData({ ...normalized, _id: data.biolink._id });
           setIsNew(false);
         }
@@ -1589,7 +1597,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
               <label>Accent Color</label>
               <input
                 type="color"
-                value={biolinkData.settings.accentColor}
+                value={safeColor(biolinkData.settings.accentColor)}
                 onChange={(e) => {
                   const value = e.target.value;
                   setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, accentColor: value } }));
@@ -1602,7 +1610,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
               <label>Text Color</label>
               <input
                 type="color"
-                value={biolinkData.settings.textColor}
+                value={safeColor(biolinkData.settings.textColor)}
                 onChange={(e) => {
                   const value = e.target.value;
                   setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, textColor: value } }));
@@ -1615,7 +1623,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
               <label>Background Color</label>
               <input
                 type="color"
-                value={biolinkData.settings.backgroundColor}
+                value={safeColor(biolinkData.settings.backgroundColor)}
                 onChange={(e) => {
                   const value = e.target.value;
                   setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundColor: value } }));

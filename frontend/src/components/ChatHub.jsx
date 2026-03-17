@@ -261,10 +261,10 @@ function ChatHub() {
                 <div className="sidebar-section">
                     <p className="sidebar-section-label">Quick Actions</p>
                     {[
-                        { icon: Link2, label: 'BioLinks', action: 'navigate', path: '/biolink' },
+                        { icon: Link2, label: 'BioLinks', action: 'navigate', path: '/profile' },
                         { icon: BarChart2, label: 'View Status', msg: "What's my current setup?" },
                         { icon: Package, label: 'My Assets', msg: 'Show my assets' },
-                        { icon: User, label: 'Profile', msg: 'Show my profile' },
+                        { icon: User, label: 'Profile', action: 'navigate', path: '/profile' },
                         { icon: RotateCcw, label: 'Preferences', msg: 'Show my preferences' },
                     ].map(({ icon: Icon, label, msg, action, path }) => (
                         <button key={label} className="sidebar-action-btn"

@@ -94,10 +94,16 @@ const Profile = () => {
   const fetchUserBiolinks = async () => {
     try {
       setIsBiolinksLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) return;
+      const instaUserId = localStorage.getItem('insta_user_id');
+      const ytChannelId = localStorage.getItem('yt_channel_id');
+      if (!instaUserId && !ytChannelId) return;
+
+      const headers = {};
+      if (instaUserId) headers['X-Insta-UserId'] = instaUserId;
+      if (ytChannelId) headers['X-YT-ChannelId'] = ytChannelId;
+
       const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/data`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers
       });
       const list = Array.isArray(response.data?.biolinks)
         ? response.data.biolinks
@@ -119,10 +125,15 @@ const Profile = () => {
     const confirmDelete = window.confirm('Are you sure you want to delete this BioLink?');
     if (!confirmDelete) return;
     try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
+      const instaUserId = localStorage.getItem('insta_user_id');
+      const ytChannelId = localStorage.getItem('yt_channel_id');
+      
+      const headers = { 'Content-Type': 'application/json' };
+      if (instaUserId) headers['X-Insta-UserId'] = instaUserId;
+      if (ytChannelId) headers['X-YT-ChannelId'] = ytChannelId;
+
       await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/remove`, {
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers,
         data: { id }
       });
       setMessage('BioLink deleted');
@@ -282,13 +293,29 @@ const Profile = () => {
 
         {/* Biolinks Section */}
         <div className="custom-biolinks-section">
-          <h2>My BioLinks</h2>
-          <p>Manage all your biolinks</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div>
+              <h2>My BioLinks</h2>
+              <p>Manage all your biolinks</p>
+            </div>
+            <button 
+              className="custom-create-button"
+              onClick={() => navigate('/biolink/editor', { state: { new: true, reset: true } })}
+            >
+              <Plus size={16} /> New BioLink
+            </button>
+          </div>
 
           {isBiolinksLoading ? (
             <div className="custom-profile-loading"><div className="custom-loading-spinner"></div></div>
           ) : (
             <div className="biolinks-grid">
+              <div className="biolink-card create-new-card" onClick={() => navigate('/biolink/editor', { state: { new: true, reset: true } })}>
+                <div className="create-new-content">
+                  <div className="plus-icon-wrap"><Plus size={32} /></div>
+                  <span>Create New</span>
+                </div>
+              </div>
               {biolinks && biolinks.length > 0 ? (
                 biolinks.map((b) => (
                   <div key={b._id} className="biolink-card">
