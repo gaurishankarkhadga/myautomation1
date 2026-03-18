@@ -35,6 +35,20 @@ function resolveTheme(styleHint) {
     return 'modern';
 }
 
+// ── Helper: resolve biolink user ID prefix ────────────────────────
+async function resolveBiolinkUserId(userId) {
+    try {
+        const { Token } = require('../../model/Instaautomation');
+        const instaToken = await Token.findOne({ userId }).lean();
+        if (instaToken) return `insta_${userId}`;
+
+        const YoutubeAutomation = require('../../model/YoutubeAutomation');
+        const ytData = await YoutubeAutomation.findOne({ channelId: userId }).lean();
+        if (ytData) return `yt_${userId}`;
+    } catch {}
+    return userId; // fallback
+}
+
 // ── Helper: detect social media links from connected platforms ──────
 async function gatherSocialLinks(userId) {
     const links = [];
@@ -154,6 +168,8 @@ module.exports = {
         const { userId } = context;
 
         try {
+            const biolinkUserId = await resolveBiolinkUserId(userId);
+
             // ==================== CREATE BIOLINK ====================
             if (intent === 'create_biolink') {
                 // 1. Resolve theme
@@ -180,7 +196,7 @@ module.exports = {
                 // 6. Create the biolink
                 const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
                 const biolink = new BioLink({
-                    userId,
+                    userId: biolinkUserId,
                     username: `creator_${uniqueSuffix}`,
                     profile: {
                         displayName: profile.displayName,
@@ -222,7 +238,7 @@ module.exports = {
             // ==================== UPDATE BIOLINK ====================
             if (intent === 'update_biolink') {
                 // Find the most recent biolink for this user
-                const biolink = await BioLink.findOne({ userId }).sort({ lastModified: -1, updatedAt: -1 });
+                const biolink = await BioLink.findOne({ userId: biolinkUserId }).sort({ lastModified: -1, updatedAt: -1 });
 
                 if (!biolink) {
                     return {
@@ -255,7 +271,7 @@ module.exports = {
 
             // ==================== LIST BIOLINKS ====================
             if (intent === 'list_biolinks') {
-                const biolinks = await BioLink.find({ userId })
+                const biolinks = await BioLink.find({ userId: biolinkUserId })
                     .sort({ lastModified: -1, updatedAt: -1 })
                     .lean();
 
