@@ -155,15 +155,14 @@ router.post('/save', authenticateToken, async (req, res) => {
       try { biolinkData.elements = JSON.parse(biolinkData.elements); } catch (e) { /* ignore */ }
     }
 
-    let biolink = null;
-    if (biolinkData._id) {
-      const updatePayload = {};
-      if (biolinkData.username && biolinkData.username !== 'user') updatePayload.username = biolinkData.username;
-      if (biolinkData.profile) updatePayload.profile = { ...biolinkData.profile };
-      if (Array.isArray(biolinkData.links)) updatePayload.links = biolinkData.links;
-      if (Array.isArray(biolinkData.products)) updatePayload.products = biolinkData.products;
-      if (Array.isArray(biolinkData.elements)) {
-        updatePayload.elements = biolinkData.elements.map(el => ({
+    const buildUpdatePayload = (data) => {
+      const payload = {};
+      if (data.username && data.username !== 'user' && data.username !== '') payload.username = data.username;
+      if (data.profile) payload.profile = { ...data.profile };
+      if (Array.isArray(data.links)) payload.links = data.links;
+      if (Array.isArray(data.products)) payload.products = data.products;
+      if (Array.isArray(data.elements)) {
+        payload.elements = data.elements.map(el => ({
           id: el.id || `element_${Date.now()}_${Math.random()}`,
           type: el.type || 'text',
           content: el.content || {},
@@ -171,49 +170,29 @@ router.post('/save', authenticateToken, async (req, res) => {
           isActive: el.isActive !== false
         }));
       }
-      if (biolinkData.theme) updatePayload.theme = biolinkData.theme;
-      if (biolinkData.settings) updatePayload.settings = { ...(biolinkData.settings || {}) };
-      updatePayload.lastModified = new Date();
+      if (data.theme) payload.theme = data.theme;
+      if (data.settings) payload.settings = { ...(data.settings || {}) };
+      payload.lastModified = new Date();
+      return payload;
+    };
 
+    let biolink = null;
+
+    // Case 1: Has an _id — update that specific biolink
+    if (biolinkData._id) {
+      const updatePayload = buildUpdatePayload(biolinkData);
       biolink = await BioLink.findOneAndUpdate(
         { _id: biolinkData._id },
         { $set: updatePayload },
         { new: true }
       );
-    } else if (biolinkData.username && biolinkData.username !== 'user') {
-      // If no ID but username exists, check if we can update an existing one instead of creating new
-      const existing = await BioLink.findOne({ username: biolinkData.username });
-      if (existing) {
-        // Only allow update if it belongs to the same user or was anonymous
-        if (!existing.userId || existing.userId === 'anonymous' || existing.userId === req.userId) {
-          const updatePayload = {};
-          if (biolinkData.profile) updatePayload.profile = { ...biolinkData.profile };
-          if (Array.isArray(biolinkData.links)) updatePayload.links = biolinkData.links;
-          if (Array.isArray(biolinkData.products)) updatePayload.products = biolinkData.products;
-          if (Array.isArray(biolinkData.elements)) updatePayload.elements = biolinkData.elements;
-          if (biolinkData.theme) updatePayload.theme = biolinkData.theme;
-          if (biolinkData.settings) updatePayload.settings = { ...(biolinkData.settings || {}) };
-          updatePayload.lastModified = new Date();
-
-          biolink = await BioLink.findOneAndUpdate(
-            { _id: existing._id },
-            { $set: updatePayload },
-            { new: true }
-          );
-        }
-      }
     }
-
-    if (!biolink) {
-      // Create new biolink
+    // Case 2: Explicitly creating a NEW biolink (_new flag) — always create fresh
+    else if (biolinkData._new) {
       const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
-      const generatedUsername = biolinkData.username && biolinkData.username !== 'user' 
-        ? biolinkData.username 
-        : `user_${uniqueSuffix}`;
-        
       biolink = new BioLink({
         userId: req.userId || 'anonymous',
-        username: generatedUsername,
+        username: `user_${uniqueSuffix}`,
         profile: biolinkData.profile || {},
         links: Array.isArray(biolinkData.links) ? biolinkData.links : [],
         products: Array.isArray(biolinkData.products) ? biolinkData.products : [],
@@ -229,6 +208,40 @@ router.post('/save', authenticateToken, async (req, res) => {
       });
       await biolink.save();
     }
+    // Case 3: No _id and no _new — legacy fallback (find by username or create)
+    else {
+      if (biolinkData.username && biolinkData.username !== 'user' && biolinkData.username !== '') {
+        const existing = await BioLink.findOne({ username: biolinkData.username });
+        if (existing && (!existing.userId || existing.userId === 'anonymous' || existing.userId === req.userId)) {
+          const updatePayload = buildUpdatePayload(biolinkData);
+          biolink = await BioLink.findOneAndUpdate(
+            { _id: existing._id },
+            { $set: updatePayload },
+            { new: true }
+          );
+        }
+      }
+      if (!biolink) {
+        const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+        biolink = new BioLink({
+          userId: req.userId || 'anonymous',
+          username: `user_${uniqueSuffix}`,
+          profile: biolinkData.profile || {},
+          links: Array.isArray(biolinkData.links) ? biolinkData.links : [],
+          products: Array.isArray(biolinkData.products) ? biolinkData.products : [],
+          elements: Array.isArray(biolinkData.elements) ? biolinkData.elements.map(el => ({
+            id: el.id || `element_${Date.now()}_${Math.random()}`,
+            type: el.type || 'text',
+            content: el.content || {},
+            position: el.position || 0,
+            isActive: el.isActive !== false
+          })) : [],
+          theme: biolinkData.theme || 'minimal',
+          settings: biolinkData.settings || {}
+        });
+        await biolink.save();
+      }
+    }
 
     res.json({ success: true, biolink });
   } catch (error) {
@@ -242,31 +255,25 @@ router.post('/publish', authenticateToken, async (req, res) => {
   try {
     const { username, id } = req.body || {};
 
-    const excludeId = id ? new mongoose.Types.ObjectId(id) : null;
+    if (!username) return res.status(400).json({ error: 'Username is required' });
+    if (!id) return res.status(400).json({ error: 'BioLink ID is required. Please save before publishing.' });
+
+    // Check if username is taken by a DIFFERENT biolink
+    const excludeId = new mongoose.Types.ObjectId(id);
     const existing = await BioLink.findOne({
       username,
-      ...(excludeId ? { _id: { $ne: excludeId } } : {})
+      _id: { $ne: excludeId }
     });
     if (existing) return res.status(400).json({ error: 'Username already taken' });
 
-    let biolink = id ? await BioLink.findById(id) : null;
-    if (!biolink) biolink = await BioLink.findOne().sort({ lastModified: -1 });
+    // Find the specific biolink to publish — never fall back to a random one
+    const biolink = await BioLink.findById(id);
+    if (!biolink) return res.status(404).json({ error: 'BioLink not found. Please save it first.' });
 
-    if (biolink) {
-      biolink.username = username;
-      biolink.isPublished = true;
-      biolink.publishedAt = new Date();
-      biolink.lastModified = new Date();
-    } else {
-      biolink = new BioLink({
-        userId: req.userId || 'anonymous',
-        username,
-        profile: { displayName: username, tagline: 'Your tagline here', bio: '' },
-        links: [], products: [], theme: 'minimal', elements: [],
-        settings: { backgroundColor: '#ffffff', textColor: '#1e1b4b', accentColor: '#8b5cf6', borderRadius: '12px', spacing: '16px' },
-        isPublished: true, publishedAt: new Date()
-      });
-    }
+    biolink.username = username;
+    biolink.isPublished = true;
+    biolink.publishedAt = new Date();
+    biolink.lastModified = new Date();
 
     await biolink.save();
     res.json({
@@ -355,10 +362,15 @@ router.post('/click', async (req, res) => {
 // Check username availability
 router.post('/check', async (req, res) => {
   try {
-    const { username } = req.body;
+    const { username, excludeId } = req.body;
     if (!username) return res.status(400).json({ error: 'Username is required' });
 
-    const existing = await BioLink.findOne({ username });
+    const query = { username };
+    // Exclude the current biolink so its own username doesn't show as "taken"
+    if (excludeId) {
+      query._id = { $ne: new mongoose.Types.ObjectId(excludeId) };
+    }
+    const existing = await BioLink.findOne(query);
     res.json({ available: !existing, username });
   } catch (error) {
     console.error('Error checking username:', error);

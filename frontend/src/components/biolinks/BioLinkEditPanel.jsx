@@ -83,7 +83,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       theme: 'minimal',
       elements: [],
       settings: { backgroundColor: '#0b1220', textColor: '#e5e7eb', accentColor: '#3b82f6' },
-      username: userProp?.username || 'user'
+      username: ''
     };
     return {
       _id: raw._id,
@@ -98,7 +98,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         accentColor: '#3b82f6',
         ...(raw.settings || {})
       },
-      username: raw.username || userProp?.username || 'user'
+      username: raw.username || userProp?.username || ''
     };
   };
 
@@ -306,6 +306,14 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       loadBiolinkById(editId);
       return;
     }
+    // Creating a new biolink — clear all old state
+    if (location?.state?.new || location?.state?.reset) {
+      editIdRef.current = null;
+      setIsNew(true);
+      setBiolinkData(normalizeBiolink(null));
+      setIsLoading(false);
+      return;
+    }
     if (biolinkProp) {
       const normalized = normalizeBiolink(biolinkProp);
       isHydratingRef.current = true;
@@ -316,13 +324,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     } else if (!userProp) {
       // Only fetch if no props provided
       fetchUserProfile();
-      if (location?.state?.new || location?.state?.reset) {
-        setIsNew(true);
-        setBiolinkData(normalizeBiolink(null));
-        setIsLoading(false);
-      } else {
-        loadBiolinkData();
-      }
+      loadBiolinkData();
     } else {
       setIsLoading(false);
     }
@@ -593,19 +595,20 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       setAutoSaveStatus('saving');
       await autoSave();
 
-      // Validate required data
-      if (!biolinkData._id) {
+      // Validate required data — must have a saved _id
+      const currentId = biolinkData._id || editIdRef.current;
+      if (!currentId) {
         alert('Please save your BioLink before publishing');
         return;
       }
 
-      // Determine username: use biolink-specific username first, then fall back to user's default
-      let username = biolinkData.username || user?.username;
-
-      if (!username) {
-        username = prompt('Enter a unique username/slug for this BioLink (e.g., "myname" will create /p/myname):');
-        if (!username) return;
-      }
+      // Always prompt the user for the URL slug they want
+      let username = prompt(
+        'Choose a unique URL for this BioLink (e.g., "myname" → /p/myname):',
+        biolinkData.username || ''
+      );
+      if (!username) return; // User cancelled
+      username = username.trim();
 
       // Validate username format
       if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
@@ -619,7 +622,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       // Attempt to publish - retry with a new username if taken
       let attempts = 0;
       while (attempts < 3) {
-        const publishData = { id: biolinkData._id, username: username };
+        const publishData = { id: currentId, username: username };
         console.log('Publishing with data:', publishData);
         const response = await fetch(`${backendUrl}/api/biolinks/publish`, {
           method: 'POST',
@@ -647,14 +650,14 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
           if (parsed?.error === 'Username already taken') {
             // Prompt user for a different username
             const newUsername = prompt(
-              `The username "${username}" is already taken by another BioLink.\n\nEnter a different unique username for this BioLink (e.g., "${username}-2" or "${username}-portfolio"):`
+              `The username "${username}" is already taken by another BioLink.\n\nEnter a different unique username (e.g., "${username}-2" or "${username}-portfolio"):`
             );
             if (!newUsername) return; // User cancelled
-            if (!/^[a-zA-Z0-9_-]+$/.test(newUsername)) {
+            if (!/^[a-zA-Z0-9_-]+$/.test(newUsername.trim())) {
               alert('Username can only contain letters, numbers, underscores, and hyphens');
               return;
             }
-            username = newUsername;
+            username = newUsername.trim();
             attempts++;
           } else {
             console.error('Publish failed:', response.status, errorText);
@@ -782,7 +785,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       const payload = {
         ...biolinkData,
         _id: currentId || undefined,
-        _new: isNew && !currentId ? true : undefined,
+        _new: (isNew && !currentId) ? true : undefined,
         username: biolinkData.username || undefined
       };
 
