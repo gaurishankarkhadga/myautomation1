@@ -11,7 +11,7 @@ const creatorAssetSchema = new mongoose.Schema({
     type: {
         type: String,
         required: true,
-        enum: ['product', 'link', 'course', 'image', 'service', 'ebook', 'merch'],
+        enum: ['product', 'link', 'course', 'image', 'service', 'ebook', 'merch', 'affiliate_link', 'text_template'],
         index: true
     },
 
@@ -21,6 +21,12 @@ const creatorAssetSchema = new mongoose.Schema({
     url: { type: String, default: '' },
     imageUrl: { type: String, default: '' },
     price: { type: String, default: '' },
+
+    // Affiliate tracking
+    affiliateCode: { type: String, default: '' },
+
+    // Template categorization (for text_template type)
+    category: { type: String, enum: ['bio', 'cta', 'dm_reply', 'social', 'general', ''], default: '' },
 
     // AI matching — tags help Gemini find the right asset for user intent
     tags: { type: [String], default: [] },

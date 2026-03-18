@@ -115,6 +115,11 @@ User: "can you handle my youtube too?" → [{"intent": "set_platform_preference"
 User: "add my course link mysite.com/course price 49 and turn on smart dm" → [{"intent": "add_asset", "params": {"type": "course", "url": "mysite.com/course", "price": "49", "title": "Course"}, "confidence": 0.9}, {"intent": "enable_dm_autoreply", "params": {"mode": "ai_with_assets"}, "confidence": 0.9}]
 User: "setting dikha" → [{"intent": "get_preferences", "params": {}, "confidence": 0.85}]
 User: "sab reset kr de" → [{"intent": "reset_preferences", "params": {}, "confidence": 0.9}]
+User: "create biolink with modern look" → [{"intent": "create_biolink", "params": {"style": "modern"}, "confidence": 0.95}]
+User: "make a biolink with my social media and courses" → [{"intent": "create_biolink", "params": {"style": "modern"}, "confidence": 0.9}]
+User: "show my biolinks" → [{"intent": "list_biolinks", "params": {}, "confidence": 0.9}]
+User: "update my biolink theme to glass" → [{"intent": "update_biolink", "params": {"theme": "glass"}, "confidence": 0.9}]
+User: "biolink bana do modern wala" → [{"intent": "create_biolink", "params": {"style": "modern"}, "confidence": 0.9}]
 User: "if dm fails send 'hey will reply soon'" → [{"intent": "set_dm_fallback", "params": {"message": "hey will reply soon"}, "confidence": 0.9}]
 User: "run for 1 hour only on latest post, 30 comments max" → [{"intent": "set_content_target", "params": {"target": "recent"}, "confidence": 0.9}, {"intent": "set_time_limit", "params": {"hours": 1}, "confidence": 0.9}, {"intent": "set_comment_limit", "params": {"maxReplies": 30}, "confidence": 0.9}]
 
@@ -322,6 +327,9 @@ function formatIntentTitle(intent) {
         'enable_all_automation': 'All Automation',
         'disable_all_automation': 'All Automation',
         'set_platform_preference': 'Platform Preference',
+        'create_biolink': 'BioLink Created',
+        'update_biolink': 'BioLink Updated',
+        'list_biolinks': 'Your BioLinks',
         'general_chat': 'Chat'
     };
 

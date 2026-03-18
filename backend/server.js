@@ -70,6 +70,9 @@ app.use('/api/chat', chatRoutes);
 const biolinkRoutes = require('./route/biolinkapi');
 app.use('/api/biolinks', biolinkRoutes);
 
+const assetsRoutes = require('./route/assetsapi');
+app.use('/api/assets', assetsRoutes);
+
 // Serve uploaded biolink files (avatars, product images, videos)
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));

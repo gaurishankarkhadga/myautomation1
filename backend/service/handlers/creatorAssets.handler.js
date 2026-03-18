@@ -29,12 +29,14 @@ module.exports = {
                     imageUrl: params.imageUrl || '',
                     price: params.price || '',
                     tags: params.tags || [],
+                    affiliateCode: params.affiliateCode || '',
+                    category: params.category || '',
                     isDefault: params.isDefault || false,
                     priority: params.priority || 0,
                     isActive: true
                 });
 
-                const typeIcons = { product: '📦', link: '🔗', course: '📚', image: '🖼️', service: '⚙️', ebook: '📖', merch: '👕' };
+                const typeIcons = { product: '📦', link: '🔗', course: '📚', image: '🖼️', service: '⚙️', ebook: '📖', merch: '👕', affiliate_link: '💰', text_template: '📝' };
                 const icon = typeIcons[type] || '📎';
 
                 return {
@@ -62,7 +64,7 @@ module.exports = {
                     };
                 }
 
-                const typeIcons = { product: '📦', link: '🔗', course: '📚', image: '🖼️', service: '⚙️', ebook: '📖', merch: '👕' };
+                const typeIcons = { product: '📦', link: '🔗', course: '📚', image: '🖼️', service: '⚙️', ebook: '📖', merch: '👕', affiliate_link: '💰', text_template: '📝' };
                 const assetList = assets.map((a, i) => {
                     const icon = typeIcons[a.type] || '📎';
                     const status = a.isActive ? '✅' : '❌';

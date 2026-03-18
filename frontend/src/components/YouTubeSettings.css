@@ -18,21 +18,21 @@
 }
 
 .yt-container {
-    max-width: 1100px;
-    margin: 0 auto;
+    width: 100%;
     padding: 0 1.5rem;
 }
 
 /* Header */
 .yt-header {
-    background: rgba(15, 15, 15, 0.8);
-    backdrop-filter: blur(10px);
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     position: sticky;
     top: 0;
-    z-index: 100;
-    border-bottom: 1px solid var(--yt-border);
-    padding: 1rem 0;
-    margin-bottom: 2rem;
+    z-index: 1000;
+    border-bottom: 1px solid var(--glass-border);
+    padding: 12px 0;
+    margin-bottom: 24px;
 }
 
 .yt-header-content {
@@ -73,13 +73,15 @@
 }
 
 .yt-connect-card {
-    background: var(--yt-glass);
-    border: 1px solid var(--yt-glass-border);
-    border-radius: 20px;
-    padding: 3rem;
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: 32px 20px;
     text-align: center;
     max-width: 500px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-xl);
     animation: fadeIn 0.5s ease-out;
 }
 
@@ -114,38 +116,33 @@
 .yt-btn-instagram-connect {
     flex: 1;
     min-width: 200px;
-    padding: 1rem 1.5rem;
-    border-radius: 12px;
+    padding: 14px 24px;
+    border-radius: var(--radius-lg);
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.75rem;
-    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    gap: 10px;
+    transition: var(--transition-bounce);
     cursor: pointer;
     border: none;
+    box-shadow: var(--shadow-md);
 }
 
 .yt-btn-connect {
-    background: var(--yt-red);
+    background: #FF0000;
     color: white;
 }
 
-.yt-btn-connect:hover {
-    background: #cc0000;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(255, 0, 0, 0.3);
+.yt-btn-connect:active,
+.yt-btn-instagram-connect:active {
+    transform: scale(0.97);
 }
 
 .yt-btn-instagram-connect {
-    background: linear-gradient(135deg, #E1306C 0%, #C13584 100%);
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
     color: white;
-}
-
-.yt-btn-instagram-connect:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(225, 48, 108, 0.3);
 }
 
 .yt-btn-disconnect {
@@ -405,17 +402,19 @@
 }
 
 .yt-btn-save {
-    background: white;
-    color: black;
+    background: var(--primary-color);
+    color: white;
     border: none;
-    padding: 0.8rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: var(--radius-full);
+    font-weight: 700;
     cursor: pointer;
+    transition: var(--transition-bounce);
+    box-shadow: var(--shadow-md);
 }
 
-.yt-btn-save:hover {
-    background: #e6e6e6;
+.yt-btn-save:active {
+    transform: scale(0.96);
 }
 
 .yt-save-status {
@@ -489,10 +488,16 @@
 }
 
 .yt-log-entry {
-    background: var(--yt-gray-hover);
-    border-radius: 12px;
-    padding: 1.25rem;
-    border-left: 4px solid var(--yt-border);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-quick);
+}
+
+.yt-log-entry:active {
+    transform: scale(0.99);
 }
 
 .yt-log-top {
@@ -512,41 +517,42 @@
 
 .yt-log-action,
 .yt-log-status {
-    font-size: 0.7rem;
-    text-transform: uppercase;
+    font-size: 11px;
     font-weight: 800;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .yt-badge-replied {
-    background: rgba(52, 152, 219, 0.1);
-    color: #3498db;
+    color: var(--info-color);
+    background: rgba(14, 165, 233, 0.1);
+    border: 1px solid rgba(14, 165, 233, 0.2);
 }
 
 .yt-badge-hidden {
-    background: rgba(231, 76, 60, 0.1);
-    color: #e74c3c;
-}
-
-.yt-badge-skipped {
-    background: rgba(149, 165, 166, 0.1);
-    color: #95a5a6;
+    color: var(--error-color);
+    background: rgba(255, 77, 109, 0.1);
+    border: 1px solid rgba(255, 77, 109, 0.2);
 }
 
 .yt-badge-success {
-    background: rgba(46, 213, 115, 0.2);
-    color: #2ed573;
+    color: var(--success-color);
+    background: rgba(6, 214, 160, 0.1);
+    border: 1px solid rgba(6, 214, 160, 0.2);
 }
 
 .yt-badge-pending {
-    background: rgba(241, 196, 15, 0.2);
-    color: #f1c40f;
+    color: var(--warning-color);
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
 .yt-badge-error {
-    background: rgba(255, 71, 87, 0.2);
-    color: #ff4757;
+    color: var(--error-color);
+    background: rgba(255, 77, 109, 0.1);
+    border: 1px solid rgba(255, 77, 109, 0.2);
 }
 
 .yt-log-comment {
@@ -590,16 +596,17 @@
 }
 
 .yt-video-card {
-    background: var(--yt-gray-hover);
-    border-radius: 12px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
     overflow: hidden;
     cursor: pointer;
-    transition: transform 0.2s;
-    border: 2px solid transparent;
+    transition: var(--transition-bounce);
+    box-shadow: var(--shadow-sm);
 }
 
-.yt-video-card:hover {
-    transform: translateY(-5px);
+.yt-video-card:active {
+    transform: scale(0.96);
 }
 
 .yt-video-card.selected {
