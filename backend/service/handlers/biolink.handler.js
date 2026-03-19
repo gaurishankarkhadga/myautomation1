@@ -215,6 +215,7 @@ module.exports = {
                         borderRadius: '12px',
                         spacing: '16px'
                     },
+                    
                     analytics: { views: 0, clicks: 0 },
                     isPublished: true,
                     publishedAt: new Date()
