@@ -190,6 +190,7 @@ function ChatHub() {
         if (!content) return '';
         return content
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; text-decoration: underline;">$1</a>')
             .replace(/\n/g, '<br/>');
     };
 

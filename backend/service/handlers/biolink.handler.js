@@ -216,10 +216,14 @@ module.exports = {
                         spacing: '16px'
                     },
                     analytics: { views: 0, clicks: 0 },
-                    isPublished: false
+                    isPublished: true,
+                    publishedAt: new Date()
                 });
 
                 await biolink.save();
+
+                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+                const publicUrl = `${frontendUrl}/p/${biolink.username}`;
 
                 // Build response summary
                 const parts = [];
@@ -230,8 +234,8 @@ module.exports = {
 
                 return {
                     success: true,
-                    message: `🎨 **BioLink created!** Theme: ${themeId}\n\nAuto-added: ${contentSummary}\n\n📝 Profile: ${profile.displayName}\n🔗 Edit it at /biolink (click BioLinks in sidebar)\n\n_Tip: You can publish it from the editor to get a shareable link!_`,
-                    data: { biolinkId: biolink._id, theme: themeId, linkCount: allLinks.length, productCount: products.length }
+                    message: `🎨 **BioLink created & Published!** Theme: ${themeId}\n\nAuto-added: ${contentSummary}\n📝 Profile: ${profile.displayName}\n\n🔗 **Your Live BioLink URL:**\n${publicUrl}\n\n_Tip: You can customize it further at /biolink (click BioLinks in sidebar)._`,
+                    data: { biolinkId: biolink._id, theme: themeId, linkCount: allLinks.length, productCount: products.length, url: publicUrl }
                 };
             }
 
@@ -283,11 +287,13 @@ module.exports = {
                     };
                 }
 
+                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
                 const list = biolinks.map((b, i) => {
                     const status = b.isPublished ? '🟢 Published' : '⚪ Draft';
                     const linkCount = (b.links || []).length;
                     const prodCount = (b.products || []).length;
-                    return `${i + 1}. **${b.profile?.displayName || b.username}** (${b.theme}) — ${status}\n   🔗 ${linkCount} links, 📦 ${prodCount} products${b.isPublished ? ` | /p/${b.username}` : ''}`;
+                    const publicUrl = `${frontendUrl}/p/${b.username}`;
+                    return `${i + 1}. **${b.profile?.displayName || b.username}** (${b.theme}) — ${status}\n   🔗 ${linkCount} links, 📦 ${prodCount} products${b.isPublished ? `\n   🌐 ${publicUrl}` : ''}`;
                 }).join('\n\n');
 
                 return {
