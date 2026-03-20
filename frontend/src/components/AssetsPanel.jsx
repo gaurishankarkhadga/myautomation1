@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Link2, Package, BookOpen, Tag, FileText,
-    Plus, Trash2, ToggleLeft, ToggleRight, X,
+    Plus, Trash2, ToggleLeft, ToggleRight, X, ArrowLeft,
     ChevronDown, ChevronUp, Copy, ExternalLink, Loader
 } from 'lucide-react';
+import '../styles/AssetsPanel.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -60,12 +61,38 @@ function AssetsPanel({ userId, isOpen, onClose }) {
         }
     }, []);
 
+    const closedViaGestureRef = useRef(false);
+
     useEffect(() => {
-        if (isOpen && userId) {
+        if (userId) { // Load instantly in background!
             fetchAssets();
             fetchDefaultTemplates();
         }
-    }, [isOpen, userId, fetchAssets, fetchDefaultTemplates]);
+    }, [userId, fetchAssets, fetchDefaultTemplates]);
+
+    // ── Native Back Gesture Handling ───────────────────────────────
+    useEffect(() => {
+        if (!isOpen) return;
+
+        // Push an invisible state to hijack the native back gesture
+        window.history.pushState({ modal: 'assets-panel' }, '');
+
+        const handlePopState = () => {
+            closedViaGestureRef.current = true;
+            onClose();
+        };
+
+        window.addEventListener('popstate', handlePopState);
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+            // If closed via the UI X button, manually pop the ghost state
+            if (!closedViaGestureRef.current) {
+                setTimeout(() => window.history.back(), 0);
+            }
+            closedViaGestureRef.current = false;
+        };
+    }, [isOpen, onClose]);
 
     // ── Add asset ─────────────────────────────────────────────────
     const handleAdd = async () => {
@@ -125,7 +152,7 @@ function AssetsPanel({ userId, isOpen, onClose }) {
 
     // ── Copy template to clipboard ────────────────────────────────
     const handleCopyTemplate = (text) => {
-        navigator.clipboard.writeText(text).catch(() => {});
+        navigator.clipboard.writeText(text).catch(() => { });
     };
 
     // ── Save default template as user asset ───────────────────────
@@ -154,14 +181,25 @@ function AssetsPanel({ userId, isOpen, onClose }) {
     // ── Filter assets for current tab ─────────────────────────────
     const filteredAssets = assets.filter(a => a.type === activeTab);
 
-    if (!isOpen) return null;
-
     return (
-        <div className="assets-panel-overlay" onClick={onClose}>
+        <div className={`assets-panel-overlay ${isOpen ? 'open' : ''}`} onClick={onClose}>
             <div className="assets-panel" onClick={e => e.stopPropagation()}>
                 {/* Header */}
                 <div className="assets-panel-header">
-                    <h3>📦 My Assets</h3>
+                    <div className="assets-header-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button 
+                             className="assets-back-btn" 
+                             onClick={onClose} 
+                             aria-label="Back to ChatHub"
+                             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+                        >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                        </button>
+                        <h3 style={{ margin: 0, color: '#fff', fontSize: '16px', display: 'flex', alignItems: 'center' }}>📦 My Assets</h3>
+                    </div>
                     <button className="assets-close-btn" onClick={onClose} aria-label="Close assets panel">
                         <X size={18} />
                     </button>

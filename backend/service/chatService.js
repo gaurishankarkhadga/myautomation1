@@ -422,8 +422,49 @@ async function getChatHistory(userId, limit = 50) {
     }
 }
 
+// ==================== DELETE CHAT HISTORY ====================
+async function clearChatHistory(userId) {
+    try {
+        const chatHistory = await ChatHistory.findOne({ userId });
+        if (!chatHistory) {
+            return { success: true, message: 'History already empty' };
+        }
+        chatHistory.messages = [];
+        await chatHistory.save();
+        return { success: true, message: 'Chat history cleared' };
+    } catch (error) {
+        console.error('[ChatService] Failed to clear history:', error.message);
+        return { success: false, error: 'Failed to clear history' };
+    }
+}
+
+// ==================== DELETE SINGLE MESSAGE ====================
+async function deleteMessage(userId, messageId) {
+    try {
+        const chatHistory = await ChatHistory.findOne({ userId });
+        if (!chatHistory) {
+            return { success: false, error: 'Chat history not found' };
+        }
+        
+        const initialLength = chatHistory.messages.length;
+        chatHistory.messages = chatHistory.messages.filter(msg => msg._id.toString() !== messageId);
+        
+        if (chatHistory.messages.length === initialLength) {
+            return { success: false, error: 'Message not found' };
+        }
+        
+        await chatHistory.save();
+        return { success: true, message: 'Message deleted' };
+    } catch (error) {
+        console.error('[ChatService] Failed to delete message:', error.message);
+        return { success: false, error: 'Failed to delete message' };
+    }
+}
+
 module.exports = {
     processMessage,
     getChatHistory,
+    clearChatHistory,
+    deleteMessage,
     loadHandlers  // Exposed for testing/reloading
 };

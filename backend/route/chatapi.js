@@ -71,6 +71,37 @@ router.get('/history/:userId', async (req, res) => {
     }
 });
 
+// DELETE /api/chat/history/:userId — Clear chat history
+router.delete('/history/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'userId is required' });
+        }
+        const result = await chatService.clearChatHistory(userId);
+        res.json(result);
+    } catch (error) {
+        console.error('[ChatAPI] Error clearing history:', error.message);
+        res.status(500).json({ success: false, error: 'Failed to clear chat history' });
+    }
+});
+
+// DELETE /api/chat/message/:messageId — Delete a specific message
+router.delete('/message/:messageId', async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const { userId } = req.body;
+        if (!userId || !messageId) {
+            return res.status(400).json({ success: false, error: 'userId and messageId are required' });
+        }
+        const result = await chatService.deleteMessage(userId, messageId);
+        res.json(result);
+    } catch (error) {
+        console.error('[ChatAPI] Error deleting message:', error.message);
+        res.status(500).json({ success: false, error: 'Failed to delete message' });
+    }
+});
+
 // GET /api/chat/active-count/:userId — Get count of active automations (for sidebar badge)
 router.get('/active-count/:userId', async (req, res) => {
     try {

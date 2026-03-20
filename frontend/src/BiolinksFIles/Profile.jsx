@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, Mail, AtSign, Camera, Plus, Link, Pencil, Trash2, ExternalLink, 
-  Globe, ShieldCheck, TrendingUp, Zap, Gift, DollarSign, Layout, ChevronRight 
+  Globe, ShieldCheck, TrendingUp, Zap, Gift, DollarSign, Layout, ChevronRight, ArrowLeft 
 } from 'lucide-react';
 import axios from 'axios';
 import { getBioLinkAuthHeaders } from './config';
@@ -406,8 +406,20 @@ const Profile = () => {
 
       <div className="custom-profile-header">
         <div className="header-title-wrap">
-          <h1>Creator Universe</h1>
-          <p>Global Command Center & Automation Hub</p>
+          <button 
+            className="assets-back-btn" 
+            onClick={() => navigate('/')} 
+            aria-label="Back to ChatHub"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+               <line x1="19" y1="12" x2="5" y2="12"></line>
+               <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <div className="header-text-container">
+            <h1>Creator Universe</h1>
+            <p>Global Command Center & Automation Hub</p>
+          </div>
         </div>
         <div className="quick-stats-pills" style={{ display: 'flex', gap: '1rem' }}>
           <div className="module-status"><Zap size={14} /> Total Presence: {biolinks.length}</div>

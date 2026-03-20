@@ -685,6 +685,72 @@ body {
     flex-shrink: 0;
 }
 
+/* ── Tabs ────────────────────────────────────────────────────── */
+.chat-tabs-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: rgba(10, 10, 10, 0.75);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.chat-tabs {
+    display: flex;
+    gap: 8px;
+    background: var(--surface-2);
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-2);
+}
+
+.chat-tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.chat-tab-btn:hover {
+    color: var(--text-primary);
+    background: var(--surface-3);
+}
+
+.chat-tab-btn.active {
+    background: var(--border-2);
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.clear-history-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.2);
+    color: var(--red);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.clear-history-btn:hover {
+    background: rgba(248, 113, 113, 0.2);
+}
+
+.clear-history-btn svg {
+    color: var(--red);
+}
+
 /* ── Messages — THE ONLY SCROLLABLE ZONE ─────────────────────── */
 .chat-messages {
     flex: 1;
@@ -848,6 +914,7 @@ body {
 }
 
 .msg-bubble {
+    position: relative;
     max-width: min(76%, 640px);
     padding: 11px 14px;
     border-radius: var(--radius);
@@ -986,6 +1053,45 @@ body {
     color: var(--text-faint);
     margin-top: 5px;
     text-align: right;
+}
+
+.msg-delete-btn {
+    position: absolute;
+    bottom: -8px;
+    right: -8px;
+    background: rgba(20, 20, 20, 0.9);
+    border: 1px solid rgba(248, 113, 113, 0.4);
+    color: var(--red);
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.msg-row:hover .msg-delete-btn,
+.msg-bubble:hover .msg-delete-btn {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.msg-row.user .msg-delete-btn {
+    left: -8px;
+    right: auto;
+}
+
+.msg-delete-btn:hover {
+    background: var(--red);
+    color: #fff;
+}
+
+.msg-delete-btn svg {
+    color: inherit;
 }
 
 /* ── Typing indicator ───────────────────────────────────────── */

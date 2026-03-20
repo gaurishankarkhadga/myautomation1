@@ -4,7 +4,7 @@ import {
     Zap, Send, Menu, X, Settings, LogOut, BarChart2,
     Package, User, MessageSquare, Mail, Handshake,
     Instagram, Youtube, CheckCircle, Circle, Loader,
-    Bot, Activity, ChevronRight, RotateCcw, Link2
+    Bot, Activity, ChevronRight, RotateCcw, Link2, Trash2
 } from 'lucide-react';
 import ToastNotification, { useToasts } from './ToastNotification';
 import AssetsPanel from './AssetsPanel';
@@ -29,6 +29,8 @@ function ChatHub() {
     const [profile, setProfile] = useState(null);
 
     const [messages, setMessages] = useState([]);
+    const [historyMessages, setHistoryMessages] = useState([]);
+    const [activeTab, setActiveTab] = useState('current');
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [loadingHistory, setLoadingHistory] = useState(true);
@@ -122,15 +124,57 @@ function ChatHub() {
             setLoadingHistory(true);
             const res = await fetch(`${API_BASE_URL}/api/chat/history/${userId}`);
             const data = await res.json();
-            if (data.success && data.messages.length > 0) setMessages(data.messages);
+            if (data.success && data.messages.length > 0) setHistoryMessages(data.messages);
         } catch { }
         finally { setLoadingHistory(false); }
+    };
+
+    const handleDeleteMessage = async (msgId) => {
+        if (!window.confirm("Delete this message?")) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/chat/message/${msgId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setHistoryMessages(prev => prev.filter(m => m._id !== msgId));
+                setMessages(prev => prev.filter(m => m._id !== msgId));
+                addToasts([{ type: 'success', title: 'Deleted', message: 'Message deleted successfully.' }]);
+            } else {
+                addToasts([{ type: 'error', title: 'Error', message: data.error || 'Failed to delete message.' }]);
+            }
+        } catch {
+            addToasts([{ type: 'error', title: 'Error', message: 'Network error deleting message.' }]);
+        }
+    };
+
+    const handleClearHistory = async () => {
+        if (!window.confirm("Are you sure you want to delete your entire chat history?")) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/chat/history/${userId}`, {
+                method: 'DELETE'
+            });
+            const data = await res.json();
+            if (data.success) {
+                setHistoryMessages([]);
+                setMessages([]);
+                setActiveTab('current');
+                addToasts([{ type: 'success', title: 'Cleared', message: 'Chat history cleared successfully.' }]);
+            } else {
+                addToasts([{ type: 'error', title: 'Error', message: data.error || 'Failed to clear history.' }]);
+            }
+        } catch {
+            addToasts([{ type: 'error', title: 'Error', message: 'Network error clearing history.' }]);
+        }
     };
 
     const sendMessage = async (messageText) => {
         const text = (messageText || inputValue).trim();
         if (!text || isTyping) return;
 
+        setActiveTab('current');
         setMessages(prev => [...prev, { role: 'user', content: text, timestamp: new Date().toISOString() }]);
         setInputValue('');
         setIsTyping(true);
@@ -379,10 +423,23 @@ function ChatHub() {
                     </div>
                 </header>
 
+                {/* Tabs */}
+                <div className="chat-tabs-container">
+                    <div className="chat-tabs">
+                        <button className={`chat-tab-btn ${activeTab === 'current' ? 'active' : ''}`} onClick={() => setActiveTab('current')}>Current Chat</button>
+                        <button className={`chat-tab-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>Chat History</button>
+                    </div>
+                    {activeTab === 'history' && historyMessages.length > 0 && (
+                        <button className="clear-history-btn" onClick={handleClearHistory}>
+                            <Trash2 size={14} /> Clear History
+                        </button>
+                    )}
+                </div>
+
                 {/* Messages */}
                 <div className="chat-messages" id="chat-messages">
                     {/* Welcome screen */}
-                    {!loadingHistory && messages.length === 0 && (
+                    {!loadingHistory && messages.length === 0 && activeTab === 'current' && (
                         <div className="chat-welcome" id="chat-welcome">
                             <div className="welcome-icon-wrap"><Zap size={28} strokeWidth={2} /></div>
                             <h2 className="welcome-title">Welcome to CreatorHub AI</h2>
@@ -400,15 +457,21 @@ function ChatHub() {
                     )}
 
                     {/* Loading history */}
-                    {loadingHistory && (
+                    {loadingHistory && activeTab === 'history' && (
                         <div className="chat-loading">
                             <Loader size={20} className="spin" />
                             <p>Loading history…</p>
                         </div>
                     )}
 
+                    {!loadingHistory && activeTab === 'history' && historyMessages.length === 0 && (
+                        <div className="chat-loading" style={{ opacity: 0.6 }}>
+                            <p>No chat history available.</p>
+                        </div>
+                    )}
+
                     {/* Message bubbles */}
-                    {messages.map((msg, i) => (
+                    {(activeTab === 'current' ? messages : historyMessages).map((msg, i) => (
                         <div key={i} className={`msg-row ${msg.role}`} id={`msg-${i}`}>
                             {msg.role === 'assistant' && (
                                 <div className="msg-avatar"><Bot size={14} strokeWidth={2} /></div>
@@ -444,6 +507,11 @@ function ChatHub() {
                                 <span className="msg-time">
                                     {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                 </span>
+                                {msg._id && (
+                                    <button className="msg-delete-btn" onClick={() => handleDeleteMessage(msg._id)} title="Delete message">
+                                        <Trash2 size={14} />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}
