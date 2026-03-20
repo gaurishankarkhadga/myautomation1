@@ -151,17 +151,12 @@ body {
     border-right: 1px solid var(--border);
     z-index: 390;
     position: relative;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .chathub-sidebar::-webkit-scrollbar {
-    width: 3px;
-}
-
-.chathub-sidebar::-webkit-scrollbar-thumb {
-    background: var(--border-2);
-    border-radius: 4px;
+    display: none;
 }
 
 /* ── Sidebar top bar ─────────────────────────────────────────── */
@@ -700,17 +695,12 @@ body {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .chat-messages::-webkit-scrollbar {
-    width: 3px;
-}
-
-.chat-messages::-webkit-scrollbar-thumb {
-    background: var(--border-2);
-    border-radius: 4px;
+    display: none;
 }
 
 /* ── Welcome screen ─────────────────────────────────────────── */

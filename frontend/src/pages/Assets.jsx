@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Link2, Package, BookOpen, Tag, FileText,
     Plus, Trash2, ToggleLeft, ToggleRight, X, ArrowLeft,
     ChevronDown, ChevronUp, Copy, ExternalLink, Loader
 } from 'lucide-react';
-import '../styles/AssetsPanel.css';
+import '../styles/Assets.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -25,7 +26,10 @@ const TEMPLATE_CATEGORIES = [
 ];
 
 // ── Main Component ────────────────────────────────────────────────
-function AssetsPanel({ userId, isOpen, onClose }) {
+function Assets() {
+    const navigate = useNavigate();
+    const storedUserId = localStorage.getItem('insta_user_id') || localStorage.getItem('yt_channel_id');
+    const [userId] = useState(storedUserId);
     const [assets, setAssets] = useState([]);
     const [activeTab, setActiveTab] = useState('link');
     const [loading, setLoading] = useState(false);
@@ -61,38 +65,12 @@ function AssetsPanel({ userId, isOpen, onClose }) {
         }
     }, []);
 
-    const closedViaGestureRef = useRef(false);
-
     useEffect(() => {
         if (userId) { // Load instantly in background!
             fetchAssets();
             fetchDefaultTemplates();
         }
     }, [userId, fetchAssets, fetchDefaultTemplates]);
-
-    // ── Native Back Gesture Handling ───────────────────────────────
-    useEffect(() => {
-        if (!isOpen) return;
-
-        // Push an invisible state to hijack the native back gesture
-        window.history.pushState({ modal: 'assets-panel' }, '');
-
-        const handlePopState = () => {
-            closedViaGestureRef.current = true;
-            onClose();
-        };
-
-        window.addEventListener('popstate', handlePopState);
-
-        return () => {
-            window.removeEventListener('popstate', handlePopState);
-            // If closed via the UI X button, manually pop the ghost state
-            if (!closedViaGestureRef.current) {
-                setTimeout(() => window.history.back(), 0);
-            }
-            closedViaGestureRef.current = false;
-        };
-    }, [isOpen, onClose]);
 
     // ── Add asset ─────────────────────────────────────────────────
     const handleAdd = async () => {
@@ -182,14 +160,14 @@ function AssetsPanel({ userId, isOpen, onClose }) {
     const filteredAssets = assets.filter(a => a.type === activeTab);
 
     return (
-        <div className={`assets-panel-overlay ${isOpen ? 'open' : ''}`} onClick={onClose}>
-            <div className="assets-panel" onClick={e => e.stopPropagation()}>
+        <div className="assets-page-container">
+            <div className="assets-panel">
                 {/* Header */}
                 <div className="assets-panel-header">
                     <div className="assets-header-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <button 
                              className="assets-back-btn" 
-                             onClick={onClose} 
+                             onClick={() => navigate(-1)} 
                              aria-label="Back to ChatHub"
                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
                         >
@@ -200,9 +178,6 @@ function AssetsPanel({ userId, isOpen, onClose }) {
                         </button>
                         <h3 style={{ margin: 0, color: '#fff', fontSize: '16px', display: 'flex', alignItems: 'center' }}>📦 My Assets</h3>
                     </div>
-                    <button className="assets-close-btn" onClick={onClose} aria-label="Close assets panel">
-                        <X size={18} />
-                    </button>
                 </div>
 
                 {/* Tabs */}
@@ -389,4 +364,4 @@ function AssetsPanel({ userId, isOpen, onClose }) {
     );
 }
 
-export default AssetsPanel;
+export default Assets;

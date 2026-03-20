@@ -27,7 +27,6 @@ function AdvancedSettings() {
                 <div className="header-left">
                     <button className="back-btn" onClick={() => navigate('/chat')}>
                         <ArrowLeft size={20} />
-                        <span>Back to ChatHub</span>
                     </button>
                     <h1>Advanced Settings</h1>
                 </div>

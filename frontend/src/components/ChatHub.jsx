@@ -7,7 +7,6 @@ import {
     Bot, Activity, ChevronRight, RotateCcw, Link2, Trash2
 } from 'lucide-react';
 import ToastNotification, { useToasts } from './ToastNotification';
-import AssetsPanel from './AssetsPanel';
 import '../styles/ChatHub.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -40,7 +39,6 @@ function ChatHub() {
     const [connectingPlatform, setConnectingPlatform] = useState(null);
     const [activeAutomations, setActiveAutomations] = useState({ count: 0, list: [] });
     const [quota, setQuota] = useState(null);
-    const [assetsPanelOpen, setAssetsPanelOpen] = useState(false);
 
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
@@ -242,7 +240,6 @@ function ChatHub() {
     return (
         <div className="chathub" id="chathub">
             <ToastNotification toasts={toasts} onRemove={removeToast} />
-            <AssetsPanel userId={userId} isOpen={assetsPanelOpen} onClose={() => setAssetsPanelOpen(false)} />
 
             {/* Mobile header bar */}
             <header className="mobile-header">
@@ -339,7 +336,7 @@ function ChatHub() {
                         <button key={label} className="sidebar-action-btn"
                             onClick={() => {
                                 if (action === 'navigate') { navigate(path); }
-                                else if (action === 'assets') { setAssetsPanelOpen(true); }
+                                else if (action === 'assets') { navigate('/assets'); }
                                 else { sendMessage(msg); }
                                 setSidebarOpen(false);
                             }}
