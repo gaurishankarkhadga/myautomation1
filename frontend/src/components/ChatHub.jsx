@@ -305,6 +305,27 @@ function ChatHub() {
                     </button>
                 </div>
 
+                {/* Chat Modes */}
+                <div className="sidebar-section">
+                    <p className="sidebar-section-label">Chat Modes</p>
+                    <button className={`sidebar-action-btn ${activeTab === 'current' ? 'active-tab' : ''}`}
+                        onClick={() => { setActiveTab('current'); setSidebarOpen(false); }}>
+                        <MessageSquare size={14} />
+                        <span style={activeTab === 'current' ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Current Chat</span>
+                    </button>
+                    <button className={`sidebar-action-btn ${activeTab === 'history' ? 'active-tab' : ''}`}
+                        onClick={() => { setActiveTab('history'); setSidebarOpen(false); }}>
+                        <RotateCcw size={14} />
+                        <span style={activeTab === 'history' ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Chat History</span>
+                    </button>
+                    {activeTab === 'history' && historyMessages.length > 0 && (
+                        <button className="sidebar-action-btn" onClick={handleClearHistory} style={{ color: 'var(--red)', marginTop: '4px' }}>
+                            <Trash2 size={14} />
+                            <span>Clear All History</span>
+                        </button>
+                    )}
+                </div>
+
                 {/* Quick actions */}
                 <div className="sidebar-section">
                     <p className="sidebar-section-label">Quick Actions</p>
@@ -422,19 +443,6 @@ function ChatHub() {
                         )}
                     </div>
                 </header>
-
-                {/* Tabs */}
-                <div className="chat-tabs-container">
-                    <div className="chat-tabs">
-                        <button className={`chat-tab-btn ${activeTab === 'current' ? 'active' : ''}`} onClick={() => setActiveTab('current')}>Current Chat</button>
-                        <button className={`chat-tab-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>Chat History</button>
-                    </div>
-                    {activeTab === 'history' && historyMessages.length > 0 && (
-                        <button className="clear-history-btn" onClick={handleClearHistory}>
-                            <Trash2 size={14} /> Clear History
-                        </button>
-                    )}
-                </div>
 
                 {/* Messages */}
                 <div className="chat-messages" id="chat-messages">
