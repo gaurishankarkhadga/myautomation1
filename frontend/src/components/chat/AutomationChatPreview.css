@@ -1,311 +1,230 @@
 /* ============================================================
-   Automation Chat Preview — Confirmation card for automation setup
-   Matches ChatHub's glassmorphism design system
+   Automation Chat Preview — Visual-first, shows actual posts
    ============================================================ */
 
 .automation-chat-preview {
     margin-top: 12px;
-    padding: 16px;
-    background: rgba(74, 222, 128, 0.03);
-    border: 1px solid rgba(74, 222, 128, 0.1);
-    border-radius: 14px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    overflow: hidden;
-    transition: border-color 0.2s;
-}
-
-.automation-chat-preview:hover {
-    border-color: rgba(74, 222, 128, 0.18);
-}
-
-/* Disabled/off state */
-.automation-chat-preview.acp-disabled {
     background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    overflow: hidden;
 }
 
-.automation-chat-preview.acp-disabled:hover {
-    border-color: rgba(255, 255, 255, 0.12);
-}
-
-/* ── Header ────────────────────────────────────────────────── */
-.acp-header {
+/* ── Toolbar ───────────────────────────────────────────────── */
+.acp-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.acp-label {
+.acp-toolbar-left {
     display: flex;
     align-items: center;
     gap: 6px;
     font-size: 10px;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: rgba(200, 200, 200, 0.45);
+    color: rgba(200, 200, 200, 0.4);
 }
 
-.acp-label svg {
-    color: rgba(200, 200, 200, 0.45);
+.acp-toolbar-left svg {
+    color: rgba(200, 200, 200, 0.4);
 }
 
-.acp-status-badge {
+.acp-status-pill {
     display: flex;
     align-items: center;
     gap: 5px;
     font-size: 10px;
-    font-weight: 600;
-    padding: 3px 8px;
+    font-weight: 700;
+    padding: 3px 9px;
     border-radius: 99px;
 }
 
-.acp-status-badge.active {
+.acp-status-pill.active {
     color: #4ade80;
     background: rgba(74, 222, 128, 0.1);
     border: 1px solid rgba(74, 222, 128, 0.18);
 }
 
-.acp-status-badge.inactive {
+.acp-status-pill.off {
     color: rgba(200, 200, 200, 0.5);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.acp-status-dot {
+.acp-dot {
     width: 5px;
     height: 5px;
     border-radius: 50%;
     background: currentColor;
 }
 
-.acp-status-badge.active .acp-status-dot {
+.acp-status-pill.active .acp-dot {
     animation: acp-pulse 2s ease-in-out infinite;
 }
 
 @keyframes acp-pulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+    50% { opacity: 0.35; }
 }
 
-/* ── Automation type card ──────────────────────────────────── */
-.acp-type-card {
+/* ── Content area ──────────────────────────────────────────── */
+.acp-body {
+    padding: 12px;
+}
+
+/* ── Type row ──────────────────────────────────────────────── */
+.acp-type-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 10px;
+    gap: 10px;
     margin-bottom: 10px;
 }
 
 .acp-type-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
 
-.acp-type-icon.comment {
-    background: rgba(96, 165, 250, 0.12);
-    color: #60a5fa;
-}
+.acp-type-icon.comment { background: rgba(96, 165, 250, 0.12); color: #60a5fa; }
+.acp-type-icon.dm { background: rgba(167, 139, 250, 0.12); color: #a78bfa; }
+.acp-type-icon.story { background: rgba(244, 114, 182, 0.12); color: #f472b6; }
+.acp-type-icon.all { background: rgba(74, 222, 128, 0.1); color: #4ade80; }
+.acp-type-icon svg { color: inherit; }
 
-.acp-type-icon.dm {
-    background: rgba(167, 139, 250, 0.12);
-    color: #a78bfa;
-}
-
-.acp-type-icon.story {
-    background: rgba(244, 114, 182, 0.12);
-    color: #f472b6;
-}
-
-.acp-type-icon.all {
-    background: rgba(74, 222, 128, 0.12);
-    color: #4ade80;
-}
-
-.acp-type-icon svg {
-    color: inherit;
-}
-
-.acp-type-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.acp-type-name {
+.acp-type-label {
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     color: #efefef;
-    line-height: 1.3;
 }
 
-.acp-type-detail {
-    font-size: 11px;
-    color: rgba(220, 220, 220, 0.5);
-    line-height: 1.3;
-    margin-top: 2px;
+.acp-type-mode {
+    font-size: 10px;
+    color: rgba(200, 200, 200, 0.5);
+    margin-top: 1px;
 }
 
-/* ── Config details ────────────────────────────────────────── */
-.acp-config {
+/* ── Config tags ───────────────────────────────────────────── */
+.acp-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 10px;
+    gap: 5px;
+    margin-bottom: 10px;
 }
 
-.acp-config-tag {
+.acp-tag {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: 10.5px;
-    font-weight: 500;
-    color: rgba(200, 200, 200, 0.6);
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(200, 200, 200, 0.55);
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    padding: 4px 8px;
+    padding: 3px 7px;
     border-radius: 6px;
 }
 
-.acp-config-tag svg {
-    color: rgba(200, 200, 200, 0.4);
-}
+.acp-tag svg { color: rgba(200, 200, 200, 0.35); width: 10px; height: 10px; }
 
-/* ── Media preview (targeted posts) ────────────────────────── */
-.acp-media-section {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.acp-media-title {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: rgba(200, 200, 200, 0.35);
-    margin-bottom: 8px;
-}
-
+/* ── Media grid (actual posts/reels) ───────────────────────── */
 .acp-media-grid {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     overflow-x: auto;
-    padding-bottom: 4px;
     scrollbar-width: none;
-    -ms-overflow-style: none;
+    padding: 2px 0;
 }
 
-.acp-media-grid::-webkit-scrollbar {
-    display: none;
-}
+.acp-media-grid::-webkit-scrollbar { display: none; }
 
-.acp-media-item {
+.acp-media-card {
     flex-shrink: 0;
-    width: 80px;
-    border-radius: 8px;
+    width: 90px;
+    border-radius: 10px;
     overflow: hidden;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.06);
     transition: border-color 0.15s;
-}
-
-.acp-media-item:hover {
-    border-color: rgba(255, 255, 255, 0.12);
-}
-
-.acp-media-item a {
     text-decoration: none;
     color: inherit;
     display: block;
 }
 
-.acp-media-thumb {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    display: block;
-    background: rgba(255, 255, 255, 0.03);
+.acp-media-card:hover {
+    border-color: rgba(74, 222, 128, 0.25);
 }
 
-.acp-media-thumb-placeholder {
-    width: 80px;
-    height: 80px;
+.acp-media-thumb {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    display: block;
+}
+
+.acp-media-thumb-empty {
+    width: 90px;
+    height: 90px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(255, 255, 255, 0.03);
-    color: rgba(200, 200, 200, 0.3);
+    color: rgba(200, 200, 200, 0.25);
+    font-size: 24px;
 }
 
-.acp-media-thumb-placeholder svg {
-    color: rgba(200, 200, 200, 0.3);
+.acp-media-footer {
+    padding: 4px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-.acp-media-caption {
-    font-size: 9px;
-    color: rgba(200, 200, 200, 0.5);
-    padding: 4px 5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.acp-media-badge {
+.acp-media-type {
     font-size: 8px;
     font-weight: 600;
-    color: #4ade80;
-    background: rgba(74, 222, 128, 0.12);
-    padding: 2px 5px;
-    margin: 0 4px 4px;
-    border-radius: 3px;
-    display: inline-block;
+    color: rgba(200, 200, 200, 0.4);
+    text-transform: uppercase;
 }
 
-.acp-media-all-note {
+.acp-active-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4ade80;
+}
+
+/* ── All-posts note ────────────────────────────────────────── */
+.acp-all-note {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
-    color: rgba(200, 200, 200, 0.45);
     padding: 8px 10px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(74, 222, 128, 0.04);
+    border: 1px solid rgba(74, 222, 128, 0.08);
     border-radius: 8px;
+    font-size: 11px;
+    color: rgba(200, 200, 200, 0.5);
 }
 
-.acp-media-all-note svg {
-    color: rgba(200, 200, 200, 0.35);
+.acp-all-note svg {
+    color: rgba(74, 222, 128, 0.4);
     flex-shrink: 0;
 }
 
-/* ── Mobile adjustments ────────────────────────────────────── */
+/* ── Mobile ────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-    .automation-chat-preview {
-        padding: 12px;
-    }
-
-    .acp-type-icon {
-        width: 32px;
-        height: 32px;
-    }
-
-    .acp-media-item {
-        width: 70px;
-    }
-
-    .acp-media-thumb,
-    .acp-media-thumb-placeholder {
-        width: 70px;
-        height: 70px;
-    }
+    .acp-body { padding: 10px; }
+    .acp-media-card { width: 78px; }
+    .acp-media-thumb, .acp-media-thumb-empty { width: 78px; height: 78px; }
 }

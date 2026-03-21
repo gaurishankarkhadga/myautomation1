@@ -1,41 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    Link2, User, Palette, ExternalLink, Copy, Check,
-    Edit3, Eye, Loader, AlertCircle, Globe, ShoppingBag,
-    Instagram, Youtube, BookOpen, Tag, Briefcase
-} from 'lucide-react';
+import { Edit3, Trash2, ExternalLink, Loader, Link2, X } from 'lucide-react';
+import BioLinkElement from '../biolinks/BioLinkElement';
+import BioLinkEditPanel from '../biolinks/BioLinkEditPanel';
 import './BioLinkChatPreview.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
-// Icon map for link types
-const LINK_ICONS = {
-    instagram: Instagram,
-    youtube: Youtube,
-    book: BookOpen,
-    tag: Tag,
-    briefcase: Briefcase,
-    link: Link2,
-    website: Globe,
-};
-
-function BioLinkChatPreview({ biolinkId, url, biolinks }) {
+function BioLinkChatPreview({ biolinkId, url }) {
     const navigate = useNavigate();
     const [biolink, setBiolink] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [urlCopied, setUrlCopied] = useState(false);
+    const [activeView, setActiveView] = useState('links');
+    const [showEditPanel, setShowEditPanel] = useState(false);
 
-    // Fetch biolink data when we have an ID
     useEffect(() => {
-        if (!biolinkId) return;
-        fetchBiolinkData();
+        if (biolinkId) fetchBiolinkData();
     }, [biolinkId]);
 
     const fetchBiolinkData = async () => {
         setLoading(true);
-        setError(null);
         try {
             const instaUserId = localStorage.getItem('insta_user_id');
             const ytChannelId = localStorage.getItem('yt_channel_id');
@@ -45,201 +29,229 @@ function BioLinkChatPreview({ biolinkId, url, biolinks }) {
 
             const res = await fetch(`${API_BASE_URL}/api/biolinks/data?id=${biolinkId}`, { headers });
             const data = await res.json();
-
-            if (data.biolink) {
-                setBiolink(data.biolink);
-            } else {
-                setError('Could not load BioLink preview');
-            }
-        } catch {
-            setError('Failed to fetch BioLink data');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleCopyUrl = async () => {
-        const copyUrl = url || (biolink ? `${window.location.origin}/p/${biolink.username}` : '');
-        if (!copyUrl) return;
-        try {
-            await navigator.clipboard.writeText(copyUrl);
-            setUrlCopied(true);
-            setTimeout(() => setUrlCopied(false), 2000);
-        } catch { /* clipboard may fail silently */ }
+            if (data.biolink) setBiolink(data.biolink);
+        } catch { /* silent */ }
+        finally { setLoading(false); }
     };
 
     const handleEdit = () => {
-        if (biolink?._id) {
-            navigate(`/profile`, { state: { openBiolinkId: biolink._id } });
-        } else {
-            navigate('/profile');
+        setShowEditPanel(true);
+    };
+
+    const handleEditPanelClose = () => {
+        setShowEditPanel(false);
+        // Refresh data after edit
+        if (biolinkId) fetchBiolinkData();
+    };
+
+    const handleEditPanelUpdate = (updatedData) => {
+        // Update local biolink state from edit panel changes
+        if (updatedData) {
+            setBiolink(prev => ({ ...prev, ...updatedData }));
         }
     };
 
     const handleView = () => {
         const viewUrl = url || (biolink ? `/p/${biolink.username}` : '');
-        if (viewUrl) {
-            window.open(viewUrl, '_blank', 'noopener,noreferrer');
-        }
+        if (viewUrl) window.open(viewUrl, '_blank', 'noopener,noreferrer');
     };
 
-    // Resolve icon component for a link
-    const getLinkIcon = (link) => {
-        const iconKey = link.icon || link.platform || 'link';
-        return LINK_ICONS[iconKey] || Link2;
+    const handleDelete = async () => {
+        if (!biolink?._id) return;
+        if (!window.confirm('Delete this BioLink?')) return;
+        try {
+            const instaUserId = localStorage.getItem('insta_user_id');
+            const ytChannelId = localStorage.getItem('yt_channel_id');
+            const headers = { 'Content-Type': 'application/json' };
+            if (instaUserId) headers['x-insta-userid'] = instaUserId;
+            else if (ytChannelId) headers['x-yt-channelid'] = ytChannelId;
+
+            await fetch(`${API_BASE_URL}/api/biolinks/remove`, {
+                method: 'DELETE',
+                headers,
+                body: JSON.stringify({ id: biolink._id })
+            });
+            setBiolink(null);
+        } catch { /* silent */ }
     };
 
-    const displayUrl = url || (biolink ? `${window.location.origin}/p/${biolink.username}` : '');
-
-    // ── Loading state ──────────────────────────────────────────
+    // Loading
     if (loading) {
         return (
-            <div className="biolink-chat-preview" id="bcp-loading">
-                <div className="bcp-loading">
-                    <Loader size={14} />
-                    <span>Loading BioLink preview…</span>
-                </div>
+            <div className="biolink-chat-preview">
+                <div className="bcp-loading"><Loader size={14} /> Loading preview…</div>
             </div>
         );
     }
 
-    // ── Error state ────────────────────────────────────────────
-    if (error && !biolink) {
-        return (
-            <div className="biolink-chat-preview" id="bcp-error">
-                <div className="bcp-error">
-                    <AlertCircle size={13} />
-                    <span>{error}</span>
-                </div>
-                {displayUrl && (
-                    <div className="bcp-actions" style={{ marginTop: 8 }}>
-                        <button className="bcp-view-btn" onClick={handleView}>
-                            <ExternalLink size={13} /> Open BioLink
-                        </button>
-                        <button className="bcp-edit-btn" onClick={handleEdit}>
-                            <Edit3 size={13} /> Edit
-                        </button>
-                    </div>
-                )}
-            </div>
-        );
-    }
+    if (!biolink) return null;
 
-    // ── No data — show minimal card ────────────────────────────
-    if (!biolink) {
-        return null;
-    }
-
+    const settings = biolink.settings || {};
     const profile = biolink.profile || {};
-    const links = Array.isArray(biolink.links) ? biolink.links.filter(l => l.isActive !== false) : [];
-    const products = Array.isArray(biolink.products) ? biolink.products : [];
+    const links = (biolink.links || []).filter(l => l.isActive !== false);
+    const products = biolink.products || [];
+    const elements = biolink.elements || [];
     const theme = biolink.theme || 'modern';
-    const isPublished = biolink.isPublished;
+    const styleType = settings.styleType || (theme === 'glass' ? 'glass' : theme === 'modern' ? 'timeline' : theme === 'creative' ? 'perspective' : 'default');
+
+    const phoneBg = (settings.backgroundColor || '#0b1220').includes('gradient')
+        ? settings.backgroundColor
+        : settings.backgroundColor || '#0b1220';
+
+    const textColor = settings.textColor || '#ffffff';
+    const accent = settings.accentColor || '#3b82f6';
+
+    // Link styling matching PublicBioLink
+    const linkStyle = () => {
+        if (styleType === 'glass') return { background: 'rgba(51,51,51,0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', backdropFilter: 'blur(10px)' };
+        if (styleType === 'timeline') return { background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', backdropFilter: 'blur(10px)' };
+        if (styleType === 'perspective') return { background: '#fff', border: '1px solid rgba(255,255,255,0.3)', color: '#000' };
+        return { background: accent, color: textColor };
+    };
 
     return (
-        <div className="biolink-chat-preview" id="bcp-card">
-            {/* Header */}
-            <div className="bcp-header">
-                <span className="bcp-label">
-                    <Link2 size={11} /> BioLink Preview
-                </span>
-                {isPublished ? (
-                    <span className="bcp-status">
-                        <span className="bcp-status-dot" /> Published
+        <>
+            <div className="biolink-chat-preview" id="bcp-card">
+                {/* Toolbar: Edit / Delete / View */}
+                <div className="bcp-toolbar">
+                    <span className="bcp-toolbar-left">
+                        <Link2 size={11} /> BioLink
                     </span>
-                ) : (
-                    <span className="bcp-theme-badge">
-                        <Palette size={10} /> Draft
-                    </span>
-                )}
-            </div>
-
-            {/* Profile */}
-            <div className="bcp-profile">
-                <div className="bcp-avatar-wrap">
-                    {profile.avatar ? (
-                        <img
-                            src={profile.avatar.startsWith('http') ? profile.avatar : `${API_BASE_URL}${profile.avatar}`}
-                            alt={profile.displayName || 'Avatar'}
-                        />
-                    ) : (
-                        <User size={20} />
-                    )}
-                </div>
-                <div className="bcp-profile-info">
-                    <div className="bcp-name">{profile.displayName || biolink.username || 'Untitled'}</div>
-                    {profile.tagline && <div className="bcp-tagline">{profile.tagline}</div>}
-                </div>
-                <span className="bcp-theme-badge">
-                    <Palette size={10} /> {theme}
-                </span>
-            </div>
-
-            {/* Links preview (show max 3) */}
-            {links.length > 0 && (
-                <div className="bcp-links-section">
-                    <div className="bcp-links-title">Links ({links.length})</div>
-                    {links.slice(0, 3).map((link) => {
-                        const IconComp = getLinkIcon(link);
-                        return (
-                            <div key={link.id} className="bcp-link-item">
-                                <div className="bcp-link-icon">
-                                    <IconComp size={13} />
-                                </div>
-                                <span className="bcp-link-title">
-                                    {link.title || link.platform || link.url}
-                                </span>
-                            </div>
-                        );
-                    })}
-                    {links.length > 3 && (
-                        <div className="bcp-more-links">+{links.length - 3} more link{links.length - 3 > 1 ? 's' : ''}</div>
-                    )}
-                </div>
-            )}
-
-            {/* Stats row */}
-            <div className="bcp-stats">
-                <div className="bcp-stat">
-                    <Link2 size={12} />
-                    <span className="bcp-stat-value">{links.length}</span> links
-                </div>
-                {products.length > 0 && (
-                    <div className="bcp-stat">
-                        <ShoppingBag size={12} />
-                        <span className="bcp-stat-value">{products.length}</span> products
+                    <div className="bcp-toolbar-actions">
+                        <button className="bcp-toolbar-btn edit" onClick={handleEdit} title="Edit BioLink">
+                            <Edit3 size={12} /> Edit
+                        </button>
+                        <button className="bcp-toolbar-btn delete" onClick={handleDelete} title="Delete BioLink">
+                            <Trash2 size={12} />
+                        </button>
+                        <button className="bcp-toolbar-btn view" onClick={handleView} title="Open Live">
+                            <ExternalLink size={12} />
+                        </button>
                     </div>
-                )}
-                <div className="bcp-stat">
-                    <Eye size={12} />
-                    <span className="bcp-stat-value">{biolink.analytics?.views || 0}</span> views
+                </div>
+
+                {/* Actual biolink render — phone frame */}
+                <div className="bcp-phone-frame">
+                    <div
+                        className="bcp-phone"
+                        style={{
+                            background: phoneBg,
+                            color: textColor,
+                            borderColor: styleType === 'glass' || styleType === 'timeline'
+                                ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'
+                        }}
+                    >
+                        {/* Avatar */}
+                        <div className="bcp-avatar">
+                            {profile.avatar ? (
+                                <img
+                                    src={profile.avatar.startsWith('http') ? profile.avatar : `${API_BASE_URL}${profile.avatar}`}
+                                    alt={profile.displayName || 'Avatar'}
+                                />
+                            ) : (
+                                <div className="bcp-avatar-empty">👤</div>
+                            )}
+                        </div>
+
+                        {/* Name & Tagline */}
+                        <h3 className="bcp-display-name" style={{ color: textColor }}>
+                            {profile.displayName || biolink.username || 'Untitled'}
+                        </h3>
+                        {profile.tagline && (
+                            <p className="bcp-tagline" style={{ color: textColor }}>
+                                {profile.tagline}
+                            </p>
+                        )}
+
+                        {/* Tab switcher (only if products exist) */}
+                        {products.length > 0 && (
+                            <div className="bcp-tab-switcher" style={{ background: accent }}>
+                                <button
+                                    className="bcp-tab-btn"
+                                    onClick={() => setActiveView('links')}
+                                    style={{
+                                        background: activeView === 'links' ? '#fff' : 'transparent',
+                                        color: activeView === 'links' ? accent : '#fff'
+                                    }}
+                                >LINK</button>
+                                <button
+                                    className="bcp-tab-btn"
+                                    onClick={() => setActiveView('shop')}
+                                    style={{
+                                        background: activeView === 'shop' ? '#fff' : 'transparent',
+                                        color: activeView === 'shop' ? accent : '#fff'
+                                    }}
+                                >SHOP</button>
+                            </div>
+                        )}
+
+                        {/* Links */}
+                        {activeView === 'links' && links.length > 0 && (
+                            <div className="bcp-links-list">
+                                {links.map((link) => (
+                                    <a
+                                        key={link.id || link.url}
+                                        href={link.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="bcp-link-btn"
+                                        style={linkStyle()}
+                                    >
+                                        {link.title || link.platform || link.url}
+                                    </a>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Products */}
+                        {activeView === 'shop' && products.length > 0 && (
+                            <div className="bcp-products-grid">
+                                {products.map((product) => (
+                                    <a key={product.id} href={product.url} target="_blank" rel="noopener noreferrer" className="bcp-product-card">
+                                        <div className="bcp-product-img">
+                                            {product.image ? (
+                                                <img
+                                                    src={product.image.startsWith('http') ? product.image : `${API_BASE_URL}${product.image}`}
+                                                    alt={product.name}
+                                                />
+                                            ) : (
+                                                <div className="bcp-product-img-empty">📦</div>
+                                            )}
+                                        </div>
+                                        <div className="bcp-product-name">{product.name}</div>
+                                        {product.price && <div className="bcp-product-price">{product.price}</div>}
+                                    </a>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Custom elements */}
+                        {elements.length > 0 && (
+                            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+                                {elements.map((el) => (
+                                    <BioLinkElement key={el.id} element={el} isPreview={true} settings={settings} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* URL bar */}
-            {displayUrl && (
-                <div className="bcp-url-bar">
-                    <Globe size={13} style={{ color: 'rgba(200,200,200,0.4)', flexShrink: 0 }} />
-                    <span className="bcp-url-text">{displayUrl}</span>
-                    <button
-                        className={`bcp-url-copy-btn ${urlCopied ? 'copied' : ''}`}
-                        onClick={handleCopyUrl}
-                    >
-                        {urlCopied ? <><Check size={11} /> Copied</> : <><Copy size={11} /> Copy</>}
-                    </button>
+            {/* BioLink Edit Panel Overlay */}
+            {showEditPanel && (
+                <div className="bcp-edit-overlay" onClick={handleEditPanelClose}>
+                    <div className="bcp-edit-container" onClick={e => e.stopPropagation()}>
+                        <button className="bcp-edit-close" onClick={handleEditPanelClose}>
+                            <X size={20} />
+                        </button>
+                        <BioLinkEditPanel
+                            biolink={biolink}
+                            onUpdate={handleEditPanelUpdate}
+                        />
+                    </div>
                 </div>
             )}
-
-            {/* Action buttons */}
-            <div className="bcp-actions">
-                <button className="bcp-edit-btn" onClick={handleEdit} id="bcp-edit-btn">
-                    <Edit3 size={14} /> Edit BioLink
-                </button>
-                <button className="bcp-view-btn" onClick={handleView} id="bcp-view-btn">
-                    <ExternalLink size={14} /> View Live
-                </button>
-            </div>
-        </div>
+        </>
     );
 }
 

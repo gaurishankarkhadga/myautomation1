@@ -1,16 +1,34 @@
 const {
     DmAutoReplySetting
 } = require('../../model/Instaautomation');
+const axios = require('axios');
+
+const GRAPH_BASE_URL = 'https://graph.instagram.com/v21.0';
 
 // ==================== DM AUTO-REPLY HANDLER ====================
 // Handles: enable/disable/configure DM auto-reply settings
+
+// Helper: fetch recent media for preview
+async function fetchMedia(token) {
+    if (!token) return [];
+    try {
+        const res = await axios.get(`${GRAPH_BASE_URL}/me/media`, {
+            params: {
+                fields: 'id,caption,media_type,thumbnail_url,timestamp,permalink',
+                access_token: token,
+                limit: 5
+            }
+        });
+        return res.data?.data || [];
+    } catch { return []; }
+}
 
 module.exports = {
     name: 'dmAutoReply',
     intents: ['enable_dm_autoreply', 'disable_dm_autoreply', 'configure_dm_autoreply', 'set_dm_fallback'],
 
     async execute(intent, params, context) {
-        const { userId } = context;
+        const { userId, token } = context;
 
         try {
             if (intent === 'enable_dm_autoreply') {
@@ -36,10 +54,13 @@ module.exports = {
                     'ai_with_assets': 'AI + Assets (shares products & links)'
                 };
 
+                // Fetch media for preview
+                const media = await fetchMedia(token);
+
                 return {
                     success: true,
                     message: `DM auto-reply enabled! Mode: ${modeLabels[mode] || mode}, Delay: ${delay}s`,
-                    data: { enabled: true, mode, delay, automationType: 'dm_reply' }
+                    data: { enabled: true, mode, delay, automationType: 'dm_reply', media }
                 };
             }
 

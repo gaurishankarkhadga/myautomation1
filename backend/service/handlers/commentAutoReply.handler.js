@@ -1,16 +1,34 @@
 const {
     AutoReplySetting
 } = require('../../model/Instaautomation');
+const axios = require('axios');
+
+const GRAPH_BASE_URL = 'https://graph.instagram.com/v21.0';
 
 // ==================== COMMENT AUTO-REPLY HANDLER ====================
 // Handles: enable/disable/configure comment auto-reply settings
+
+// Helper: fetch recent media for preview
+async function fetchMedia(token) {
+    if (!token) return [];
+    try {
+        const res = await axios.get(`${GRAPH_BASE_URL}/me/media`, {
+            params: {
+                fields: 'id,caption,media_type,thumbnail_url,timestamp,permalink',
+                access_token: token,
+                limit: 5
+            }
+        });
+        return res.data?.data || [];
+    } catch { return []; }
+}
 
 module.exports = {
     name: 'commentAutoReply',
     intents: ['enable_comment_autoreply', 'disable_comment_autoreply', 'configure_comment_autoreply'],
 
     async execute(intent, params, context) {
-        const { userId } = context;
+        const { userId, token } = context;
 
         try {
             if (intent === 'enable_comment_autoreply') {
@@ -36,10 +54,13 @@ module.exports = {
                     'ai_smart': 'AI Smart (persona-based)'
                 };
 
+                // Fetch media for preview
+                const media = await fetchMedia(token);
+
                 return {
                     success: true,
                     message: `Comment auto-reply enabled! Mode: ${modeLabels[mode] || mode}, Delay: ${delay}s`,
-                    data: { enabled: true, mode, delay, automationType: 'comment_reply' }
+                    data: { enabled: true, mode, delay, automationType: 'comment_reply', media }
                 };
             }
 

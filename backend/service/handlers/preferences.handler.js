@@ -1,4 +1,22 @@
 const CreatorPreference = require('../../model/CreatorPreference');
+const axios = require('axios');
+
+const GRAPH_BASE_URL = 'https://graph.instagram.com/v21.0';
+
+// Helper: fetch recent media for preview
+async function fetchMedia(token) {
+    if (!token) return [];
+    try {
+        const res = await axios.get(`${GRAPH_BASE_URL}/me/media`, {
+            params: {
+                fields: 'id,caption,media_type,thumbnail_url,timestamp,permalink',
+                access_token: token,
+                limit: 5
+            }
+        });
+        return res.data?.data || [];
+    } catch { return []; }
+}
 
 // ==================== PREFERENCES HANDLER ====================
 // Handles: set/get/reset creator automation preferences via chat
@@ -15,7 +33,7 @@ module.exports = {
     ],
 
     async execute(intent, params, context) {
-        const { userId } = context;
+        const { userId, token } = context;
 
         try {
             // ==================== SET CONTENT TARGET ====================
@@ -53,10 +71,13 @@ module.exports = {
                 const label = targetLabels[target] || target;
                 const extraInfo = maxPosts > 0 ? ` (max ${maxPosts} posts)` : '';
 
+                // Fetch media for preview
+                const media = await fetchMedia(token);
+
                 return {
                     success: true,
                     message: `Content targeting set to: ${label}${extraInfo}. Auto-reply will only apply to this content.`,
-                    data: { target, maxPosts, postTitle }
+                    data: { target, maxPosts, postTitle, enabled: true, automationType: 'comment_reply', media }
                 };
             }
 
