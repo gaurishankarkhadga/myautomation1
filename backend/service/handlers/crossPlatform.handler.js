@@ -68,7 +68,7 @@ module.exports = {
                 return {
                     success: successCount > 0,
                     message: `🚀 **All automation enabled!** (${successCount}/${results.length} features)\n\n${summary}\n\nAll connected platforms are now set to ${mode === 'ai_smart' ? 'AI Smart' : mode} mode.`,
-                    data: { results, mode }
+                    data: { results, mode, enabled: true, automationType: 'all_automation' }
                 };
             }
 
@@ -108,7 +108,7 @@ module.exports = {
                 return {
                     success: true,
                     message: `⛔ **All automation stopped!**\n\n${summary}\n\nEverything is paused. Just say "turn on everything" to re-enable.`,
-                    data: { results }
+                    data: { results, enabled: false, automationType: 'all_automation' }
                 };
             }
 

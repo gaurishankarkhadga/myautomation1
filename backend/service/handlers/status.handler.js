@@ -234,7 +234,7 @@ module.exports = {
                 return {
                     success: true,
                     message: sections.join('\n'),
-                    data: { activeCount, automations: activeItems, videos, preferences: prefs }
+                    data: { activeCount, automations: activeItems, media: videos, preferences: prefs, automationType: 'all_automation' }
                 };
             }
 

@@ -39,7 +39,7 @@ module.exports = {
                 return {
                     success: true,
                     message: `DM auto-reply enabled! Mode: ${modeLabels[mode] || mode}, Delay: ${delay}s`,
-                    data: { enabled: true, mode, delay }
+                    data: { enabled: true, mode, delay, automationType: 'dm_reply' }
                 };
             }
 
@@ -53,7 +53,7 @@ module.exports = {
                 return {
                     success: true,
                     message: 'DM auto-reply has been turned off.',
-                    data: { enabled: false }
+                    data: { enabled: false, automationType: 'dm_reply' }
                 };
             }
 

@@ -7,6 +7,8 @@ import {
     Bot, Activity, ChevronRight, RotateCcw, Link2, Trash2
 } from 'lucide-react';
 import ToastNotification, { useToasts } from './ToastNotification';
+import BioLinkChatPreview from './chat/BioLinkChatPreview';
+import AutomationChatPreview from './chat/AutomationChatPreview';
 import '../styles/ChatHub.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -507,6 +509,29 @@ function ChatHub() {
                                             </span>
                                         ))}
                                     </div>
+                                )}
+
+                                {/* BioLink Preview Card */}
+                                {msg.actions?.some(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId) && (
+                                    <BioLinkChatPreview
+                                        biolinkId={msg.actions.find(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId).data.biolinkId}
+                                        url={msg.actions.find(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId).data.url}
+                                    />
+                                )}
+
+                                {/* Automation Preview Card */}
+                                {msg.actions?.some(a =>
+                                    ['enable_comment_autoreply', 'enable_dm_autoreply', 'enable_all_automation',
+                                     'disable_comment_autoreply', 'disable_dm_autoreply', 'disable_all_automation',
+                                     'get_active_automations'].includes(a.intent) && a.data
+                                ) && (
+                                    <AutomationChatPreview
+                                        actionData={msg.actions.find(a =>
+                                            ['enable_comment_autoreply', 'enable_dm_autoreply', 'enable_all_automation',
+                                             'disable_comment_autoreply', 'disable_dm_autoreply', 'disable_all_automation',
+                                             'get_active_automations'].includes(a.intent) && a.data
+                                        ).data}
+                                    />
                                 )}
 
                                 <span className="msg-time">

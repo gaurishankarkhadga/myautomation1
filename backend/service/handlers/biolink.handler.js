@@ -267,10 +267,13 @@ module.exports = {
                 updates.lastModified = new Date();
                 await BioLink.findByIdAndUpdate(biolink._id, { $set: updates });
 
+                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+                const publicUrl = `${frontendUrl}/p/${biolink.username}`;
+
                 return {
                     success: true,
                     message: `✅ BioLink updated! ${Object.keys(updates).filter(k => k !== 'lastModified').map(k => `**${k}** changed`).join(', ')}`,
-                    data: { biolinkId: biolink._id }
+                    data: { biolinkId: biolink._id, url: publicUrl }
                 };
             }
 
