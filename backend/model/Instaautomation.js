@@ -132,6 +132,23 @@ const apiUsageSchema = new mongoose.Schema({
     lastUpdated: { type: Date, default: Date.now }
 });
 
+// ==================== COMMENT TO DM SETTING ====================
+const commentToDmSettingSchema = new mongoose.Schema({
+    userId: { type: String, required: true, unique: true, index: true },
+    enabled: { type: Boolean, default: false },
+    mode: { type: String, default: 'default' }
+});
+
+// ==================== GAMIFY FUNNEL SETTING ====================
+const gamifyFunnelSettingSchema = new mongoose.Schema({
+    userId: { type: String, required: true, unique: true, index: true },
+    enabled: { type: Boolean, default: false },
+    mode: { type: String, default: 'default' }
+});
+
+const CommentToDmSetting = mongoose.model('CommentToDmSetting', commentToDmSettingSchema);
+const GamifyFunnelSetting = mongoose.model('GamifyFunnelSetting', gamifyFunnelSettingSchema);
+
 // ==================== EXPORT MODELS ====================
 const Token = mongoose.model('Token', tokenSchema);
 const AutoReplySetting = mongoose.model('AutoReplySetting', autoReplySettingSchema);
@@ -152,5 +169,7 @@ module.exports = {
     Message,
     Conversation,
     WebhookEvent,
-    ApiUsage
+    ApiUsage,
+    CommentToDmSetting,
+    GamifyFunnelSetting
 };
