@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit3, Trash2, ExternalLink, Loader, Link2, X } from 'lucide-react';
+import { Edit3, Trash2, ExternalLink, Loader, Link2 } from 'lucide-react';
 import BioLinkElement from '../biolinks/BioLinkElement';
-import BioLinkEditPanel from '../biolinks/BioLinkEditPanel';
 import './BioLinkChatPreview.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -12,7 +11,6 @@ function BioLinkChatPreview({ biolinkId, url }) {
     const [biolink, setBiolink] = useState(null);
     const [loading, setLoading] = useState(false);
     const [activeView, setActiveView] = useState('links');
-    const [showEditPanel, setShowEditPanel] = useState(false);
 
     useEffect(() => {
         if (biolinkId) fetchBiolinkData();
@@ -34,20 +32,10 @@ function BioLinkChatPreview({ biolinkId, url }) {
         finally { setLoading(false); }
     };
 
+    // Same navigation as Profile tab Edit button
     const handleEdit = () => {
-        setShowEditPanel(true);
-    };
-
-    const handleEditPanelClose = () => {
-        setShowEditPanel(false);
-        // Refresh data after edit
-        if (biolinkId) fetchBiolinkData();
-    };
-
-    const handleEditPanelUpdate = (updatedData) => {
-        // Update local biolink state from edit panel changes
-        if (updatedData) {
-            setBiolink(prev => ({ ...prev, ...updatedData }));
+        if (biolink?._id) {
+            navigate('/biolink/editor', { state: { id: biolink._id } });
         }
     };
 
@@ -110,148 +98,131 @@ function BioLinkChatPreview({ biolinkId, url }) {
     };
 
     return (
-        <>
-            <div className="biolink-chat-preview" id="bcp-card">
-                {/* Toolbar: Edit / Delete / View */}
-                <div className="bcp-toolbar">
-                    <span className="bcp-toolbar-left">
-                        <Link2 size={11} /> BioLink
-                    </span>
-                    <div className="bcp-toolbar-actions">
-                        <button className="bcp-toolbar-btn edit" onClick={handleEdit} title="Edit BioLink">
-                            <Edit3 size={12} /> Edit
-                        </button>
-                        <button className="bcp-toolbar-btn delete" onClick={handleDelete} title="Delete BioLink">
-                            <Trash2 size={12} />
-                        </button>
-                        <button className="bcp-toolbar-btn view" onClick={handleView} title="Open Live">
-                            <ExternalLink size={12} />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Actual biolink render — phone frame */}
-                <div className="bcp-phone-frame">
-                    <div
-                        className="bcp-phone"
-                        style={{
-                            background: phoneBg,
-                            color: textColor,
-                            borderColor: styleType === 'glass' || styleType === 'timeline'
-                                ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'
-                        }}
-                    >
-                        {/* Avatar */}
-                        <div className="bcp-avatar">
-                            {profile.avatar ? (
-                                <img
-                                    src={profile.avatar.startsWith('http') ? profile.avatar : `${API_BASE_URL}${profile.avatar}`}
-                                    alt={profile.displayName || 'Avatar'}
-                                />
-                            ) : (
-                                <div className="bcp-avatar-empty">👤</div>
-                            )}
-                        </div>
-
-                        {/* Name & Tagline */}
-                        <h3 className="bcp-display-name" style={{ color: textColor }}>
-                            {profile.displayName || biolink.username || 'Untitled'}
-                        </h3>
-                        {profile.tagline && (
-                            <p className="bcp-tagline" style={{ color: textColor }}>
-                                {profile.tagline}
-                            </p>
-                        )}
-
-                        {/* Tab switcher (only if products exist) */}
-                        {products.length > 0 && (
-                            <div className="bcp-tab-switcher" style={{ background: accent }}>
-                                <button
-                                    className="bcp-tab-btn"
-                                    onClick={() => setActiveView('links')}
-                                    style={{
-                                        background: activeView === 'links' ? '#fff' : 'transparent',
-                                        color: activeView === 'links' ? accent : '#fff'
-                                    }}
-                                >LINK</button>
-                                <button
-                                    className="bcp-tab-btn"
-                                    onClick={() => setActiveView('shop')}
-                                    style={{
-                                        background: activeView === 'shop' ? '#fff' : 'transparent',
-                                        color: activeView === 'shop' ? accent : '#fff'
-                                    }}
-                                >SHOP</button>
-                            </div>
-                        )}
-
-                        {/* Links */}
-                        {activeView === 'links' && links.length > 0 && (
-                            <div className="bcp-links-list">
-                                {links.map((link) => (
-                                    <a
-                                        key={link.id || link.url}
-                                        href={link.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="bcp-link-btn"
-                                        style={linkStyle()}
-                                    >
-                                        {link.title || link.platform || link.url}
-                                    </a>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Products */}
-                        {activeView === 'shop' && products.length > 0 && (
-                            <div className="bcp-products-grid">
-                                {products.map((product) => (
-                                    <a key={product.id} href={product.url} target="_blank" rel="noopener noreferrer" className="bcp-product-card">
-                                        <div className="bcp-product-img">
-                                            {product.image ? (
-                                                <img
-                                                    src={product.image.startsWith('http') ? product.image : `${API_BASE_URL}${product.image}`}
-                                                    alt={product.name}
-                                                />
-                                            ) : (
-                                                <div className="bcp-product-img-empty">📦</div>
-                                            )}
-                                        </div>
-                                        <div className="bcp-product-name">{product.name}</div>
-                                        {product.price && <div className="bcp-product-price">{product.price}</div>}
-                                    </a>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Custom elements */}
-                        {elements.length > 0 && (
-                            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
-                                {elements.map((el) => (
-                                    <BioLinkElement key={el.id} element={el} isPreview={true} settings={settings} />
-                                ))}
-                            </div>
-                        )}
-                    </div>
+        <div className="biolink-chat-preview" id="bcp-card">
+            {/* Toolbar: Edit / Delete / View */}
+            <div className="bcp-toolbar">
+                <span className="bcp-toolbar-left">
+                    <Link2 size={11} /> BioLink
+                </span>
+                <div className="bcp-toolbar-actions">
+                    <button className="bcp-toolbar-btn edit" onClick={handleEdit} title="Edit BioLink">
+                        <Edit3 size={12} /> Edit
+                    </button>
+                    <button className="bcp-toolbar-btn delete" onClick={handleDelete} title="Delete BioLink">
+                        <Trash2 size={12} />
+                    </button>
+                    <button className="bcp-toolbar-btn view" onClick={handleView} title="Open Live">
+                        <ExternalLink size={12} />
+                    </button>
                 </div>
             </div>
 
-            {/* BioLink Edit Panel Overlay */}
-            {showEditPanel && (
-                <div className="bcp-edit-overlay" onClick={handleEditPanelClose}>
-                    <div className="bcp-edit-container" onClick={e => e.stopPropagation()}>
-                        <button className="bcp-edit-close" onClick={handleEditPanelClose}>
-                            <X size={20} />
-                        </button>
-                        <BioLinkEditPanel
-                            biolink={biolink}
-                            onUpdate={handleEditPanelUpdate}
-                        />
+            {/* Actual biolink render — phone frame */}
+            <div className="bcp-phone-frame">
+                <div
+                    className="bcp-phone"
+                    style={{
+                        background: phoneBg,
+                        color: textColor,
+                        borderColor: styleType === 'glass' || styleType === 'timeline'
+                            ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'
+                    }}
+                >
+                    {/* Avatar */}
+                    <div className="bcp-avatar">
+                        {profile.avatar ? (
+                            <img
+                                src={profile.avatar.startsWith('http') ? profile.avatar : `${API_BASE_URL}${profile.avatar}`}
+                                alt={profile.displayName || 'Avatar'}
+                            />
+                        ) : (
+                            <div className="bcp-avatar-empty">👤</div>
+                        )}
                     </div>
+
+                    {/* Name & Tagline */}
+                    <h3 className="bcp-display-name" style={{ color: textColor }}>
+                        {profile.displayName || biolink.username || 'Untitled'}
+                    </h3>
+                    {profile.tagline && (
+                        <p className="bcp-tagline" style={{ color: textColor }}>
+                            {profile.tagline}
+                        </p>
+                    )}
+
+                    {/* Tab switcher (only if products exist) */}
+                    {products.length > 0 && (
+                        <div className="bcp-tab-switcher" style={{ background: accent }}>
+                            <button
+                                className="bcp-tab-btn"
+                                onClick={() => setActiveView('links')}
+                                style={{
+                                    background: activeView === 'links' ? '#fff' : 'transparent',
+                                    color: activeView === 'links' ? accent : '#fff'
+                                }}
+                            >LINK</button>
+                            <button
+                                className="bcp-tab-btn"
+                                onClick={() => setActiveView('shop')}
+                                style={{
+                                    background: activeView === 'shop' ? '#fff' : 'transparent',
+                                    color: activeView === 'shop' ? accent : '#fff'
+                                }}
+                            >SHOP</button>
+                        </div>
+                    )}
+
+                    {/* Links */}
+                    {activeView === 'links' && links.length > 0 && (
+                        <div className="bcp-links-list">
+                            {links.map((link) => (
+                                <a
+                                    key={link.id || link.url}
+                                    href={link.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="bcp-link-btn"
+                                    style={linkStyle()}
+                                >
+                                    {link.title || link.platform || link.url}
+                                </a>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Products */}
+                    {activeView === 'shop' && products.length > 0 && (
+                        <div className="bcp-products-grid">
+                            {products.map((product) => (
+                                <a key={product.id} href={product.url} target="_blank" rel="noopener noreferrer" className="bcp-product-card">
+                                    <div className="bcp-product-img">
+                                        {product.image ? (
+                                            <img
+                                                src={product.image.startsWith('http') ? product.image : `${API_BASE_URL}${product.image}`}
+                                                alt={product.name}
+                                            />
+                                        ) : (
+                                            <div className="bcp-product-img-empty">📦</div>
+                                        )}
+                                    </div>
+                                    <div className="bcp-product-name">{product.name}</div>
+                                    {product.price && <div className="bcp-product-price">{product.price}</div>}
+                                </a>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Custom elements */}
+                    {elements.length > 0 && (
+                        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+                            {elements.map((el) => (
+                                <BioLinkElement key={el.id} element={el} isPreview={true} settings={settings} />
+                            ))}
+                        </div>
+                    )}
                 </div>
-            )}
-        </>
+            </div>
+        </div>
     );
 }
 

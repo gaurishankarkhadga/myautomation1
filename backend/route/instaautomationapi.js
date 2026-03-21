@@ -1011,6 +1011,29 @@ router.post('/webhook', async (req, res) => {
                             { upsert: true, new: true }
                         );
 
+                        // ==================== FEATURE: AI DEAL NEGOTIATOR ====================
+                        if (priorityTag === 'Collaboration') {
+                            console.log('[Webhook] Triggering background AI Deal Negotiator...');
+                            // Fire and forget background task
+                            inboxTriageService.generateNegotiationDraft(messageData.text, '100,000', '5%')
+                                .then(async (draft) => {
+                                    if (draft) {
+                                        console.log('[Webhook] Deal Negotiation Draft generated for:', draft.brandName);
+                                        await Conversation.findOneAndUpdate(
+                                            { conversationId },
+                                            {
+                                                negotiationData: {
+                                                    brandName: draft.brandName,
+                                                    suggestedRate: draft.suggestedRate,
+                                                    draftReply: draft.draftReply,
+                                                    status: 'drafted'
+                                                }
+                                            }
+                                        );
+                                    }
+                                }).catch(err => console.error('[Webhook] Failed to generate deal draft:', err.message));
+                        }
+
                         // If you also want to update ChatHistory directly here, you could find the ChatHistory doc and push a message with the tag
 
                         console.log('[Webhook] Message stored in DB');

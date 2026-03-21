@@ -99,7 +99,13 @@ const conversationSchema = new mongoose.Schema({
     lastMessage: { type: Object },
     lastMessageTime: { type: Number },
     unreadCount: { type: Number, default: 0 },
-    priorityTag: { type: String, enum: ['Collaboration', 'Support', 'Fan Mail', 'Spam', 'Other', 'Untriaged'], default: 'Untriaged' }
+    priorityTag: { type: String, enum: ['Collaboration', 'Support', 'Fan Mail', 'Spam', 'Other', 'Untriaged'], default: 'Untriaged' },
+    negotiationData: {
+        brandName: { type: String },
+        suggestedRate: { type: String },
+        draftReply: { type: String },
+        status: { type: String, enum: ['pending', 'drafted'], default: 'pending' }
+    }
 });
 
 // ==================== WEBHOOK EVENT LOG (Debug & Queue) ====================

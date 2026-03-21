@@ -42,6 +42,52 @@ async function triageMessage(messageText) {
     }
 }
 
+/**
+ * Generates brand analysis, suggested rate card, and a drafted reply for Collaboration DMs
+ */
+async function generateNegotiationDraft(messageText, followersCount, engagementRate = '3%') {
+    if (!messageText || !process.env.GEMINI_API_KEY) return null;
+
+    try {
+        const prompt = `
+            You are an expert Talent Manager for an Instagram creator.
+            Read this incoming brand deal / sponsorship inquiry via DM:
+            "${messageText}"
+
+            The creator you represent has ${followersCount} followers and a ${engagementRate} engagement rate.
+
+            Do the following:
+            1. Extract the brand name (or agency name). If unknown, guess based on context or return "Unknown Brand".
+            2. Calculate a "Suggested Rate". A standard baseline is $10 per 1,000 followers per post, but adjust slightly based on the request (Reels cost more than Stories).
+            3. Draft a professional, polite response setting boundaries, thanking them, and smoothly dropping the suggested rate or asking for their budget first. Do not use placeholders like [Your Name]. Sign off natively.
+
+            Return ONLY a valid JSON object:
+            {
+                "brandName": "Extracted Brand",
+                "suggestedRate": "$1,500 (1 Reel + 1 Story)",
+                "draftReply": "The actual text they can send back."
+            }
+        `;
+
+        const result = await generateContentWithFallback(prompt, 'gemini-1.5-flash');
+        let responseText = result.response.text().trim();
+        
+        // Ensure JSON extraction
+        if (responseText.startsWith("\`\`\`json")) {
+            responseText = responseText.replace(/^\`\`\`json/, "").replace(/\`\`\`$/, "").trim();
+        } else if (responseText.startsWith("\`\`\`")) {
+            responseText = responseText.replace(/^\`\`\`/, "").replace(/\`\`\`$/, "").trim();
+        }
+
+        const data = JSON.parse(responseText);
+        return data;
+    } catch (error) {
+        console.error('[Inbox Triage] Error generating negotiation draft:', error.message);
+        return null; // fallback
+    }
+}
+
 module.exports = {
-    triageMessage
+    triageMessage,
+    generateNegotiationDraft
 };

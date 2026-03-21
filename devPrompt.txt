@@ -1,5 +1,23 @@
-Improvement in chat hub:
--> biolink url when chathub or ai give after completion then on that chat or url also give the edit buttion also and proper preview of biolink complete show creator directly can see if some thing happend mistake then creator can say edit it replace with other and update somewhere or change something so you can or my ai can able to do perfectly without effecting anyhting ok so add this feature 
--> when automation setup like , DM,story,comments here also show preview it is actually those automation added on perfect reels  post story dm or not so it make confidance yes added this automation proper etch those video or reels or story or post ( in short if i addd some automation proepr show preview )
-
-
+[
+  {
+    "id": "comment_to_dm",
+    "title": "Comment-to-DM Lead Magnet",
+    "concept": "Auto-DM a specific asset (link/PDF) when a follower comments a trigger word.",
+    "value": "Drives massive organic reach and lead generation.",
+    "techStack": "Map keywords to assetId in AutoReplySetting. Trigger DM API upon receiving a matching comment webhook."
+  },
+  {
+    "id": "ai_deal_negotiator",
+    "title": "AI Deal Negotiator & Brand Profiler",
+    "concept": "For DMs tagged 'Collaboration', AI researches the brand, calculates a dynamic rate card based on follower metrics, and auto-drafts a negotiation reply.",
+    "value": "Massive Unique Selling Proposition (USP). Helps creators monetize confidently, justifying premium subscriptions.",
+    "techStack": "Extend inboxTriageService.js. Trigger background AI job to parse brand, check legitimacy, calculate rate, and draft ChatHub reply."
+  },
+  {
+    "id": "gamified_funnels",
+    "title": "Scavenger Hunt / Gamified Funnels",
+    "concept": "Trigger DMs when users comment a hidden Easter egg (e.g., a 1-frame hidden emoji in a Reel or a trivia answer).",
+    "value": "Algorithmic dominance. Forces high repeat views and watch time, increasing virality.",
+    "techStack": "Configure automation listener for specific trivia answers or secret emojis in comments/DMs with conditional success/failure replies."
+  }
+]
