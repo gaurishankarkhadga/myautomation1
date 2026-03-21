@@ -136,14 +136,18 @@ const apiUsageSchema = new mongoose.Schema({
 const commentToDmSettingSchema = new mongoose.Schema({
     userId: { type: String, required: true, unique: true, index: true },
     enabled: { type: Boolean, default: false },
-    mode: { type: String, default: 'default' }
+    mode: { type: String, default: 'default' },
+    keyword: { type: String, default: '' },
+    message: { type: String, default: '' }
 });
 
 // ==================== GAMIFY FUNNEL SETTING ====================
 const gamifyFunnelSettingSchema = new mongoose.Schema({
     userId: { type: String, required: true, unique: true, index: true },
     enabled: { type: Boolean, default: false },
-    mode: { type: String, default: 'default' }
+    mode: { type: String, default: 'default' },
+    keyword: { type: String, default: '' },
+    message: { type: String, default: '' }
 });
 
 const CommentToDmSetting = mongoose.model('CommentToDmSetting', commentToDmSettingSchema);

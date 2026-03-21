@@ -25,3 +25,12 @@
 
 
 fetch my all reels from instagram show here
+
+Major visible Bugs List:
+1 -> it is not feching specific reeels post etc based on the creator specific need or automation applied. in chathub for conformation 
+2 -> it is not able to stop the automation ( i said stop this automation it can not able to atuoamtion stop)
+3 -> 
+
+
+
+

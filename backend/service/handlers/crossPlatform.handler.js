@@ -1,4 +1,4 @@
-const { AutoReplySetting, DmAutoReplySetting } = require('../../model/Instaautomation');
+const { AutoReplySetting, DmAutoReplySetting, CommentToDmSetting, GamifyFunnelSetting } = require('../../model/Instaautomation');
 const CreatorPreference = require('../../model/CreatorPreference');
 
 // ==================== CROSS-PLATFORM HANDLER ====================
@@ -52,6 +52,30 @@ module.exports = {
                     results.push({ platform: 'Instagram', feature: 'DM Auto-Reply', success: false, error: e.message });
                 }
 
+                // Enable Comment to DM
+                try {
+                    await CommentToDmSetting.findOneAndUpdate(
+                        { userId },
+                        { userId, enabled: true, mode: 'default' },
+                        { upsert: true }
+                    );
+                    results.push({ platform: 'Instagram', feature: 'Comment to DM', success: true });
+                } catch (e) {
+                    results.push({ platform: 'Instagram', feature: 'Comment to DM', success: false, error: e.message });
+                }
+
+                // Enable Gamified Funnel
+                try {
+                    await GamifyFunnelSetting.findOneAndUpdate(
+                        { userId },
+                        { userId, enabled: true, mode: 'default' },
+                        { upsert: true }
+                    );
+                    results.push({ platform: 'Instagram', feature: 'Gamified Funnel', success: true });
+                } catch (e) {
+                    results.push({ platform: 'Instagram', feature: 'Gamified Funnel', success: false, error: e.message });
+                }
+
                 // Update platform preferences
                 await CreatorPreference.findOneAndUpdate(
                     { userId },
@@ -98,6 +122,30 @@ module.exports = {
                     results.push({ platform: 'Instagram', feature: 'DM Auto-Reply', success: true });
                 } catch (e) {
                     results.push({ platform: 'Instagram', feature: 'DM Auto-Reply', success: false });
+                }
+
+                // Disable Comment to DM
+                try {
+                    await CommentToDmSetting.findOneAndUpdate(
+                        { userId },
+                        { enabled: false },
+                        { upsert: false }
+                    );
+                    results.push({ platform: 'Instagram', feature: 'Comment to DM', success: true });
+                } catch (e) {
+                    results.push({ platform: 'Instagram', feature: 'Comment to DM', success: false });
+                }
+
+                // Disable Gamified Funnel
+                try {
+                    await GamifyFunnelSetting.findOneAndUpdate(
+                        { userId },
+                        { enabled: false },
+                        { upsert: false }
+                    );
+                    results.push({ platform: 'Instagram', feature: 'Gamified Funnel', success: true });
+                } catch (e) {
+                    results.push({ platform: 'Instagram', feature: 'Gamified Funnel', success: false });
                 }
 
                 const summary = results.map(r => {

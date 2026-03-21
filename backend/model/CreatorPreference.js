@@ -10,8 +10,7 @@ const creatorPreferenceSchema = new mongoose.Schema({
     // ==================== CONTENT TARGETING ====================
     contentTarget: {
         type: { type: String, enum: ['all', 'recent', 'specific', 'first', 'previous'], default: 'all' },
-        // 'all' = all posts/videos, 'recent' = most recent only, 'specific' = named post,
-        // 'first' = first ever post, 'previous' = second most recent
+        mediaType: { type: String, enum: ['any', 'VIDEO', 'IMAGE', 'CAROUSEL_ALBUM'], default: 'any' },
         specificPostId: { type: String, default: '' },     // For targeting a specific post
         specificPostTitle: { type: String, default: '' },   // Human-readable label
         maxPosts: { type: Number, default: 0 }              // 0 = unlimited, or limit to N posts

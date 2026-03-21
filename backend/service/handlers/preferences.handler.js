@@ -24,10 +24,21 @@ module.exports = {
                 const target = params.target || 'all';  // all, recent, first, previous, specific
                 const maxPosts = params.maxPosts || 0;
                 const postTitle = params.postTitle || params.title || '';
+                
+                let mediaType = 'any';
+                if (params.mediaType) {
+                    const upperFormat = params.mediaType.toUpperCase();
+                    if (['VIDEO', 'IMAGE', 'CAROUSEL_ALBUM'].includes(upperFormat)) mediaType = upperFormat;
+                    // Auto-map user lingo:
+                    if (upperFormat === 'REEL' || upperFormat === 'REELS') mediaType = 'VIDEO';
+                    if (upperFormat === 'POST' || upperFormat === 'POSTS') mediaType = 'IMAGE';
+                    if (upperFormat === 'CAROUSEL') mediaType = 'CAROUSEL_ALBUM';
+                }
 
                 const update = {
                     'contentTarget.type': target,
-                    'contentTarget.maxPosts': maxPosts
+                    'contentTarget.maxPosts': maxPosts,
+                    'contentTarget.mediaType': mediaType
                 };
 
                 if (target === 'specific' && postTitle) {
@@ -51,16 +62,24 @@ module.exports = {
                     'specific': `🎯 Specific: "${postTitle || 'unnamed'}"`
                 };
 
+                const mediaTypeNames = {
+                    'any': '',
+                    'VIDEO': ' (Reels/Videos)',
+                    'IMAGE': ' (Images)',
+                    'CAROUSEL_ALBUM': ' (Carousels)'
+                };
+
                 const label = targetLabels[target] || target;
                 const extraInfo = maxPosts > 0 ? ` (max ${maxPosts} posts)` : '';
+                const typeInfo = mediaTypeNames[mediaType];
 
                 // Fetch media for preview
                 const media = await fetchFilteredMedia(token, userId);
 
                 return {
                     success: true,
-                    message: `Content targeting set to: ${label}${extraInfo}. Auto-reply will only apply to this content.`,
-                    data: { target, maxPosts, postTitle, enabled: true, automationType: 'comment_reply', media }
+                    message: `Content targeting set to: ${label}${typeInfo}${extraInfo}. Auto-reply will only apply to this content.`,
+                    data: { target, maxPosts, postTitle, mediaType, enabled: true, automationType: 'comment_reply', media }
                 };
             }
 

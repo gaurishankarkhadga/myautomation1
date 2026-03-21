@@ -16,6 +16,7 @@ async function fetchFilteredMedia(token, userId) {
         const targetType = prefs?.contentTarget?.type || 'all';
         const maxPosts = prefs?.contentTarget?.maxPosts || 5;
         const specificPostId = prefs?.contentTarget?.specificPostId;
+        const activeMediaType = prefs?.contentTarget?.mediaType || 'any';
 
         // Fetch basic recent media
         const res = await axios.get(`${GRAPH_BASE_URL}/me/media`, {
@@ -26,8 +27,12 @@ async function fetchFilteredMedia(token, userId) {
             }
         });
         
-        const rawMedia = res.data?.data || [];
+        let rawMedia = res.data?.data || [];
         if (rawMedia.length === 0) return [];
+
+        if (activeMediaType !== 'any') {
+            rawMedia = rawMedia.filter(m => m.media_type === activeMediaType);
+        }
 
         // Apply filtering logic
         if (targetType === 'all') {
