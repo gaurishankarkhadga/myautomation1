@@ -160,39 +160,37 @@ async function executeIntents(intents, context) {
     const actionIntents = intents.filter(i => i.intent !== 'general_chat');
     const chatIntents = intents.filter(i => i.intent === 'general_chat');
 
-    // Execute all actionable intents in parallel
+    // Execute all actionable intents sequentially
     if (actionIntents.length > 0) {
-        const promises = actionIntents.map(async (intentObj) => {
+        for (const intentObj of actionIntents) {
             const handler = handlerRegistry.get(intentObj.intent);
 
             if (!handler) {
-                return {
+                results.push({
                     intent: intentObj.intent,
                     success: false,
                     message: `I don't know how to handle "${intentObj.intent}" yet. This feature may be coming soon!`,
                     data: null
-                };
+                });
+                continue;
             }
 
             try {
                 const result = await handler.execute(intentObj.intent, intentObj.params || {}, context);
-                return {
+                results.push({
                     intent: intentObj.intent,
                     ...result
-                };
+                });
             } catch (error) {
                 console.error(`[ChatService] Handler error for ${intentObj.intent}:`, error.message);
-                return {
+                results.push({
                     intent: intentObj.intent,
                     success: false,
                     message: `Something went wrong with ${handler.name}: ${error.message}`,
                     data: null
-                };
+                });
             }
-        });
-
-        const handlerResults = await Promise.all(promises);
-        results.push(...handlerResults);
+        }
     }
 
     return { actionResults: results, hasChat: chatIntents.length > 0, chatIntents };
@@ -316,6 +314,10 @@ function formatIntentTitle(intent) {
         'analyze_persona': 'Persona Analysis',
         'find_brand_deals': 'Brand Deals',
         'list_brand_deals': 'Brand Deals',
+        'enable_comment_to_dm': 'Comment to DM',
+        'disable_comment_to_dm': 'Comment to DM',
+        'enable_gamify_funnel': 'Gamified Funnel',
+        'disable_gamify_funnel': 'Gamified Funnel',
         'get_status': 'Status',
         'get_comments_log': 'Comment Log',
         'get_dm_log': 'DM Log',

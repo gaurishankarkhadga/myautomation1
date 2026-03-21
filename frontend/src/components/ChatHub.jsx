@@ -523,13 +523,15 @@ function ChatHub() {
                                 {msg.actions?.some(a =>
                                     ['enable_comment_autoreply', 'enable_dm_autoreply', 'enable_all_automation',
                                      'disable_comment_autoreply', 'disable_dm_autoreply', 'disable_all_automation',
-                                     'get_active_automations', 'set_content_target'].includes(a.intent) && a.data
+                                     'get_active_automations', 'set_content_target', 
+                                     'find_brand_deals', 'list_brand_deals', 'enable_comment_to_dm', 'enable_gamify_funnel'].includes(a.intent) && a.data
                                 ) && (
                                     <AutomationChatPreview
                                         actionData={msg.actions.find(a =>
                                             ['enable_comment_autoreply', 'enable_dm_autoreply', 'enable_all_automation',
                                              'disable_comment_autoreply', 'disable_dm_autoreply', 'disable_all_automation',
-                                             'get_active_automations', 'set_content_target'].includes(a.intent) && a.data
+                                             'get_active_automations', 'set_content_target',
+                                             'find_brand_deals', 'list_brand_deals', 'enable_comment_to_dm', 'enable_gamify_funnel'].includes(a.intent) && a.data
                                         ).data}
                                     />
                                 )}

@@ -1,27 +1,7 @@
 const {
     AutoReplySetting
 } = require('../../model/Instaautomation');
-const axios = require('axios');
-
-const GRAPH_BASE_URL = 'https://graph.instagram.com/v21.0';
-
-// ==================== COMMENT AUTO-REPLY HANDLER ====================
-// Handles: enable/disable/configure comment auto-reply settings
-
-// Helper: fetch recent media for preview
-async function fetchMedia(token) {
-    if (!token) return [];
-    try {
-        const res = await axios.get(`${GRAPH_BASE_URL}/me/media`, {
-            params: {
-                fields: 'id,caption,media_type,thumbnail_url,timestamp,permalink',
-                access_token: token,
-                limit: 5
-            }
-        });
-        return res.data?.data || [];
-    } catch { return []; }
-}
+const { fetchFilteredMedia } = require('../mediaUtils');
 
 module.exports = {
     name: 'commentAutoReply',
@@ -55,7 +35,7 @@ module.exports = {
                 };
 
                 // Fetch media for preview
-                const media = await fetchMedia(token);
+                const media = await fetchFilteredMedia(token, userId);
 
                 return {
                     success: true,

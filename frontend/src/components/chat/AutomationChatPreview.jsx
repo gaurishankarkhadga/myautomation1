@@ -11,6 +11,9 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 const TYPES = {
     comment_reply: { label: 'Comment Auto-Reply', icon: MessageSquare, cls: 'comment', modes: { reply_only: 'Reply Only', reply_and_hide: 'Smart Hide', ai_smart: 'AI Smart' } },
     dm_reply: { label: 'DM Auto-Reply', icon: Mail, cls: 'dm', modes: { static: 'Static', ai_smart: 'AI Smart', ai_with_assets: 'AI + Assets' } },
+    comment_to_dm: { label: 'Comment to DM', icon: MessageSquare, cls: 'comment', modes: { default: 'Active' } },
+    brand_deals: { label: 'AI Deal Generator', icon: Zap, cls: 'all', modes: { default: 'Active' } },
+    gamify_funnel: { label: 'Gamified Funnel', icon: Activity, cls: 'all', modes: { default: 'Active' } },
     story_mention: { label: 'Story Mention', icon: ImageIcon, cls: 'story', modes: {} },
     all_automation: { label: 'All Automations', icon: Zap, cls: 'all', modes: {} }
 };
@@ -113,6 +116,7 @@ function AutomationChatPreview({ actionData }) {
 
 function detectType(data) {
     if (data.automationType) return data.automationType;
+    if (data.deals !== undefined || data.analyzing) return 'brand_deals';
     if (data.results) return 'all_automation';
     return 'all_automation';
 }
