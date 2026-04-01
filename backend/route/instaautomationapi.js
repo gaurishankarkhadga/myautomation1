@@ -417,13 +417,20 @@ async function scheduleDMAutoReply(messageData, igUserId) {
     igUserId = await resolveUserIdMapping(igUserId);
 
     const settings = await DmAutoReplySetting.findOne({ userId: igUserId });
-    if (!settings || !settings.enabled) {
-        console.log('[DM-AutoReply] DM auto-reply disabled for user:', igUserId);
+
+    // ==================== AUTONOMOUS MODE ====================
+    // If standard auto-reply is disabled, check if autonomous mode is on.
+    // Autonomous mode: AI auto-sells assets when a fan explicitly asks for a product,
+    // even when the creator hasn't toggled "enable DM replies" on.
+    const isStandardEnabled = settings && settings.enabled;
+    const isAutonomousEnabled = settings ? (settings.autonomousMode !== false) : true; // default: on
+
+    if (!isStandardEnabled && !isAutonomousEnabled) {
+        console.log('[DM-AutoReply] DM auto-reply AND autonomous mode both disabled for user:', igUserId);
         return;
     }
 
     const senderId = messageData.senderId;
-    const replyMode = settings.replyMode || 'static';
 
     // Don't reply to own messages (echo prevention)
     if (senderId === igUserId) {
@@ -456,12 +463,12 @@ async function scheduleDMAutoReply(messageData, igUserId) {
     }
 
     let replyMessage = '';
-    let delaySeconds = settings.delaySeconds || 10;
+    let delaySeconds = settings?.delaySeconds || 10;
     let replyType = 'text';
     let assetsShared = [];
-    let imageToSend = null;
+    let imagesToSend = []; // Multi-asset: support multiple images
 
-    console.log(`[DM-AutoReply] FORCED AI MODE | Incoming: "${messageData.text}"`);
+    console.log(`[DM-AutoReply] ${isStandardEnabled ? 'STANDARD' : 'AUTONOMOUS'} AI MODE | Incoming: "${messageData.text}"`);
 
     // ==================== ALWAYS AI — TRY ASSETS FIRST, FALLBACK TO SMART ====================
     try {
@@ -471,6 +478,12 @@ async function scheduleDMAutoReply(messageData, igUserId) {
             .lean();
 
         console.log(`[DM-AutoReply] Creator has ${creatorAssets.length} active assets`);
+
+        // If AUTONOMOUS mode only (standard is off), we ONLY reply when assets are explicitly requested
+        if (!isStandardEnabled && creatorAssets.length === 0) {
+            console.log('[DM-AutoReply] Autonomous mode active but no assets uploaded — skipping reply.');
+            return;
+        }
 
         // Trigger online research if not done yet (non-blocking)
         const persona = await CreatorPersona.findOne({ userId: igUserId });
@@ -490,41 +503,59 @@ async function scheduleDMAutoReply(messageData, igUserId) {
             }
         }
 
-        // Step 2: If assets exist, use AI + Assets mode
+        // Step 2: Load custom instructions for injection into AI prompt
+        const customInstructions = settings?.customInstructions
+            ?.filter(i => i.active)
+            ?.map(i => i.instruction) || [];
+
+        // Step 3: If assets exist, use AI + Assets mode
         if (creatorAssets.length > 0) {
             console.log('[DM-AutoReply] Using AI + Assets mode...');
             const matchResult = await aiService.matchCreatorAssets(messageData.text, creatorAssets);
+
+            // AUTONOMOUS GATE: If standard is OFF, only reply if the fan has SPECIFIC intent
+            if (!isStandardEnabled && matchResult.isGenericMessage) {
+                console.log('[DM-AutoReply] Autonomous mode: Generic DM detected — skipping (no explicit product intent).');
+                return;
+            }
+
             const dmReply = await aiService.generateSmartDMReply(
                 igUserId,
                 messageData.text,
                 'there',
                 matchResult.matchedAssets,
-                matchResult.isGenericMessage
+                matchResult.isGenericMessage,
+                customInstructions // Pass custom instructions to AI
             );
 
             replyMessage = dmReply.text;
             replyType = dmReply.replyType;
             assetsShared = dmReply.recommendedAssets;
 
-            const imageAsset = matchResult.matchedAssets.find(a => a.imageUrl);
-            if (imageAsset) {
-                imageToSend = imageAsset.imageUrl;
-            }
+            // ==================== MULTI-ASSET: Collect ALL images ====================
+            imagesToSend = matchResult.matchedAssets
+                .filter(a => a.imageUrl)
+                .map(a => a.imageUrl);
+
         } else {
-            // Step 3: No assets — use AI Smart (persona-based)
+            // Step 4: No assets — use AI Smart (persona-based)
+            if (!isStandardEnabled) {
+                console.log('[DM-AutoReply] Autonomous mode: No assets, skipping reply.');
+                return;
+            }
             console.log('[DM-AutoReply] Using AI Smart mode (no assets)...');
             replyMessage = await aiService.generateSmartReply(igUserId, messageData.text, 'dm', 'there');
         }
 
         // Random delay 4-8s for human-like timing
         delaySeconds = Math.floor(Math.random() * (8 - 4 + 1)) + 4;
-        console.log(`[DM-AutoReply] AI reply generated: "${replyMessage}" | Assets: ${assetsShared.length} | Image: ${imageToSend ? 'yes' : 'no'}`);
+        console.log(`[DM-AutoReply] AI reply generated: "${replyMessage}" | Assets: ${assetsShared.length} | Images: ${imagesToSend.length}`);
 
     } catch (err) {
         console.error('[DM-AutoReply] AI generation failed:', err.message);
 
         // Use creator's own fallback message (set via chat) — if they set one
-        if (settings.message && settings.message.trim().length > 0) {
+        if (settings?.message && settings.message.trim().length > 0) {
             replyMessage = settings.message;
             console.log(`[DM-AutoReply] Using creator's fallback: "${replyMessage}"`);
         } else {
@@ -562,7 +593,17 @@ async function scheduleDMAutoReply(messageData, igUserId) {
     });
 
     const timeoutId = setTimeout(async () => {
-        const result = await sendDirectMessage(igUserId, senderId, replyMessage, tokenData.accessToken, imageToSend);
+        // ==================== MULTI-ASSET: Send text reply first ====================
+        const result = await sendDirectMessage(igUserId, senderId, replyMessage, tokenData.accessToken, imagesToSend[0] || null);
+
+        // ==================== MULTI-ASSET: Send additional images sequentially ====================
+        if (imagesToSend.length > 1) {
+            for (let i = 1; i < imagesToSend.length; i++) {
+                await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5s between messages
+                await sendDirectMessage(igUserId, senderId, '', tokenData.accessToken, imagesToSend[i]);
+                console.log(`[DM-AutoReply] Sent additional asset image ${i + 1}/${imagesToSend.length}`);
+            }
+        }
 
         // Update log entry in DB
         await DmAutoReplyLog.findByIdAndUpdate(logEntry._id, {

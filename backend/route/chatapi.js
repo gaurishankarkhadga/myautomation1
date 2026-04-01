@@ -132,6 +132,31 @@ router.get('/active-count/:userId', async (req, res) => {
     }
 });
 
+// GET /api/chat/briefing-check/:userId — Check if morning briefing should be shown
+router.get('/briefing-check/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const DmAutoReplySetting = require('../model/Instaautomation').DmAutoReplySetting;
+        const settings = await DmAutoReplySetting.findOne({ userId }).lean();
+
+        const lastBriefing = settings?.lastBriefingAt;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const shouldShow = !lastBriefing || new Date(lastBriefing) < today;
+
+        res.json({
+            success: true,
+            shouldShowBriefing: shouldShow,
+            lastBriefingAt: lastBriefing || null,
+            autonomousMode: settings?.autonomousMode !== false,
+            customRulesCount: settings?.customInstructions?.filter(i => i.active).length || 0
+        });
+    } catch (error) {
+        res.json({ success: true, shouldShowBriefing: false });
+    }
+});
+
 // GET /api/chat/quota — Get Gemini API usage
 router.get('/quota', async (req, res) => {
     try {

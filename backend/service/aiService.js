@@ -559,18 +559,21 @@ async function matchCreatorAssets(incomingText, creatorAssets) {
         Analyze the fan's message and determine:
         1. Is this a GENERIC message (hi, hello, hey, what's up, random chat) or does the fan have a SPECIFIC intent?
         2. If specific intent — which assets are most relevant? Match by meaning, not just keywords.
+        3. IMPORTANT: The fan may ask for MULTIPLE DIFFERENT products in a single message. Identify ALL relevant assets.
 
         Return ONLY this JSON (no markdown):
         {
             "isGenericMessage": true/false,
-            "matchedAssetIds": ["id1", "id2"],
+            "matchedAssetIds": ["id1", "id2", "id3"],
             "matchReason": "why these assets match"
         }
 
         Rules:
         - If generic → return empty matchedAssetIds (the system will use defaults)
-        - If specific → return up to 3 most relevant asset IDs, sorted by relevance
+        - If specific → return up to 5 most relevant asset IDs, sorted by relevance
         - Match by MEANING — "I want to get fit" should match fitness products even if the word "fitness" isn't in the message
+        - MULTI-INTENT: "Give me your course AND the preset pack" = match BOTH assets
+        - "I want everything you have" = match ALL assets
         - Simple reactions ("wow", "nice", emoji-only) are GENERIC
         - Questions about pricing, courses, links, products = SPECIFIC
         `;
@@ -623,7 +626,7 @@ async function matchCreatorAssets(incomingText, creatorAssets) {
  * @param {boolean} isGenericMessage - Whether the message is generic
  * @returns {Promise<{text: string, recommendedAssets: Array, replyType: string}>}
  */
-async function generateSmartDMReply(userId, incomingText, senderName, matchedAssets, isGenericMessage) {
+async function generateSmartDMReply(userId, incomingText, senderName, matchedAssets, isGenericMessage, customInstructions = []) {
     try {
         const persona = await CreatorPersona.findOne({ userId });
 
@@ -663,6 +666,12 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
             }
         }
 
+        // Build custom instructions context
+        let customContext = '';
+        if (customInstructions.length > 0) {
+            customContext = `\n=== CREATOR'S CUSTOM RULES (MUST FOLLOW — these override default behavior) ===\n${customInstructions.map((inst, i) => `${i + 1}. ${inst}`).join('\n')}\n`;
+        }
+
         let prompt;
 
         if (matchedAssets.length > 0) {
@@ -670,6 +679,7 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
             You ARE this Instagram creator replying to a DM. Not an assistant. The actual human.
 
             ${personaContext}
+            ${customContext}
 
             === YOUR PRODUCTS/LINKS TO SHARE ===
             ${assetContext}
@@ -683,14 +693,16 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
             2. ${isGenericMessage
                     ? 'Casually mentions your product/link/course — like a friend sharing something cool, NOT a salesperson'
                     : 'Directly shares the relevant product/link/course since they asked about it'}
-            3. Include the actual URLs from the assets above
-            4. Keep it conversational — no bullet points, no "Here are my products"
-            5. Max 2-3 short sentences
+            3. If the fan asked for MULTIPLE products, mention ALL of them naturally
+            4. Include the actual URLs from the assets above
+            5. Keep it conversational — no bullet points, no "Here are my products"
+            6. Max 2-4 short sentences (more if multiple products)
 
             SAFETY RULES:
             - Never be pushy or salesy
             - If hateful/abusive DM → reply with just "❤️" and do NOT share any links
             - Stay authentic to your personality
+            - ALWAYS follow the Creator's Custom Rules above if any exist
 
             Output ONLY your reply text. Nothing else.
             `;

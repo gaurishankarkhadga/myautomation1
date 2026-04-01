@@ -4,7 +4,8 @@ import {
     Zap, Send, Menu, X, Settings, LogOut, BarChart2,
     Package, User, MessageSquare, Mail, Handshake,
     Instagram, Youtube, CheckCircle, Circle, Loader,
-    Bot, Activity, ChevronRight, RotateCcw, Link2, Trash2
+    Bot, Activity, ChevronRight, RotateCcw, Link2, Trash2,
+    Sunrise, Sparkles, DollarSign, AlertTriangle
 } from 'lucide-react';
 import ToastNotification, { useToasts } from './ToastNotification';
 import BioLinkChatPreview from './chat/BioLinkChatPreview';
@@ -14,10 +15,10 @@ import '../styles/ChatHub.css';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 const SUGGESTED_PROMPTS = [
+    { icon: Sunrise, text: 'Good morning! Catch me up', label: 'Morning Briefing' },
     { icon: MessageSquare, text: 'Turn on auto-reply for comments', label: 'Enable Replies' },
     { icon: Mail, text: 'Enable smart DM auto-reply', label: 'Smart DMs' },
-    { icon: BarChart2, text: "What's my current setup?", label: 'View Status' },
-    { icon: Package, text: 'Show my assets', label: 'My Assets' },
+    { icon: Sparkles, text: 'Never mention prices in DMs', label: 'Custom Rule' },
     { icon: Handshake, text: 'Find brand deals for me', label: 'Brand Deals' },
     { icon: Link2, text: 'Create a biolink with modern look with my social media and courses', label: 'Create BioLink' },
 ];
@@ -69,7 +70,7 @@ function ChatHub() {
 
     useEffect(() => {
         if (token && userId) { fetchProfile(); loadChatHistory(); }
-        if (userId) { fetchActiveCount(); fetchQuota(); }
+        if (userId) { fetchActiveCount(); fetchQuota(); triggerMorningBriefing(); }
     }, [token, userId]);
 
     useEffect(() => {
@@ -79,6 +80,33 @@ function ChatHub() {
     }, [userId]);
 
     useEffect(() => { scrollToBottom(); }, [messages, isTyping]);
+
+    // ── Morning Briefing (auto-trigger on first load of the day) ────
+    const triggerMorningBriefing = async () => {
+        try {
+            const lastBriefing = localStorage.getItem('last_briefing_date');
+            const today = new Date().toDateString();
+            if (lastBriefing === today) return; // Already shown today
+
+            // Auto-send a morning briefing request
+            localStorage.setItem('last_briefing_date', today);
+            const res = await fetch(`${API_BASE_URL}/api/chat/message`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, message: 'morning briefing', token })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setMessages(prev => [{
+                    role: 'assistant',
+                    content: data.response || 'Good morning! Ready to work 🚀',
+                    actions: data.actions || [],
+                    toasts: [],
+                    timestamp: new Date().toISOString()
+                }, ...prev]);
+            }
+        } catch { }
+    };
 
     // ── API helpers ──────────────────────────────────────────────────
     const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -534,6 +562,37 @@ function ChatHub() {
                                              'find_brand_deals', 'list_brand_deals', 'enable_comment_to_dm', 'enable_gamify_funnel'].includes(a.intent) && a.data
                                         ).data}
                                     />
+                                )}
+
+                                {/* ====== DEAL ALERT CARD ====== */}
+                                {msg.actions?.some(a => a.intent === 'get_morning_briefing' && a.data?.hasPendingDeals) && (
+                                    <div className="deal-alert-card">
+                                        <div className="deal-alert-header">
+                                            <DollarSign size={16} />
+                                            <span>Brand Deal Alerts</span>
+                                        </div>
+                                        {msg.actions.find(a => a.intent === 'get_morning_briefing').data.dealAlerts.map((deal, di) => (
+                                            <div key={di} className="deal-alert-item">
+                                                <div className="deal-brand">
+                                                    <Handshake size={14} />
+                                                    <strong>{deal.brandName}</strong>
+                                                </div>
+                                                <div className="deal-rate">
+                                                    <span>Suggested Rate:</span>
+                                                    <span className="deal-amount">{deal.suggestedRate}</span>
+                                                </div>
+                                                <div className="deal-draft">
+                                                    <p>{deal.draftReply?.substring(0, 120)}...</p>
+                                                </div>
+                                                <button
+                                                    className="deal-approve-btn"
+                                                    onClick={() => sendMessage(`Approve the deal draft for ${deal.brandName}`)}
+                                                >
+                                                    <CheckCircle size={13} /> Approve Draft
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 )}
 
                                 <span className="msg-time">

@@ -36,7 +36,16 @@ const dmAutoReplySettingSchema = new mongoose.Schema({
     aiPersonality: { type: String, default: '' }, // Custom personality override
     storyMentionEnabled: { type: Boolean, default: false },
     storyMentionMessage: { type: String, default: 'Thank you so much for the mention! ❤️' },
-    inboxTriageEnabled: { type: Boolean, default: false }
+    inboxTriageEnabled: { type: Boolean, default: false },
+    // ==================== AUTONOMOUS AI AGENCY FIELDS ====================
+    autonomousMode: { type: Boolean, default: true }, // AI auto-sells assets even when standard reply is off
+    customInstructions: [{
+        instruction: { type: String, required: true },
+        active: { type: Boolean, default: true },
+        createdAt: { type: Date, default: Date.now }
+    }],
+    confidenceThreshold: { type: Number, default: 0.7, min: 0.1, max: 1.0 }, // Min confidence to send a reply
+    lastBriefingAt: { type: Date, default: null } // Track when morning briefing was last shown
 });
 
 // ==================== AUTO-REPLY LOG (Comments) ====================

@@ -78,9 +78,16 @@ CRITICAL RULES:
 7. If the creator mentions a NUMBER (like "100", "50", "24"), figure out if it's hours, comment count, or price from CONTEXT.
 8. If the creator mentions a platform name ("youtube", "insta", "all"), map it to platform preferences.
 9. Common abbreviations: "dm" = direct message, "yt" = youtube, "insta/ig" = instagram, "auto" = automation, "hrs" = hours
+10. ULTRA-FLEXIBLE: If the creator gives a CUSTOM INSTRUCTION that doesn't fit any specific intent (e.g. "never mention prices", "reply in Hindi to Indian fans", "don't share links after 10pm"), use "add_custom_instruction" with the full instruction as the param.
+11. If the creator asks "what happened", "morning update", "briefing", "catch me up", "what did you do" — use "get_morning_briefing".
 
 AVAILABLE INTENTS:
 ${intentList}
+- add_custom_instruction (for custom DM behavior rules — params: {instruction: "the full custom rule"})
+- list_custom_instructions (show all custom rules)
+- remove_custom_instruction (remove a rule by number — params: {index: 1})
+- clear_custom_instructions (remove all custom rules)
+- get_morning_briefing (24h activity summary, morning update, "what happened")
 - general_chat (for general questions, greetings, help, feedback, or anything not matching above)
 
 CONTEXT:
@@ -92,7 +99,7 @@ EXAMPLES (covering diverse real-world inputs):
 User: "replies on" → [{"intent": "enable_comment_autoreply", "params": {"mode": "ai_smart"}, "confidence": 0.85}]
 User: "stop dms" → [{"intent": "disable_dm_autoreply", "params": {}, "confidence": 0.9}]
 User: "add course 29$ xyz.com" → [{"intent": "add_asset", "params": {"type": "course", "price": "29", "url": "xyz.com", "title": "Course"}, "confidence": 0.8}]
-User: "what's happening" → [{"intent": "get_status", "params": {}, "confidence": 0.85}]
+User: "what's happening" → [{"intent": "get_morning_briefing", "params": {}, "confidence": 0.85}]
 User: "turn on replies and find deals" → [{"intent": "enable_comment_autoreply", "params": {"mode": "ai_smart"}, "confidence": 0.9}, {"intent": "find_brand_deals", "params": {}, "confidence": 0.9}]
 User: "deal milao" → [{"intent": "find_brand_deals", "params": {}, "confidence": 0.85}]
 User: "hello" → [{"intent": "general_chat", "params": {}, "confidence": 1.0}]
@@ -122,6 +129,22 @@ User: "update my biolink theme to glass" → [{"intent": "update_biolink", "para
 User: "biolink bana do modern wala" → [{"intent": "create_biolink", "params": {"style": "modern"}, "confidence": 0.9}]
 User: "if dm fails send 'hey will reply soon'" → [{"intent": "set_dm_fallback", "params": {"message": "hey will reply soon"}, "confidence": 0.9}]
 User: "run for 1 hour only on latest post, 30 comments max" → [{"intent": "set_content_target", "params": {"target": "recent"}, "confidence": 0.9}, {"intent": "set_time_limit", "params": {"hours": 1}, "confidence": 0.9}, {"intent": "set_comment_limit", "params": {"maxReplies": 30}, "confidence": 0.9}]
+
+CUSTOM INSTRUCTION EXAMPLES (ultra-flexible):
+User: "never mention prices in DMs" → [{"intent": "add_custom_instruction", "params": {"instruction": "Never mention prices in DM replies"}, "confidence": 0.95}]
+User: "reply in Hindi if fans are from India" → [{"intent": "add_custom_instruction", "params": {"instruction": "Reply in Hindi if the fan seems to be from India based on their message language"}, "confidence": 0.9}]
+User: "don't share links after 10pm" → [{"intent": "add_custom_instruction", "params": {"instruction": "Do not share any product links in DM replies after 10 PM"}, "confidence": 0.9}]
+User: "if someone asks about my course tell them it's sold out" → [{"intent": "add_custom_instruction", "params": {"instruction": "If someone asks about the course, tell them it is currently sold out"}, "confidence": 0.95}]
+User: "show my custom rules" → [{"intent": "list_custom_instructions", "params": {}, "confidence": 0.9}]
+User: "remove rule 2" → [{"intent": "remove_custom_instruction", "params": {"index": 2}, "confidence": 0.9}]
+User: "clear all my custom instructions" → [{"intent": "clear_custom_instructions", "params": {}, "confidence": 0.9}]
+
+MORNING BRIEFING EXAMPLES:
+User: "good morning" → [{"intent": "get_morning_briefing", "params": {}, "confidence": 0.8}]
+User: "catch me up" → [{"intent": "get_morning_briefing", "params": {}, "confidence": 0.9}]
+User: "kya hua raat mein?" → [{"intent": "get_morning_briefing", "params": {}, "confidence": 0.9}]
+User: "any updates?" → [{"intent": "get_morning_briefing", "params": {}, "confidence": 0.85}]
+User: "morning briefing" → [{"intent": "get_morning_briefing", "params": {}, "confidence": 0.95}]
 
 USER MESSAGE: "${message}"
 
@@ -334,6 +357,11 @@ function formatIntentTitle(intent) {
         'create_biolink': 'BioLink Created',
         'update_biolink': 'BioLink Updated',
         'list_biolinks': 'Your BioLinks',
+        'add_custom_instruction': 'Custom Rule Added',
+        'list_custom_instructions': 'Custom Rules',
+        'remove_custom_instruction': 'Custom Rule Removed',
+        'clear_custom_instructions': 'Custom Rules Cleared',
+        'get_morning_briefing': 'Morning Briefing',
         'general_chat': 'Chat'
     };
 
