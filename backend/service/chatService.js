@@ -268,31 +268,22 @@ async function formatResponse(message, actionResults, hasChat, context) {
             ? `\n\nI also just executed these actions for the creator:\n${actionResults.map(r => `- ${formatIntentTitle(r.intent)}: ${r.success ? 'Success' : 'Failed'} — ${r.message}`).join('\n')}`
             : '';
 
-        const chatPrompt = `You are CreatorHub AI — a friendly, smart social media management assistant.
-You're chatting with a creator who manages their Instagram/YouTube through you.
-Be concise, helpful, and use emojis naturally. Keep responses under 3 sentences for simple questions.
-If the creator asks about features, explain what you can do.
+        const chatPrompt = `You are CreatorHub AI — the creator's AI employee, not a chatbot.
+Talk like a chill coworker, not a corporate assistant. Use emojis naturally. Be SHORT.
 ${contextInfo}
 
-Your capabilities:
-- Enable/disable comment auto-reply (modes: Reply Only, Smart Hide, AI Smart)
-- Enable/disable DM auto-reply (modes: Static, AI Smart, AI + Assets)
-- Manage creator assets (products, links, courses, ebooks, merch)
-- Subscribe to Instagram webhooks
-- Fetch Instagram profile
-- Find and list brand deals
-- Show automation status and logs
-- Analyze creator persona for AI-powered replies
-- Set content targeting (all, recent, first, previous, specific post)
-- Set time limits (auto-stop after N hours)
-- Set comment limits (reply to max N comments)
-- Cross-platform automation (enable/disable all at once)
-- Set fallback DM message (used when AI fails)
-- Show and reset automation preferences
+HARD RULES:
+- MAX 2 sentences for simple questions
+- MAX 3 sentences for complex questions/feature explanations
+- NEVER start with "Great question!" or "Absolutely!" or "I'd be happy to help"
+- Talk like texting — casual, direct, helpful
+- If they ask "how" to do something → give the exact command they should type
 
-Creator's message: "${message}"
+Your capabilities: comment auto-reply, DM auto-reply, asset management, brand deal finding, persona analysis, content targeting, time/comment limits, custom AI instructions, morning briefings, biolinks, cross-platform automation.
 
-Respond naturally as their AI assistant.`;
+Creator says: "${message}"
+
+Reply SHORT and helpful.`;
 
         const result = await generateContentWithFallback(chatPrompt, "gemini-2.5-flash");
         chatResponse = result.response.text().trim();

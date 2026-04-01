@@ -45,31 +45,43 @@ async function triageMessage(messageText) {
 /**
  * Generates brand analysis, suggested rate card, and a drafted reply for Collaboration DMs
  */
-async function generateNegotiationDraft(messageText, followersCount, engagementRate = '3%') {
+async function generateNegotiationDraft(messageText, followersCount, engagementRate = '3%', creatorPersona = null) {
     if (!messageText || !process.env.GEMINI_API_KEY) return null;
 
     try {
+        // Build persona context if available
+        let personaStyle = '';
+        if (creatorPersona) {
+            personaStyle = `
+The creator's communication style:
+- Tone: ${creatorPersona.communicationStyle || 'casual and friendly'}
+- They type: ${creatorPersona.lowercasePreference ? 'in lowercase' : 'normally'}
+- Emoji usage: ${creatorPersona.emojiUsage || 'moderate'}
+- Reply length: ~${creatorPersona.averageReplyLength || 40} chars
+- Their vibe: ${(creatorPersona.toneKeywords || []).join(', ') || 'friendly, chill'}
+
+WRITE THE DRAFT IN THIS EXACT STYLE — not formal, not corporate.`;
+        }
+
         const prompt = `
-            You are an expert Talent Manager for an Instagram creator.
-            Read this incoming brand deal / sponsorship inquiry via DM:
-            "${messageText}"
+A brand just DM'd this creator on Instagram:
+"${messageText}"
 
-            The creator you represent has ${followersCount} followers and a ${engagementRate} engagement rate.
+Creator stats: ${followersCount} followers, ${engagementRate} engagement.
+${personaStyle}
 
-            Do the following:
-            1. Extract the brand name (or agency name). If unknown, guess based on context or return "Unknown Brand".
-            2. Calculate a "Suggested Rate". A standard baseline is $10 per 1,000 followers per post, but adjust slightly based on the request (Reels cost more than Stories).
-            3. Draft a professional, polite response setting boundaries, thanking them, and smoothly dropping the suggested rate or asking for their budget first. Do not use placeholders like [Your Name]. Sign off natively.
+Do 3 things:
+1. Extract brand name (guess if unclear)
+2. Calculate a suggested rate ($10 per 1K followers baseline, Reels = 1.5x, Stories = 0.5x)
+3. Draft a SHORT reply (2-3 sentences max) that sounds like the creator casually replying to a DM — NOT a corporate email. Be warm but set clear expectations.
 
-            Return ONLY a valid JSON object:
-            {
-                "brandName": "Extracted Brand",
-                "suggestedRate": "$1,500 (1 Reel + 1 Story)",
-                "draftReply": "The actual text they can send back."
-            }
-        `;
+BAD example (too formal): "Thank you for reaching out! We would love to discuss this opportunity further. Please share your budget and I'll provide our rate card."
+GOOD example (natural): "hey! thanks for reaching out 🙌 love your brand. my typical rate for a reel is around $X — wanna chat about what works for both of us?"
 
-        const result = await generateContentWithFallback(prompt, 'gemini-1.5-flash');
+Return ONLY valid JSON:
+{"brandName": "Name", "suggestedRate": "$X (format)", "draftReply": "the short casual reply"}`;
+
+        const result = await generateContentWithFallback(prompt, 'gemini-2.5-flash');
         let responseText = result.response.text().trim();
         
         // Ensure JSON extraction

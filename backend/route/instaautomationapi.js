@@ -12,7 +12,8 @@ const {
     DmAutoReplyLog,
     Message,
     Conversation,
-    WebhookEvent
+    WebhookEvent,
+    CommentToDmSetting
 } = require('../model/Instaautomation');
 const CreatorPersona = require('../model/CreatorPersona');
 const aiService = require('../service/aiService');
@@ -156,7 +157,12 @@ async function sendDirectMessage(igUserId, recipientIGSID, message, accessToken,
             }
         }
 
-        // Send text message
+        // Send text message — SKIP if empty (for image-only follow-up messages)
+        if (!message || message.trim().length === 0) {
+            console.log('[DM-AutoReply] No text message to send (image-only mode)');
+            return { success: true, data: { imageOnly: true } };
+        }
+
         const response = await axios.post(
             `${INSTAGRAM_CONFIG.graphBaseUrl}/${igUserId}/messages`,
             {
@@ -986,6 +992,60 @@ router.post('/webhook', async (req, res) => {
 
                         // Trigger auto-reply if enabled
                         await scheduleAutoReply(commentData, igUserId);
+
+                        // ==================== COMMENT-TO-DM TRIGGER ====================
+                        // If Comment-to-DM is enabled, send a DM to the commenter
+                        try {
+                            const igUserIdMapped = await resolveUserIdMapping(igUserId);
+                            const c2dSettings = await CommentToDmSetting.findOne({ userId: igUserIdMapped });
+
+                            if (c2dSettings && c2dSettings.enabled && commentData.senderId) {
+                                const keyword = (c2dSettings.keyword || '').trim().toLowerCase();
+                                const commentText = (commentData.text || '').toLowerCase();
+
+                                // Match: either no keyword set (all comments) or keyword found in comment
+                                const shouldTrigger = !keyword || commentText.includes(keyword);
+
+                                if (shouldTrigger) {
+                                    console.log(`[Comment-to-DM] Triggered! Comment "${commentData.text}" matched keyword "${keyword || '(any)'}"`);
+
+                                    const tokenData = await Token.findOne({ userId: igUserIdMapped });
+                                    if (tokenData) {
+                                        let dmMessage = c2dSettings.message || '';
+
+                                        // If no custom message, try AI with assets
+                                        if (!dmMessage.trim()) {
+                                            const creatorAssets = await CreatorAsset.find({ userId: igUserIdMapped, isActive: true }).lean();
+                                            if (creatorAssets.length > 0) {
+                                                const matchResult = await aiService.matchCreatorAssets(commentData.text, creatorAssets);
+                                                const dmReply = await aiService.generateSmartDMReply(
+                                                    igUserIdMapped,
+                                                    commentData.text,
+                                                    commentData.username,
+                                                    matchResult.matchedAssets,
+                                                    matchResult.isGenericMessage
+                                                );
+                                                dmMessage = dmReply.text;
+                                            } else {
+                                                dmMessage = await aiService.generateSmartReply(igUserIdMapped, commentData.text, 'dm', commentData.username);
+                                            }
+                                        }
+
+                                        if (dmMessage && dmMessage.trim()) {
+                                            // Small delay for natural feel
+                                            setTimeout(async () => {
+                                                const result = await sendDirectMessage(igUserIdMapped, commentData.senderId, dmMessage, tokenData.accessToken);
+                                                console.log(`[Comment-to-DM] DM ${result.success ? 'sent' : 'failed'} to @${commentData.username}`);
+                                            }, 3000);
+                                        }
+                                    }
+                                } else {
+                                    console.log(`[Comment-to-DM] Skipped — keyword "${keyword}" not found in comment.`);
+                                }
+                            }
+                        } catch (c2dErr) {
+                            console.error('[Comment-to-DM] Error:', c2dErr.message);
+                        }
                     }
                 }
 
@@ -1055,8 +1115,11 @@ router.post('/webhook', async (req, res) => {
                         // ==================== FEATURE: AI DEAL NEGOTIATOR ====================
                         if (priorityTag === 'Collaboration') {
                             console.log('[Webhook] Triggering background AI Deal Negotiator...');
+                            // Fetch creator persona for natural voice
+                            const igUserIdMapped = await resolveUserIdMapping(igUserId);
+                            const creatorPersona = await CreatorPersona.findOne({ userId: igUserIdMapped }).lean();
                             // Fire and forget background task
-                            inboxTriageService.generateNegotiationDraft(messageData.text, '100,000', '5%')
+                            inboxTriageService.generateNegotiationDraft(messageData.text, '100,000', '5%', creatorPersona)
                                 .then(async (draft) => {
                                     if (draft) {
                                         console.log('[Webhook] Deal Negotiation Draft generated for:', draft.brandName);
