@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
     Activity, MessageSquare, Mail, Image as ImageIcon, Zap,
-    Clock, Layers, Film, Camera, Grid
+    Clock, Layers, Film, Camera, Grid, CheckCircle, AlertTriangle,
+    Hash, Timer, Shield
 } from 'lucide-react';
 import './AutomationChatPreview.css';
 
@@ -21,7 +22,7 @@ const TYPES = {
 const MEDIA_ICONS = { VIDEO: Film, CAROUSEL_ALBUM: Grid, IMAGE: Camera };
 
 function AutomationChatPreview({ actionData }) {
-    const [media, setMedia] = useState(null);
+    const [timeLeft, setTimeLeft] = useState(null);
 
     if (!actionData) return null;
 
@@ -35,6 +36,28 @@ function AutomationChatPreview({ actionData }) {
 
     // Try to use media from actionData
     const mediaItems = actionData.media || [];
+
+    // Calculate time remaining for Comment-to-DM
+    useEffect(() => {
+        if (!actionData.expiresAt) return;
+        
+        const updateTimer = () => {
+            const remaining = new Date(actionData.expiresAt) - Date.now();
+            if (remaining <= 0) {
+                setTimeLeft('Expired');
+                return;
+            }
+            const hours = Math.floor(remaining / (1000 * 60 * 60));
+            const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+            setTimeLeft(hours > 0 ? `${hours}h ${mins}m` : `${mins}m`);
+        };
+
+        updateTimer();
+        const interval = setInterval(updateTimer, 60000); // Update every minute
+        return () => clearInterval(interval);
+    }, [actionData.expiresAt]);
+
+    const isC2D = automationType === 'comment_to_dm';
 
     return (
         <div className="automation-chat-preview" id="acp-card">
@@ -61,8 +84,102 @@ function AutomationChatPreview({ actionData }) {
                     </div>
                 </div>
 
-                {/* Config tags — only show relevant ones */}
-                {isActive && (delay || mode) && (
+                {/* ====== COMMENT-TO-DM DETAILS ====== */}
+                {isC2D && isActive && (
+                    <div className="acp-c2d-details">
+                        {/* Keyword */}
+                        {actionData.keyword && (
+                            <div className="acp-detail-row">
+                                <Hash size={12} />
+                                <span>Keyword: <strong>"{actionData.keyword}"</strong></span>
+                            </div>
+                        )}
+                        {!actionData.keyword && (
+                            <div className="acp-detail-row">
+                                <Hash size={12} />
+                                <span>Triggers on: <strong>all comments</strong></span>
+                            </div>
+                        )}
+
+                        {/* Comment Reply */}
+                        {actionData.commentReply && (
+                            <div className="acp-detail-row">
+                                <MessageSquare size={12} />
+                                <span>Comment reply: "{actionData.commentReply}"</span>
+                            </div>
+                        )}
+
+                        {/* DM Message */}
+                        {actionData.dmMessage && (
+                            <div className="acp-detail-row">
+                                <Mail size={12} />
+                                <span>DM: "{actionData.dmMessage.substring(0, 50)}{actionData.dmMessage.length > 50 ? '...' : ''}"</span>
+                            </div>
+                        )}
+                        {!actionData.dmMessage && actionData.useAssets && (
+                            <div className="acp-detail-row">
+                                <Mail size={12} />
+                                <span>DM: AI auto-shares your assets/links</span>
+                            </div>
+                        )}
+
+                        {/* Time limit */}
+                        {actionData.expiresAt && (
+                            <div className="acp-detail-row acp-timer">
+                                <Timer size={12} />
+                                <span>
+                                    {timeLeft === 'Expired' 
+                                        ? '⚠️ Time expired' 
+                                        : `Auto-stops in ${timeLeft}`
+                                    }
+                                    {actionData.timeLimitHours > 0 && ` (${actionData.timeLimitHours}h total)`}
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Comment limit */}
+                        {actionData.maxComments > 0 && (
+                            <div className="acp-detail-row">
+                                <Layers size={12} />
+                                <span>Max: {actionData.maxComments} comments then auto-stop</span>
+                            </div>
+                        )}
+
+                        {/* Target */}
+                        {actionData.targetMedia && actionData.targetMedia !== 'all' && (
+                            <div className="acp-detail-row">
+                                <Camera size={12} />
+                                <span>Target: {actionData.targetMedia} post</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ====== VERIFICATION BADGES ====== */}
+                {isC2D && actionData.verification && (
+                    <div className="acp-verification">
+                        <div className="acp-verify-title">
+                            <Shield size={11} /> Verification
+                        </div>
+                        <div className="acp-verify-badges">
+                            <span className={`acp-verify-badge ${actionData.verification.tokenValid ? 'ok' : 'warn'}`}>
+                                {actionData.verification.tokenValid ? <CheckCircle size={10} /> : <AlertTriangle size={10} />}
+                                Token
+                            </span>
+                            <span className={`acp-verify-badge ${actionData.verification.webhookActive ? 'ok' : 'warn'}`}>
+                                {actionData.verification.webhookActive ? <CheckCircle size={10} /> : <AlertTriangle size={10} />}
+                                API
+                            </span>
+                            <span className={`acp-verify-badge ${actionData.verification.assetsAvailable ? 'ok' : 'warn'}`}>
+                                {actionData.verification.assetsAvailable ? <CheckCircle size={10} /> : <AlertTriangle size={10} />}
+                                Assets
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Config tags — only show relevant ones (non-C2D types) */}
+                {!isC2D && isActive && (delay || mode) && (
                     <div className="acp-tags">
                         {delay && (
                             <span className="acp-tag"><Clock size={10} />{delay}s delay</span>
@@ -103,7 +220,7 @@ function AutomationChatPreview({ actionData }) {
                 )}
 
                 {/* All-posts note when no specific media */}
-                {isActive && mediaItems.length === 0 && (
+                {isActive && mediaItems.length === 0 && !isC2D && (
                     <div className="acp-all-note">
                         <Layers size={14} />
                         <span>Monitoring all incoming {automationType === 'dm_reply' ? 'messages' : 'comments'}</span>

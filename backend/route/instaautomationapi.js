@@ -1000,104 +1000,133 @@ router.post('/webhook', async (req, res) => {
                             const c2dSettings = await CommentToDmSetting.findOne({ userId: igUserIdMapped });
 
                             if (c2dSettings && c2dSettings.enabled && commentData.senderId) {
-                                const keyword = (c2dSettings.keyword || '').trim().toLowerCase();
-                                const commentTextLower = (commentData.text || '').toLowerCase();
 
-                                // Match: either no keyword (all comments) or keyword found in comment
-                                const shouldTrigger = !keyword || commentTextLower.includes(keyword);
+                                // ── CHECK 1: Time limit — auto-disable if expired ──
+                                if (c2dSettings.expiresAt && new Date() > new Date(c2dSettings.expiresAt)) {
+                                    console.log(`[Comment-to-DM] ⏰ Time limit expired at ${c2dSettings.expiresAt}. Auto-disabling.`);
+                                    await CommentToDmSetting.findOneAndUpdate(
+                                        { userId: igUserIdMapped },
+                                        { enabled: false }
+                                    );
+                                    // Fall through to normal auto-reply
+                                }
+                                // ── CHECK 2: Comment limit — auto-disable if max reached ──
+                                else if (c2dSettings.maxComments > 0 && c2dSettings.processedCount >= c2dSettings.maxComments) {
+                                    console.log(`[Comment-to-DM] 🔢 Comment limit reached (${c2dSettings.processedCount}/${c2dSettings.maxComments}). Auto-disabling.`);
+                                    await CommentToDmSetting.findOneAndUpdate(
+                                        { userId: igUserIdMapped },
+                                        { enabled: false }
+                                    );
+                                    // Fall through to normal auto-reply
+                                }
+                                // ── CHECK 3: Media targeting — skip if comment is on wrong post ──
+                                else if (c2dSettings.targetMediaId && commentData.mediaId && 
+                                         String(c2dSettings.targetMediaId) !== String(commentData.mediaId)) {
+                                    console.log(`[Comment-to-DM] 🎯 Media mismatch — target: ${c2dSettings.targetMediaId}, comment on: ${commentData.mediaId}. Skipping.`);
+                                    // Fall through to normal auto-reply
+                                }
+                                else {
+                                    // ── KEYWORD CHECK ──
+                                    const keyword = (c2dSettings.keyword || '').trim().toLowerCase();
+                                    const commentTextLower = (commentData.text || '').toLowerCase();
+                                    const shouldTrigger = !keyword || commentTextLower.includes(keyword);
 
-                                if (shouldTrigger) {
-                                    console.log(`[Comment-to-DM] ✅ Triggered! Comment "${commentData.text}" matched "${keyword || '(any)'}"`);
-                                    commentToDmHandled = true;
+                                    if (shouldTrigger) {
+                                        console.log(`[Comment-to-DM] ✅ Triggered! Comment "${commentData.text}" matched "${keyword || '(any)'}"`);
+                                        commentToDmHandled = true;
 
-                                    const tokenData = await Token.findOne({ userId: igUserIdMapped });
-                                    if (!tokenData) {
-                                        console.error('[Comment-to-DM] No token found');
-                                    } else {
-                                        // ── STEP 1: Reply on the comment with "sent!" ──
-                                        const commentReplyText = c2dSettings.commentReply || 'sent! check your DM 🔥';
-                                        const commentDelay = Math.floor(Math.random() * (8 - 3 + 1)) + 3; // 3-8s
+                                        const tokenData = await Token.findOne({ userId: igUserIdMapped });
+                                        if (!tokenData) {
+                                            console.error('[Comment-to-DM] No token found');
+                                        } else {
+                                            // ── INCREMENT PROCESSED COUNT ──
+                                            await CommentToDmSetting.findOneAndUpdate(
+                                                { userId: igUserIdMapped },
+                                                { $inc: { processedCount: 1 } }
+                                            );
 
-                                        setTimeout(async () => {
-                                            try {
-                                                const replyResult = await replyToComment(commentData.commentId, commentReplyText, tokenData.accessToken);
-                                                console.log(`[Comment-to-DM] Comment reply ${replyResult.success ? 'sent' : 'failed'}: "${commentReplyText}"`);
+                                            // ── STEP 1: Reply on the comment ──
+                                            const commentReplyText = c2dSettings.commentReply || 'sent! check your DM 🔥';
+                                            const commentDelay = Math.floor(Math.random() * (8 - 3 + 1)) + 3; // 3-8s
 
-                                                await AutoReplyLog.create({
-                                                    commentId: commentData.commentId,
-                                                    commentText: commentData.text,
-                                                    commenterUsername: commentData.username,
-                                                    mediaId: commentData.mediaId,
-                                                    replyText: commentReplyText,
-                                                    status: replyResult.success ? 'sent' : 'failed',
-                                                    action: 'comment_to_dm_reply',
-                                                    error: replyResult.error || null,
-                                                    scheduledAt: new Date(),
-                                                    repliedAt: new Date()
-                                                });
-                                            } catch (replyErr) {
-                                                console.error('[Comment-to-DM] Comment reply error:', replyErr.message);
-                                            }
-                                        }, commentDelay * 1000);
+                                            setTimeout(async () => {
+                                                try {
+                                                    const replyResult = await replyToComment(commentData.commentId, commentReplyText, tokenData.accessToken);
+                                                    console.log(`[Comment-to-DM] Comment reply ${replyResult.success ? 'sent' : 'failed'}: "${commentReplyText}"`);
 
-                                        // ── STEP 2: Send DM to the commenter ──
-                                        const dmDelay = commentDelay + Math.floor(Math.random() * (5 - 2 + 1)) + 2; // after comment reply
-
-                                        setTimeout(async () => {
-                                            try {
-                                                let dmMessage = c2dSettings.dmMessage || c2dSettings.message || '';
-
-                                                // If no custom DM message, use AI + assets
-                                                if (!dmMessage.trim()) {
-                                                    const creatorAssets = await CreatorAsset.find({ userId: igUserIdMapped, isActive: true }).lean();
-                                                    if (creatorAssets.length > 0 && c2dSettings.useAssets !== false) {
-                                                        // Use AI to generate a DM with asset links
-                                                        const matchResult = await aiService.matchCreatorAssets(commentData.text, creatorAssets);
-                                                        const dmReply = await aiService.generateSmartDMReply(
-                                                            igUserIdMapped,
-                                                            commentData.text,
-                                                            commentData.username,
-                                                            matchResult.matchedAssets.length > 0 ? matchResult.matchedAssets : creatorAssets.slice(0, 3),
-                                                            false // NOT generic — they commented so they're interested
-                                                        );
-                                                        dmMessage = dmReply.text;
-                                                    } else {
-                                                        // No assets — generate a simple personalized DM
-                                                        dmMessage = await aiService.generateSmartReply(igUserIdMapped, commentData.text, 'dm', commentData.username);
-                                                    }
-                                                }
-
-                                                if (dmMessage && dmMessage.trim()) {
-                                                    // Get all asset images for multi-asset delivery
-                                                    let imageUrl = null;
-                                                    if (c2dSettings.useAssets !== false) {
-                                                        const assets = await CreatorAsset.find({ userId: igUserIdMapped, isActive: true }).lean();
-                                                        const imgAsset = assets.find(a => a.imageUrl);
-                                                        if (imgAsset) imageUrl = imgAsset.imageUrl;
-                                                    }
-
-                                                    const result = await sendDirectMessage(igUserIdMapped, commentData.senderId, dmMessage, tokenData.accessToken, imageUrl);
-                                                    console.log(`[Comment-to-DM] DM ${result.success ? '✅ sent' : '❌ failed'} to @${commentData.username}: "${dmMessage.substring(0, 50)}..."`);
-
-                                                    await DmAutoReplyLog.create({
-                                                        senderId: commentData.senderId,
-                                                        messageText: `[Comment-to-DM] Comment: "${commentData.text}"`,
-                                                        replyText: dmMessage,
-                                                        replyType: imageUrl ? 'image' : 'text',
-                                                        assetsShared: [],
-                                                        status: result.success ? 'sent' : 'failed',
-                                                        error: result.error || null,
+                                                    await AutoReplyLog.create({
+                                                        commentId: commentData.commentId,
+                                                        commentText: commentData.text,
+                                                        commenterUsername: commentData.username,
+                                                        mediaId: commentData.mediaId,
+                                                        replyText: commentReplyText,
+                                                        status: replyResult.success ? 'sent' : 'failed',
+                                                        action: 'comment_to_dm_reply',
+                                                        error: replyResult.error || null,
                                                         scheduledAt: new Date(),
                                                         repliedAt: new Date()
                                                     });
+                                                } catch (replyErr) {
+                                                    console.error('[Comment-to-DM] Comment reply error:', replyErr.message);
                                                 }
-                                            } catch (dmErr) {
-                                                console.error('[Comment-to-DM] DM send error:', dmErr.message);
-                                            }
-                                        }, dmDelay * 1000);
+                                            }, commentDelay * 1000);
+
+                                            // ── STEP 2: Send DM to the commenter ──
+                                            const dmDelay = commentDelay + Math.floor(Math.random() * (5 - 2 + 1)) + 2;
+
+                                            setTimeout(async () => {
+                                                try {
+                                                    let dmMessage = c2dSettings.dmMessage || c2dSettings.message || '';
+
+                                                    // If no custom DM message, use AI + assets
+                                                    if (!dmMessage.trim()) {
+                                                        const creatorAssets = await CreatorAsset.find({ userId: igUserIdMapped, isActive: true }).lean();
+                                                        if (creatorAssets.length > 0 && c2dSettings.useAssets !== false) {
+                                                            const matchResult = await aiService.matchCreatorAssets(commentData.text, creatorAssets);
+                                                            const dmReply = await aiService.generateSmartDMReply(
+                                                                igUserIdMapped,
+                                                                commentData.text,
+                                                                commentData.username,
+                                                                matchResult.matchedAssets.length > 0 ? matchResult.matchedAssets : creatorAssets.slice(0, 3),
+                                                                false
+                                                            );
+                                                            dmMessage = dmReply.text;
+                                                        } else {
+                                                            dmMessage = await aiService.generateSmartReply(igUserIdMapped, commentData.text, 'dm', commentData.username);
+                                                        }
+                                                    }
+
+                                                    if (dmMessage && dmMessage.trim()) {
+                                                        let imageUrl = null;
+                                                        if (c2dSettings.useAssets !== false) {
+                                                            const assets = await CreatorAsset.find({ userId: igUserIdMapped, isActive: true }).lean();
+                                                            const imgAsset = assets.find(a => a.imageUrl);
+                                                            if (imgAsset) imageUrl = imgAsset.imageUrl;
+                                                        }
+
+                                                        const result = await sendDirectMessage(igUserIdMapped, commentData.senderId, dmMessage, tokenData.accessToken, imageUrl);
+                                                        console.log(`[Comment-to-DM] DM ${result.success ? '✅ sent' : '❌ failed'} to @${commentData.username}: "${dmMessage.substring(0, 50)}..."`);
+
+                                                        await DmAutoReplyLog.create({
+                                                            senderId: commentData.senderId,
+                                                            messageText: `[Comment-to-DM] Comment: "${commentData.text}"`,
+                                                            replyText: dmMessage,
+                                                            replyType: imageUrl ? 'image' : 'text',
+                                                            assetsShared: [],
+                                                            status: result.success ? 'sent' : 'failed',
+                                                            error: result.error || null,
+                                                            scheduledAt: new Date(),
+                                                            repliedAt: new Date()
+                                                        });
+                                                    }
+                                                } catch (dmErr) {
+                                                    console.error('[Comment-to-DM] DM send error:', dmErr.message);
+                                                }
+                                            }, dmDelay * 1000);
+                                        }
+                                    } else {
+                                        console.log(`[Comment-to-DM] Skipped — keyword "${keyword}" not found in comment.`);
                                     }
-                                } else {
-                                    console.log(`[Comment-to-DM] Skipped — keyword "${keyword}" not found in comment.`);
                                 }
                             }
                         } catch (c2dErr) {

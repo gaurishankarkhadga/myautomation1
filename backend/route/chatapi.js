@@ -108,10 +108,12 @@ router.get('/active-count/:userId', async (req, res) => {
         const { userId } = req.params;
         const AutoReplySetting = require('../model/Instaautomation').AutoReplySetting;
         const DmAutoReplySetting = require('../model/Instaautomation').DmAutoReplySetting;
+        const CommentToDmSetting = require('../model/Instaautomation').CommentToDmSetting;
 
-        const [commentSettings, dmSettings] = await Promise.all([
+        const [commentSettings, dmSettings, c2dSettings] = await Promise.all([
             AutoReplySetting.findOne({ userId }).lean(),
-            DmAutoReplySetting.findOne({ userId }).lean()
+            DmAutoReplySetting.findOne({ userId }).lean(),
+            CommentToDmSetting.findOne({ userId }).lean()
         ]);
 
         let activeCount = 0;
@@ -124,6 +126,10 @@ router.get('/active-count/:userId', async (req, res) => {
         if (dmSettings?.enabled) {
             activeCount++;
             activeList.push('✉️ DMs');
+        }
+        if (c2dSettings?.enabled) {
+            activeCount++;
+            activeList.push('📲 C2D');
         }
 
         res.json({ success: true, activeCount, activeList });

@@ -228,3 +228,94 @@
     .acp-media-card { width: 78px; }
     .acp-media-thumb, .acp-media-thumb-empty { width: 78px; height: 78px; }
 }
+
+/* ── Comment-to-DM Detail Rows ─────────────────────────────── */
+.acp-c2d-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    background: rgba(96, 165, 250, 0.04);
+    border: 1px solid rgba(96, 165, 250, 0.08);
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.acp-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: rgba(200, 200, 200, 0.65);
+    line-height: 1.3;
+}
+
+.acp-detail-row svg {
+    color: rgba(96, 165, 250, 0.45);
+    flex-shrink: 0;
+}
+
+.acp-detail-row strong {
+    color: rgba(230, 230, 230, 0.85);
+    font-weight: 600;
+}
+
+.acp-detail-row.acp-timer {
+    color: rgba(250, 204, 21, 0.8);
+}
+
+.acp-detail-row.acp-timer svg {
+    color: rgba(250, 204, 21, 0.6);
+}
+
+/* ── Verification Section ──────────────────────────────────── */
+.acp-verification {
+    margin-top: 8px;
+    padding: 6px 10px 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.acp-verify-title {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(200, 200, 200, 0.35);
+    margin-bottom: 6px;
+}
+
+.acp-verify-title svg {
+    color: rgba(200, 200, 200, 0.3);
+}
+
+.acp-verify-badges {
+    display: flex;
+    gap: 6px;
+}
+
+.acp-verify-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.acp-verify-badge.ok {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.08);
+    border: 1px solid rgba(74, 222, 128, 0.15);
+}
+
+.acp-verify-badge.warn {
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.08);
+    border: 1px solid rgba(251, 191, 36, 0.15);
+}

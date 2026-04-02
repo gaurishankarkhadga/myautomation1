@@ -85,10 +85,13 @@ CRITICAL RULES:
    - Extract commentReply if mentioned (e.g. "reply 'sent' on comment" → commentReply: "sent! 🔥")
    - Extract dmMessage if mentioned (e.g. "send them 'check your inbox'" → dmMessage: "check your inbox")
    - Default: useAssets = true (auto-share creator's products/links in the DM)
+   - IMPORTANT: If the creator mentions a TIME DURATION with comment-to-dm, include "hours" DIRECTLY in the params. Do NOT create a separate set_time_limit intent. Example: "dm commenters for 30 hours" → hours: 30 inside enable_comment_to_dm params
+   - IMPORTANT: If the creator mentions a MAX COMMENT COUNT with comment-to-dm, include "maxComments" DIRECTLY in the params. Do NOT create a separate set_comment_limit intent.
+   - If the creator mentions a specific post/reel (recent, latest, first), include "targetMedia" in the params
 
 AVAILABLE INTENTS:
 ${intentList}
-- enable_comment_to_dm (send DM to commenters — params: {keyword?, commentReply?, dmMessage?, useAssets?, targetMedia?})
+- enable_comment_to_dm (send DM to commenters — params: {keyword?, commentReply?, dmMessage?, useAssets?, targetMedia?, hours?, maxComments?})
 - disable_comment_to_dm (stop comment-to-DM)
 - configure_comment_to_dm (update comment-to-DM settings)
 - add_custom_instruction (for custom DM behavior rules — params: {instruction: "the full custom rule"})
@@ -163,6 +166,17 @@ User: "when someone says 'how' in comments reply 'check DM' and send them my cou
 User: "comment pe DM automation on kr de latest video ke liye" → [{"intent": "enable_comment_to_dm", "params": {"targetMedia": "recent"}, "confidence": 0.9}]
 User: "dm send karo comment walo ko and comment pe 'sent bro' reply karo" → [{"intent": "enable_comment_to_dm", "params": {"commentReply": "sent bro! check your DM 🔥"}, "confidence": 0.95}]
 User: "turn on comment to dm auto with message 'hey here is the link you asked for'" → [{"intent": "enable_comment_to_dm", "params": {"dmMessage": "hey here is the link you asked for"}, "confidence": 0.95}]
+
+COMMENT-TO-DM WITH TIME LIMIT (hours goes INSIDE enable_comment_to_dm — NOT a separate set_time_limit):
+User: "when user comment give within 30 hour send link of my course also reply them like link sended" → [{"intent": "enable_comment_to_dm", "params": {"hours": 30, "commentReply": "Link sent! Check your DMs 🔥", "useAssets": true}, "confidence": 0.95}]
+User: "dm commenters for 24 hours" → [{"intent": "enable_comment_to_dm", "params": {"hours": 24}, "confidence": 0.95}]
+User: "comment pe dm 6 ghante ke liye" → [{"intent": "enable_comment_to_dm", "params": {"hours": 6}, "confidence": 0.9}]
+User: "send dm to first 50 commenters and stop" → [{"intent": "enable_comment_to_dm", "params": {"maxComments": 50}, "confidence": 0.95}]
+User: "auto dm commenters for 12 hours, max 100 comments, on my latest reel" → [{"intent": "enable_comment_to_dm", "params": {"hours": 12, "maxComments": 100, "targetMedia": "recent"}, "confidence": 0.95}]
+User: "comment pe dm bhejo 30 ghante ke liye latest reel pe course link ke saath" → [{"intent": "enable_comment_to_dm", "params": {"hours": 30, "targetMedia": "recent", "useAssets": true}, "confidence": 0.95}]
+User: "when someone comments send DM with my course link and reply sent stop after 2 hours" → [{"intent": "enable_comment_to_dm", "params": {"hours": 2, "commentReply": "sent! 🔥", "useAssets": true}, "confidence": 0.95}]
+User: "auto dm for keyword interested for 48 hours on recent post" → [{"intent": "enable_comment_to_dm", "params": {"keyword": "interested", "hours": 48, "targetMedia": "recent"}, "confidence": 0.95}]
+User: "dm 200 commenters then automatically stop" → [{"intent": "enable_comment_to_dm", "params": {"maxComments": 200}, "confidence": 0.95}]
 
 MORNING BRIEFING EXAMPLES:
 User: "good morning" → [{"intent": "get_morning_briefing", "params": {}, "confidence": 0.8}]

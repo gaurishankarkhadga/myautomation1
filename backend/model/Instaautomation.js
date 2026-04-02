@@ -155,8 +155,27 @@ const commentToDmSettingSchema = new mongoose.Schema({
     message: { type: String, default: '' },
     // Whether to auto-include creator's assets/links in the DM
     useAssets: { type: Boolean, default: true },
-    // Target: 'all', 'recent', or a specific mediaId
-    targetMedia: { type: String, default: 'all' }
+    // Target: 'all', 'recent', or a specific mediaId string
+    targetMedia: { type: String, default: 'all' },
+    // Resolved Instagram media ID for specific post targeting
+    targetMediaId: { type: String, default: '' },
+
+    // ==================== TIME LIMIT ====================
+    timeLimitHours: { type: Number, default: 0 },         // 0 = no limit
+    startedAt: { type: Date, default: null },
+    expiresAt: { type: Date, default: null },
+
+    // ==================== COMMENT LIMIT ====================
+    maxComments: { type: Number, default: 0 },             // 0 = unlimited
+    processedCount: { type: Number, default: 0 },
+
+    // ==================== VERIFICATION ====================
+    lastVerifiedAt: { type: Date, default: null },
+    verificationStatus: {
+        tokenValid: { type: Boolean, default: false },
+        webhookActive: { type: Boolean, default: false },
+        assetsAvailable: { type: Boolean, default: false }
+    }
 });
 
 // ==================== GAMIFY FUNNEL SETTING ====================

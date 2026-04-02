@@ -2,7 +2,8 @@ const {
     AutoReplySetting,
     DmAutoReplySetting,
     AutoReplyLog,
-    DmAutoReplyLog
+    DmAutoReplyLog,
+    CommentToDmSetting
 } = require('../../model/Instaautomation');
 const CreatorAsset = require('../../model/CreatorAsset');
 const CreatorPersona = require('../../model/CreatorPersona');
@@ -25,9 +26,10 @@ module.exports = {
         try {
             // ==================== FULL STATUS ====================
             if (intent === 'get_status') {
-                const [commentSettings, dmSettings, persona, assets, prefs, recentCommentLogs, recentDmLogs, brandDeal] = await Promise.all([
+                const [commentSettings, dmSettings, c2dSettings, persona, assets, prefs, recentCommentLogs, recentDmLogs, brandDeal] = await Promise.all([
                     AutoReplySetting.findOne({ userId }).lean(),
                     DmAutoReplySetting.findOne({ userId }).lean(),
+                    CommentToDmSetting.findOne({ userId }).lean(),
                     CreatorPersona.findOne({ userId }).lean(),
                     CreatorAsset.countDocuments({ userId, isActive: true }),
                     CreatorPreference.findOne({ userId }).lean(),
@@ -48,6 +50,7 @@ module.exports = {
                 let activeCount = 0;
                 if (commentSettings?.enabled) activeCount++;
                 if (dmSettings?.enabled) activeCount++;
+                if (c2dSettings?.enabled) activeCount++;
                 if (commentSettings?.viralTagEnabled) activeCount++;
                 if (dmSettings?.inboxTriageEnabled) activeCount++;
                 if (dmSettings?.storyMentionEnabled) activeCount++;
@@ -56,6 +59,7 @@ module.exports = {
                     `📊 **Your Automation Dashboard** (${activeCount} active)\n`,
                     `💬 **Comment Auto-Reply:** ${commentSettings?.enabled ? `✅ ON (${modeLabels[commentSettings.replyMode] || commentSettings.replyMode}, ${commentSettings.delaySeconds}s delay)` : '❌ OFF'}`,
                     `✉️ **DM Auto-Reply:** ${dmSettings?.enabled ? `✅ ON (AI-Powered, ${dmSettings.delaySeconds}s delay)` : '❌ OFF'}`,
+                    `📲 **Comment-to-DM:** ${c2dSettings?.enabled ? `✅ ON (${c2dSettings.keyword ? `keyword: "${c2dSettings.keyword}"` : 'all comments'}${c2dSettings.timeLimitHours > 0 ? `, ${c2dSettings.timeLimitHours}h limit` : ''}${c2dSettings.maxComments > 0 ? `, ${c2dSettings.processedCount || 0}/${c2dSettings.maxComments} processed` : ''})` : '❌ OFF'}`,
                     `🚀 **Viral Tag Auto-Reply:** ${commentSettings?.viralTagEnabled ? '✅ ON (AI scheduled for 24h later)' : '❌ OFF'}`,
                     `📥 **Inbox AI Triage:** ${dmSettings?.inboxTriageEnabled ? '✅ ON (Automatic categorization via Gemini)' : '❌ OFF'}`,
                     `📸 **Story Mentions:** ${dmSettings?.storyMentionEnabled ? '✅ ON (Auto-sending thank yous)' : '❌ OFF'}`,

@@ -111,7 +111,7 @@ app.use((req, res) => {
 
 // ==================== CRON JOBS ====================
 const cron = require('node-cron');
-const { WebhookEvent, Token } = require('./model/Instaautomation');
+const { WebhookEvent, Token, CommentToDmSetting } = require('./model/Instaautomation');
 const axios = require('axios');
 
 cron.schedule('*/5 * * * *', async () => {
@@ -159,6 +159,41 @@ cron.schedule('*/5 * * * *', async () => {
     }
   } catch (err) {
     console.error('[Cron] Job error:', err.message);
+  }
+});
+
+// ==================== COMMENT-TO-DM AUTO-EXPIRY CRON ====================
+cron.schedule('*/5 * * * *', async () => {
+  try {
+    // Find all active Comment-to-DM settings that have expired
+    const expiredByTime = await CommentToDmSetting.find({
+      enabled: true,
+      expiresAt: { $ne: null, $lte: new Date() }
+    });
+
+    // Find all active settings where comment limit has been reached
+    const expiredByCount = await CommentToDmSetting.find({
+      enabled: true,
+      maxComments: { $gt: 0 },
+      $expr: { $gte: ['$processedCount', '$maxComments'] }
+    });
+
+    const toDisable = [...expiredByTime, ...expiredByCount];
+    
+    if (toDisable.length === 0) return;
+
+    console.log(`[Cron:C2D] Found ${toDisable.length} expired Comment-to-DM automations. Disabling...`);
+
+    for (const setting of toDisable) {
+      const reason = setting.expiresAt && new Date() > new Date(setting.expiresAt)
+        ? `Time limit expired (${setting.timeLimitHours}h)`
+        : `Comment limit reached (${setting.processedCount}/${setting.maxComments})`;
+      
+      await CommentToDmSetting.findByIdAndUpdate(setting._id, { enabled: false });
+      console.log(`[Cron:C2D] Disabled for user ${setting.userId}: ${reason}`);
+    }
+  } catch (err) {
+    console.error('[Cron:C2D] Error:', err.message);
   }
 });
 
