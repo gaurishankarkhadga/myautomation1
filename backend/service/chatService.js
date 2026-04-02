@@ -80,9 +80,17 @@ CRITICAL RULES:
 9. Common abbreviations: "dm" = direct message, "yt" = youtube, "insta/ig" = instagram, "auto" = automation, "hrs" = hours
 10. ULTRA-FLEXIBLE: If the creator gives a CUSTOM INSTRUCTION that doesn't fit any specific intent (e.g. "never mention prices", "reply in Hindi to Indian fans", "don't share links after 10pm"), use "add_custom_instruction" with the full instruction as the param.
 11. If the creator asks "what happened", "morning update", "briefing", "catch me up", "what did you do" — use "get_morning_briefing".
+12. COMMENT-TO-DM: If the creator talks about sending DMs to people who comment, auto-DMing commenters, "comment pe dm", "send dm when they comment", etc. → use "enable_comment_to_dm". This is DIFFERENT from enable_dm_autoreply (which handles incoming DMs). Comment-to-DM = someone COMMENTS → system sends them a DM.
+   - Extract keyword if mentioned (e.g. "if they say 'interested'" → keyword: "interested")
+   - Extract commentReply if mentioned (e.g. "reply 'sent' on comment" → commentReply: "sent! 🔥")
+   - Extract dmMessage if mentioned (e.g. "send them 'check your inbox'" → dmMessage: "check your inbox")
+   - Default: useAssets = true (auto-share creator's products/links in the DM)
 
 AVAILABLE INTENTS:
 ${intentList}
+- enable_comment_to_dm (send DM to commenters — params: {keyword?, commentReply?, dmMessage?, useAssets?, targetMedia?})
+- disable_comment_to_dm (stop comment-to-DM)
+- configure_comment_to_dm (update comment-to-DM settings)
 - add_custom_instruction (for custom DM behavior rules — params: {instruction: "the full custom rule"})
 - list_custom_instructions (show all custom rules)
 - remove_custom_instruction (remove a rule by number — params: {index: 1})
@@ -138,6 +146,23 @@ User: "if someone asks about my course tell them it's sold out" → [{"intent": 
 User: "show my custom rules" → [{"intent": "list_custom_instructions", "params": {}, "confidence": 0.9}]
 User: "remove rule 2" → [{"intent": "remove_custom_instruction", "params": {"index": 2}, "confidence": 0.9}]
 User: "clear all my custom instructions" → [{"intent": "clear_custom_instructions", "params": {}, "confidence": 0.9}]
+
+COMMENT-TO-DM EXAMPLES (when creator wants to send DM to people who comment):
+User: "when someone comments on my latest reel send them a DM" → [{"intent": "enable_comment_to_dm", "params": {"targetMedia": "recent"}, "confidence": 0.95}]
+User: "when someone comments send them a DM directly and on comment reply just say sent" → [{"intent": "enable_comment_to_dm", "params": {"commentReply": "sent! check your DM 🔥"}, "confidence": 0.95}]
+User: "comment pe dm bhejo" → [{"intent": "enable_comment_to_dm", "params": {}, "confidence": 0.9}]
+User: "if they comment 'interested' dm them the link" → [{"intent": "enable_comment_to_dm", "params": {"keyword": "interested"}, "confidence": 0.95}]
+User: "send dm to commenters saying check your inbox" → [{"intent": "enable_comment_to_dm", "params": {"dmMessage": "check your inbox! I sent you something cool 🔥"}, "confidence": 0.9}]
+User: "auto dm on comments with my course link" → [{"intent": "enable_comment_to_dm", "params": {"useAssets": true}, "confidence": 0.9}]
+User: "reply sent on comment and dm them the product" → [{"intent": "enable_comment_to_dm", "params": {"commentReply": "sent! 🔥", "useAssets": true}, "confidence": 0.95}]
+User: "jisko bhi comment kare unko dm me link bhej de" → [{"intent": "enable_comment_to_dm", "params": {"useAssets": true}, "confidence": 0.9}]
+User: "stop comment to dm" → [{"intent": "disable_comment_to_dm", "params": {}, "confidence": 0.9}]
+User: "comment to dm band karo" → [{"intent": "disable_comment_to_dm", "params": {}, "confidence": 0.9}]
+User: "enable comment to dm for keyword 'link'" → [{"intent": "enable_comment_to_dm", "params": {"keyword": "link"}, "confidence": 0.95}]
+User: "when someone says 'how' in comments reply 'check DM' and send them my course" → [{"intent": "enable_comment_to_dm", "params": {"keyword": "how", "commentReply": "check DM! 🔥", "useAssets": true}, "confidence": 0.95}]
+User: "comment pe DM automation on kr de latest video ke liye" → [{"intent": "enable_comment_to_dm", "params": {"targetMedia": "recent"}, "confidence": 0.9}]
+User: "dm send karo comment walo ko and comment pe 'sent bro' reply karo" → [{"intent": "enable_comment_to_dm", "params": {"commentReply": "sent bro! check your DM 🔥"}, "confidence": 0.95}]
+User: "turn on comment to dm auto with message 'hey here is the link you asked for'" → [{"intent": "enable_comment_to_dm", "params": {"dmMessage": "hey here is the link you asked for"}, "confidence": 0.95}]
 
 MORNING BRIEFING EXAMPLES:
 User: "good morning" → [{"intent": "get_morning_briefing", "params": {}, "confidence": 0.8}]

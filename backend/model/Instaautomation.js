@@ -147,7 +147,16 @@ const commentToDmSettingSchema = new mongoose.Schema({
     enabled: { type: Boolean, default: false },
     mode: { type: String, default: 'default' },
     keyword: { type: String, default: '' },
-    message: { type: String, default: '' }
+    // What to send in the DM
+    dmMessage: { type: String, default: '' },
+    // What to reply on the comment itself (e.g. "sent! check your DM 🔥")
+    commentReply: { type: String, default: '' },
+    // Legacy field kept for compatibility
+    message: { type: String, default: '' },
+    // Whether to auto-include creator's assets/links in the DM
+    useAssets: { type: Boolean, default: true },
+    // Target: 'all', 'recent', or a specific mediaId
+    targetMedia: { type: String, default: 'all' }
 });
 
 // ==================== GAMIFY FUNNEL SETTING ====================
