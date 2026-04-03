@@ -34,3 +34,23 @@ Major visible Bugs List:
 
 
 
+
+
+
+
+Test	Prompt	Result
+Full C2D + 30h	"when user comment give within 30 hour..."	✅ hours: 30, single intent
+Hindi + keyword	"comment pe dm bhejo 6 ghante ke liye..."	✅ keyword: interested, hours: 6
+Max comments	"send dm to first 50 commenters and stop"	✅ maxComments: 50
+Complex combined	"12 hours, 100 max, latest reel, keyword link"	✅ ALL 4 params in ONE intent
+Disable	"stop comment to dm"	✅ enabled: false
+MongoDB data	Direct DB query	✅ Time math exact (0ms diff)
+Status dashboard	"show my automation status dashboard"	✅ Shows C2D with 2h limit, 0/100 processed
+Active badge	/api/chat/active-count/	✅ activeCount: 1, ['📲 C2D']
+Cron expiry	Simulated expired setting	✅ Auto-disabled
+Count limit	Simulated max reached	✅ Auto-disabled
+Custom messages	"reply check DM bro, DM saying..."	✅ Both extracted correctly
+General chat	"hello how are you"	✅ No false C2D trigger
+Hindi disable all	"sab band kar do"	✅ Stops C2D + everything
+
+

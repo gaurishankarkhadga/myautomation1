@@ -245,9 +245,10 @@ async function analyzeProfile(userId, accessToken) {
  * @param {string} incomingText - The comment or DM text to reply to
  * @param {string} contextType - "comment" or "dm"
  * @param {string} senderName - Username of the person who sent the message
+ * @param {Array} customInstructions - Specific rules or messages to insert securely
  * @returns {Promise<string>} - The generated reply text
  */
-async function generateSmartReply(userId, incomingText, contextType, senderName) {
+async function generateSmartReply(userId, incomingText, contextType, senderName, customInstructions = []) {
     try {
         const persona = await CreatorPersona.findOne({ userId });
 
@@ -282,7 +283,9 @@ async function generateSmartReply(userId, incomingText, contextType, senderName)
             - ${persona.lowercasePreference ? 'lowercase typing' : 'normal caps'}
             - Slang: ${(persona.slangPatterns || []).join(', ') || 'none'}
 
-            ${realExamples ? `=== YOUR REAL REPLIES (match this energy) ===\n${realExamples}` : ''}
+            ${realExamples ? `=== YOUR REAL REPLIES (match this energy) ===\n${realExamples}` : `=== YOUR REAL REPLIES (match this energy) ===\n(Assume you keep things short and simple, naturally conversational)`}
+            
+            ${customInstructions && customInstructions.length > 0 ? `\n=== CREATOR'S CUSTOM RULES (MUST FOLLOW — these override default behavior) ===\n${customInstructions.map((inst, i) => `${i + 1}. ${inst}`).join('\n')}\n` : ''}
 
             === REPLY TO THIS ===
             @${senderName}: "${incomingText}"
@@ -292,7 +295,8 @@ async function generateSmartReply(userId, incomingText, contextType, senderName)
             - Match your past replies' vibe exactly
             - React to what they ACTUALLY said — be specific
             - 1 emoji max, only if it's your style
-            - NEVER say: "glad you liked it", "thanks for the love", "means a lot", "stay tuned", "appreciate"
+            - NEVER sound like an AI assistant. You are a human texting a fan.
+            - NEVER say: "glad you liked it", "thanks for the love", "means a lot", "stay tuned", "appreciate", "Here's the link"
             - If hateful/abusive → reply "❤️" only
             - If simple reaction ("wow", "nice") → equally short reply
 
@@ -304,6 +308,8 @@ async function generateSmartReply(userId, incomingText, contextType, senderName)
 
             prompt = `
             You're replying to a ${contextType === 'dm' ? 'DM' : 'comment'} on your Instagram post. You're a real creator, not an AI.
+
+            ${customInstructions && customInstructions.length > 0 ? `\n=== CREATOR'S CUSTOM RULES (MUST FOLLOW — these override default behavior) ===\n${customInstructions.map((inst, i) => `${i + 1}. ${inst}`).join('\n')}\n` : ''}
 
             @${senderName}: "${incomingText}"
 
@@ -651,6 +657,12 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
                 - Content themes: ${(persona.onlineResearch.contentThemes || []).join(', ')}
                 - Audience: ${persona.onlineResearch.audienceType || 'general'}
                 `;
+            } else if (persona.communicationStyle) {
+                // Strong fallback if no onlineResearch
+                personaContext += `
+                === YOUR BRAND ===
+                - Brand voice: ${persona.communicationStyle}
+                `;
             }
         }
 
@@ -689,6 +701,7 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
             - "Thank you for reaching out"
             - "I'm glad you're interested"
             - "Feel free to check out"
+            - "Here is the link you wanted" (too robotic)
             - Any sentence over 20 words
 
             GOOD EXAMPLES:

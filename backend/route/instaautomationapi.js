@@ -254,6 +254,19 @@ async function resolveUserIdMapping(igUserId) {
             console.log(`[ID-Mapping] DM settings synced: enabled=${dmSettings.enabled}, mode=${dmSettings.replyMode}`);
         }
 
+        // ALWAYS sync Comment-to-DM settings! (CRITICAL BUG FIX)
+        const c2dSettings = await CommentToDmSetting.findOne({ userId: sourceId });
+        if (c2dSettings) {
+            const syncObj = c2dSettings.toObject();
+            delete syncObj._id;
+            await CommentToDmSetting.findOneAndUpdate(
+                { userId: igUserId },
+                { ...syncObj, userId: igUserId },
+                { upsert: true }
+            );
+            console.log(`[ID-Mapping] C2D settings synced: enabled=${c2dSettings.enabled}`);
+        }
+
         // Sync CreatorPersona (for AI-powered replies)
         const personaData = await CreatorPersona.findOne({ userId: sourceId });
         if (personaData) {
@@ -1076,24 +1089,30 @@ router.post('/webhook', async (req, res) => {
 
                                             setTimeout(async () => {
                                                 try {
-                                                    let dmMessage = c2dSettings.dmMessage || c2dSettings.message || '';
+                                                    let customInstructions = [];
+                                                    if (c2dSettings.dmMessage && c2dSettings.dmMessage.trim()) {
+                                                        // Pass the creator's exact prompt as a strict AI instruction rather than completely bypassing AI.
+                                                        // This forces Gemini to rewrite their custom string in their authentic tone!
+                                                        customInstructions.push(`THE CREATOR WROTE THIS EXACT MESSAGE: "${c2dSettings.dmMessage}". You MUST deliver this exact intent/message, but rewrite it so it sounds perfectly natural in your analyzed persona voice.`);
+                                                    }
 
-                                                    // If no custom DM message, use AI + assets
-                                                    if (!dmMessage.trim()) {
-                                                        const creatorAssets = await CreatorAsset.find({ userId: igUserIdMapped, isActive: true }).lean();
-                                                        if (creatorAssets.length > 0 && c2dSettings.useAssets !== false) {
-                                                            const matchResult = await aiService.matchCreatorAssets(commentData.text, creatorAssets);
-                                                            const dmReply = await aiService.generateSmartDMReply(
-                                                                igUserIdMapped,
-                                                                commentData.text,
-                                                                commentData.username,
-                                                                matchResult.matchedAssets.length > 0 ? matchResult.matchedAssets : creatorAssets.slice(0, 3),
-                                                                false
-                                                            );
-                                                            dmMessage = dmReply.text;
-                                                        } else {
-                                                            dmMessage = await aiService.generateSmartReply(igUserIdMapped, commentData.text, 'dm', commentData.username);
-                                                        }
+                                                    let dmMessage = '';
+
+                                                    const creatorAssets = await CreatorAsset.find({ userId: igUserIdMapped, isActive: true }).lean();
+                                                    if (creatorAssets.length > 0 && c2dSettings.useAssets !== false) {
+                                                        const matchResult = await aiService.matchCreatorAssets(commentData.text, creatorAssets);
+                                                        const dmReply = await aiService.generateSmartDMReply(
+                                                            igUserIdMapped,
+                                                            commentData.text,
+                                                            commentData.username,
+                                                            matchResult.matchedAssets.length > 0 ? matchResult.matchedAssets : creatorAssets.slice(0, 3),
+                                                            false,
+                                                            customInstructions
+                                                        );
+                                                        dmMessage = dmReply.text;
+                                                    } else {
+                                                        // If no assets, fallback to standard smart reply with injected context
+                                                        dmMessage = await aiService.generateSmartReply(igUserIdMapped, commentData.text, 'dm', commentData.username, customInstructions);
                                                     }
 
                                                     if (dmMessage && dmMessage.trim()) {
