@@ -293,7 +293,7 @@ class InstagramService {
    * Verify webhook subscription (for Meta's verification)
    */
   verifyWebhook(mode, token, challenge) {
-    const verifyToken = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN || 'Gshankar@413';
+    const verifyToken = process.env.WEBHOOK_VERIFY_TOKEN || process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN;
     
     if (mode === 'subscribe' && token === verifyToken) {
       console.log('✅ Webhook verified successfully');
