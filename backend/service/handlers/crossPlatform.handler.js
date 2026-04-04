@@ -102,10 +102,9 @@ module.exports = {
 
                 // Disable Instagram comment auto-reply
                 try {
-                    await AutoReplySetting.findOneAndUpdate(
-                        { userId },
-                        { enabled: false },
-                        { upsert: false }
+                    await AutoReplySetting.updateMany(
+                        {},
+                        { enabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'Comment Auto-Reply', success: true });
                 } catch (e) {
@@ -114,10 +113,9 @@ module.exports = {
 
                 // Disable Instagram DM auto-reply
                 try {
-                    await DmAutoReplySetting.findOneAndUpdate(
-                        { userId },
-                        { enabled: false },
-                        { upsert: false }
+                    await DmAutoReplySetting.updateMany(
+                        {},
+                        { enabled: false, autonomousMode: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'DM Auto-Reply', success: true });
                 } catch (e) {
@@ -126,10 +124,9 @@ module.exports = {
 
                 // Disable Comment to DM
                 try {
-                    await CommentToDmSetting.findOneAndUpdate(
-                        { userId },
-                        { enabled: false },
-                        { upsert: false }
+                    await CommentToDmSetting.updateMany(
+                        {},
+                        { enabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'Comment to DM', success: true });
                 } catch (e) {
@@ -138,10 +135,9 @@ module.exports = {
 
                 // Disable Gamified Funnel
                 try {
-                    await GamifyFunnelSetting.findOneAndUpdate(
-                        { userId },
-                        { enabled: false },
-                        { upsert: false }
+                    await GamifyFunnelSetting.updateMany(
+                        {},
+                        { enabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'Gamified Funnel', success: true });
                 } catch (e) {
