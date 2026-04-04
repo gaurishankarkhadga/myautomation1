@@ -190,100 +190,19 @@ async function sendDirectMessage(igUserId, recipientIGSID, message, accessToken,
 }
 
 async function resolveUserIdMapping(igUserId) {
-    // Find the "source" OAuth ID — the one that has a Token stored from login
-    // The webhook ID may differ from the OAuth ID, so we need to find the mapping
-
-    // First, check if THIS ID has a token (meaning it IS the OAuth ID)
+    // Check if the webhook ID exactly matches our Token OAuth ID (true for 99% of prod cases)
     const hasOwnToken = await Token.findOne({ userId: igUserId });
 
-    // Find any OTHER user ID that has settings (the OAuth ID)
-    const otherToken = await Token.findOne({ userId: { $ne: igUserId } });
-    const sourceId = otherToken ? otherToken.userId : null;
-
-    // If this ID has its own token and no other ID exists, it's the OAuth ID itself
-    if (hasOwnToken && !sourceId) {
+    if (hasOwnToken) {
+        // Safe and correct: the webhook ID belongs to this exact user in our DB
         return igUserId;
     }
 
-    // If there's a source OAuth ID, ALWAYS sync latest settings from it
-    if (sourceId) {
-        console.log(`[ID-Mapping] Syncing latest settings from OAuth ID ${sourceId} -> webhook ID ${igUserId}`);
-
-        // Sync token
-        const tokenData = await Token.findOne({ userId: sourceId });
-        if (tokenData) {
-            await Token.findOneAndUpdate(
-                { userId: igUserId },
-                { userId: igUserId, accessToken: tokenData.accessToken, expiresIn: tokenData.expiresIn, createdAt: tokenData.createdAt },
-                { upsert: true }
-            );
-        }
-
-        // ALWAYS sync comment auto-reply settings (get latest mode, delay, etc.)
-        const commentSettings = await AutoReplySetting.findOne({ userId: sourceId });
-        if (commentSettings) {
-            await AutoReplySetting.findOneAndUpdate(
-                { userId: igUserId },
-                {
-                    userId: igUserId,
-                    enabled: commentSettings.enabled,
-                    delaySeconds: commentSettings.delaySeconds,
-                    message: commentSettings.message,
-                    replyMode: commentSettings.replyMode || 'reply_only'
-                },
-                { upsert: true }
-            );
-            console.log(`[ID-Mapping] Comment settings synced: enabled=${commentSettings.enabled}, mode=${commentSettings.replyMode}`);
-        }
-
-        // ALWAYS sync DM auto-reply settings (critical: includes replyMode!)
-        const dmSettings = await DmAutoReplySetting.findOne({ userId: sourceId });
-        if (dmSettings) {
-            await DmAutoReplySetting.findOneAndUpdate(
-                { userId: igUserId },
-                {
-                    userId: igUserId,
-                    enabled: dmSettings.enabled,
-                    delaySeconds: dmSettings.delaySeconds,
-                    message: dmSettings.message,
-                    replyMode: dmSettings.replyMode || 'static',
-                    aiPersonality: dmSettings.aiPersonality || ''
-                },
-                { upsert: true }
-            );
-            console.log(`[ID-Mapping] DM settings synced: enabled=${dmSettings.enabled}, mode=${dmSettings.replyMode}`);
-        }
-
-        // ALWAYS sync Comment-to-DM settings! (CRITICAL BUG FIX)
-        const c2dSettings = await CommentToDmSetting.findOne({ userId: sourceId });
-        if (c2dSettings) {
-            const syncObj = c2dSettings.toObject();
-            delete syncObj._id;
-            await CommentToDmSetting.findOneAndUpdate(
-                { userId: igUserId },
-                { ...syncObj, userId: igUserId },
-                { upsert: true }
-            );
-            console.log(`[ID-Mapping] C2D settings synced: enabled=${c2dSettings.enabled}`);
-        }
-
-        // Sync CreatorPersona (for AI-powered replies)
-        const personaData = await CreatorPersona.findOne({ userId: sourceId });
-        if (personaData) {
-            const personaObj = personaData.toObject();
-            delete personaObj._id;
-            await CreatorPersona.findOneAndUpdate(
-                { userId: igUserId },
-                { ...personaObj, userId: igUserId },
-                { upsert: true }
-            );
-        }
-
-        return igUserId;
-    }
-
-    // No mapping found — use as-is
-    console.log(`[ID-Mapping] No mapping needed for ${igUserId}`);
+    // IF WE REACH HERE: The webhook triggered with an IG ID that is NOT in our database!
+    // We cannot blindly guess which creator this belongs to by picking a random user.
+    // So we just return the ID as-is. Normal execution will attempt to proceed but will cleanly fail
+    // when it tries to find settings/tokens for this unknown ID, preventing catastrophic cross-user leaks.
+    console.log(`[ID-Mapping] Unknown Webhook ID ${igUserId} - proceeding safely without mapping.`);
     return igUserId;
 }
 
