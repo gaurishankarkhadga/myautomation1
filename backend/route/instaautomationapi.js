@@ -333,6 +333,26 @@ async function scheduleAutoReply(commentData, igUserId) {
     });
 
     const timeoutId = setTimeout(async () => {
+        // ==================== RE-CHECK: Ensure automation is still enabled ====================
+        // This prevents sending replies if the user disabled automation during the delay window
+        try {
+            const currentSettings = await AutoReplySetting.findOne({ userId: igUserId });
+            if (!currentSettings || !currentSettings.enabled) {
+                console.log(`[AutoReply] ABORTED: Automation was disabled during delay for comment: ${commentData.commentId}`);
+                await AutoReplyLog.findByIdAndUpdate(logEntry._id, {
+                    status: 'failed',
+                    repliedAt: new Date(),
+                    error: 'Automation disabled during delay — reply cancelled'
+                });
+                pendingReplies.delete(commentData.commentId);
+                return;
+            }
+        } catch (recheckErr) {
+            console.error('[AutoReply] Re-check failed, aborting reply for safety:', recheckErr.message);
+            pendingReplies.delete(commentData.commentId);
+            return;
+        }
+
         const result = await replyToComment(commentData.commentId, replyMessage, tokenData.accessToken);
 
         // Update log entry in DB
@@ -360,8 +380,9 @@ async function scheduleDMAutoReply(messageData, igUserId) {
     // If standard auto-reply is disabled, check if autonomous mode is on.
     // Autonomous mode: AI auto-sells assets when a fan explicitly asks for a product,
     // even when the creator hasn't toggled "enable DM replies" on.
+    // IMPORTANT: Default to OFF for safety — autonomous should only be ON if explicitly enabled.
     const isStandardEnabled = settings && settings.enabled;
-    const isAutonomousEnabled = settings ? (settings.autonomousMode !== false) : true; // default: on
+    const isAutonomousEnabled = settings ? (settings.autonomousMode === true) : false; // SAFE: default OFF
 
     if (!isStandardEnabled && !isAutonomousEnabled) {
         console.log('[DM-AutoReply] DM auto-reply AND autonomous mode both disabled for user:', igUserId);
@@ -531,6 +552,28 @@ async function scheduleDMAutoReply(messageData, igUserId) {
     });
 
     const timeoutId = setTimeout(async () => {
+        // ==================== RE-CHECK: Ensure automation is still enabled ====================
+        // This prevents sending DM replies if the user disabled automation during the delay window
+        try {
+            const currentSettings = await DmAutoReplySetting.findOne({ userId: igUserId });
+            const stillStandardEnabled = currentSettings && currentSettings.enabled;
+            const stillAutonomousEnabled = currentSettings ? (currentSettings.autonomousMode === true) : false;
+            if (!stillStandardEnabled && !stillAutonomousEnabled) {
+                console.log(`[DM-AutoReply] ABORTED: Automation was disabled during delay for sender: ${senderId}`);
+                await DmAutoReplyLog.findByIdAndUpdate(logEntry._id, {
+                    status: 'failed',
+                    repliedAt: new Date(),
+                    error: 'Automation disabled during delay — DM reply cancelled'
+                });
+                pendingDMReplies.delete(senderId);
+                return;
+            }
+        } catch (recheckErr) {
+            console.error('[DM-AutoReply] Re-check failed, aborting DM for safety:', recheckErr.message);
+            pendingDMReplies.delete(senderId);
+            return;
+        }
+
         // ==================== MULTI-ASSET: Send text reply first ====================
         const result = await sendDirectMessage(igUserId, senderId, replyMessage, tokenData.accessToken, imagesToSend[0] || null);
 
@@ -2556,4 +2599,27 @@ router.get('/my-applications', async (req, res) => {
 
 
 
+// ==================== CANCEL ALL PENDING AUTOMATION ====================
+// Called by crossPlatform handler when "stop all automation" is triggered
+function cancelAllPendingAutomation() {
+    let cancelledComments = 0;
+    let cancelledDMs = 0;
+
+    for (const [commentId, timeoutId] of pendingReplies.entries()) {
+        clearTimeout(timeoutId);
+        cancelledComments++;
+    }
+    pendingReplies.clear();
+
+    for (const [senderId, timeoutId] of pendingDMReplies.entries()) {
+        clearTimeout(timeoutId);
+        cancelledDMs++;
+    }
+    pendingDMReplies.clear();
+
+    console.log(`[CancelAll] Cancelled ${cancelledComments} pending comment replies and ${cancelledDMs} pending DM replies.`);
+    return { cancelledComments, cancelledDMs };
+}
+
+router.cancelAllPendingAutomation = cancelAllPendingAutomation;
 module.exports = router;

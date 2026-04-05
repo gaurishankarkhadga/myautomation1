@@ -47,7 +47,7 @@ module.exports = {
             if (intent === 'disable_dm_autoreply') {
                 await DmAutoReplySetting.findOneAndUpdate(
                     { userId },
-                    { enabled: false },
+                    { enabled: false, autonomousMode: false },
                     { upsert: true }
                 );
 

@@ -145,7 +145,19 @@ function InstagramSettings() {
         }
     };
 
-    const handleDisconnect = () => {
+    const handleDisconnect = async () => {
+        // Tell the backend to stop ALL automation before clearing local state
+        try {
+            if (userId && token) {
+                await fetch(`${API_BASE_URL}/api/chat/message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, message: 'stop all automation', token })
+                });
+            }
+        } catch (e) {
+            console.error('[Disconnect] Failed to stop automation on backend:', e.message);
+        }
         setToken('');
         setUserId('');
         setProfile(null);

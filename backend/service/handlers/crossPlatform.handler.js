@@ -100,24 +100,24 @@ module.exports = {
             if (intent === 'disable_all_automation') {
                 const results = [];
 
-                // Disable Instagram comment auto-reply
+                // Disable Instagram comment auto-reply + viral tag
                 try {
                     await AutoReplySetting.updateMany(
                         {},
-                        { enabled: false }
+                        { enabled: false, viralTagEnabled: false }
                     );
-                    results.push({ platform: 'Instagram', feature: 'Comment Auto-Reply', success: true });
+                    results.push({ platform: 'Instagram', feature: 'Comment Auto-Reply + Viral Tag', success: true });
                 } catch (e) {
                     results.push({ platform: 'Instagram', feature: 'Comment Auto-Reply', success: false });
                 }
 
-                // Disable Instagram DM auto-reply
+                // Disable Instagram DM auto-reply + autonomous + story mention + inbox triage
                 try {
                     await DmAutoReplySetting.updateMany(
                         {},
-                        { enabled: false, autonomousMode: false }
+                        { enabled: false, autonomousMode: false, storyMentionEnabled: false, inboxTriageEnabled: false }
                     );
-                    results.push({ platform: 'Instagram', feature: 'DM Auto-Reply', success: true });
+                    results.push({ platform: 'Instagram', feature: 'DM Auto-Reply + Autonomous + Story Mentions', success: true });
                 } catch (e) {
                     results.push({ platform: 'Instagram', feature: 'DM Auto-Reply', success: false });
                 }
@@ -144,6 +144,18 @@ module.exports = {
                     results.push({ platform: 'Instagram', feature: 'Gamified Funnel', success: false });
                 }
 
+                // ==================== CANCEL ALL PENDING IN-MEMORY TIMEOUTS ====================
+                // Any replies that were already scheduled via setTimeout but haven't fired yet
+                try {
+                    const instaRouter = require('../../route/instaautomationapi');
+                    if (typeof instaRouter.cancelAllPendingAutomation === 'function') {
+                        const cancelled = instaRouter.cancelAllPendingAutomation();
+                        console.log(`[DisableAll] Cancelled pending: ${cancelled.cancelledComments} comments, ${cancelled.cancelledDMs} DMs`);
+                    }
+                } catch (cancelErr) {
+                    console.error('[DisableAll] Failed to cancel pending timeouts:', cancelErr.message);
+                }
+
                 const summary = results.map(r => {
                     const icon = r.success ? '✅' : '❌';
                     return `${icon} ${r.platform} — ${r.feature} OFF`;
@@ -151,7 +163,7 @@ module.exports = {
 
                 return {
                     success: true,
-                    message: `⛔ **All automation stopped!**\n\n${summary}\n\nEverything is paused. Just say "turn on everything" to re-enable.`,
+                    message: `⛔ **All automation stopped!**\n\n${summary}\n\nEverything is paused — including pending replies. Just say "turn on everything" to re-enable.`,
                     data: { results, enabled: false, automationType: 'all_automation' }
                 };
             }

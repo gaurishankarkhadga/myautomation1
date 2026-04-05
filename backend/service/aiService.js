@@ -261,7 +261,7 @@ async function generateSmartReply(userId, incomingText, contextType, senderName,
             let realExamples = '';
             if (persona.replyExamples && persona.replyExamples.length > 0) {
                 realExamples = persona.replyExamples
-                    .slice(0, 10)
+                    .slice(0, 15)
                     .map(ex => `Fan: "${ex.commentText}" → You replied: "${ex.creatorReply}"`)
                     .join("\n");
             }
@@ -277,13 +277,16 @@ async function generateSmartReply(userId, incomingText, contextType, senderName,
             prompt = `
             You ARE this Instagram creator. Not an assistant. The actual human.
 
-            === YOUR STYLE ===
+            === YOUR STYLE (STYLE LOCK — MATCH THIS EXACTLY) ===
             - ${persona.communicationStyle || 'casual'}, ${(persona.toneKeywords || []).join(', ') || 'friendly'}
-            - Emoji: ${persona.emojiUsage || 'moderate'} | Length: ~${persona.averageReplyLength || 30} chars
-            - ${persona.lowercasePreference ? 'lowercase typing' : 'normal caps'}
-            - Slang: ${(persona.slangPatterns || []).join(', ') || 'none'}
+            - Emoji: ${persona.emojiUsage || 'moderate'} (frequency: ${persona.emojiFrequency || 'moderate'}) | Length: ~${persona.averageReplyLength || 30} chars — NEVER exceed this
+            - ${persona.lowercasePreference ? 'You ALWAYS type in lowercase — never capitalize' : 'normal caps'}
+            - Slang you use: ${(persona.slangPatterns || []).join(', ') || 'none'} — USE THESE
+            ${(persona.commonPhrases || []).length > 0 ? `- Phrases you actually use: ${persona.commonPhrases.join(', ')} — USE THESE` : ''}
 
-            ${realExamples ? `=== YOUR REAL REPLIES (match this energy) ===\n${realExamples}` : `=== YOUR REAL REPLIES (match this energy) ===\n(Assume you keep things short and simple, naturally conversational)`}
+            ${realExamples ? `=== YOUR REAL REPLIES — COPY THIS EXACT VIBE ===\n${realExamples}\n^^^ THIS is how YOU actually talk. Match this energy, length, and tone EXACTLY. ^^^` : `=== YOUR REAL REPLIES (match this energy) ===\n(Assume you keep things short and simple, naturally conversational)`}
+
+            ${styleExamples ? `=== YOUR STYLE EXAMPLES ===\n${styleExamples}` : ''}
             
             ${customInstructions && customInstructions.length > 0 ? `\n=== CREATOR'S CUSTOM RULES (MUST FOLLOW — these override default behavior) ===\n${customInstructions.map((inst, i) => `${i + 1}. ${inst}`).join('\n')}\n` : ''}
 
@@ -292,11 +295,11 @@ async function generateSmartReply(userId, incomingText, contextType, senderName,
 
             HARD RULES:
             - MAX ${persona.averageReplyLength || 40} characters. This is a comment reply, NOT an essay.
-            - Match your past replies' vibe exactly
+            - Match your past replies' vibe exactly — look at YOUR REAL REPLIES above
             - React to what they ACTUALLY said — be specific
             - 1 emoji max, only if it's your style
             - NEVER sound like an AI assistant. You are a human texting a fan.
-            - NEVER say: "glad you liked it", "thanks for the love", "means a lot", "stay tuned", "appreciate", "Here's the link"
+            - NEVER say: "glad you liked it", "thanks for the love", "means a lot", "stay tuned", "appreciate", "Here's the link", "Great question", "Of course!", "I'd love to", "Don't hesitate"
             - If hateful/abusive → reply "❤️" only
             - If simple reaction ("wow", "nice") → equally short reply
 
@@ -636,19 +639,45 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
             }).join('\n');
         }
 
-        // Build persona context
+        // Build persona context WITH real reply examples (BUG 8 fix)
         let personaContext = '';
+        let realExamplesBlock = '';
+        let styleExamplesBlock = '';
+
         if (persona) {
+            // === Core personality traits ===
             personaContext = `
-            === YOUR PERSONALITY ===
+            === YOUR PERSONALITY (STYLE LOCK — MATCH THIS EXACTLY) ===
             - Style: ${persona.communicationStyle || 'casual and friendly'}
             - Tone: ${(persona.toneKeywords || []).join(', ') || 'friendly'}
             - Reply style: ${persona.replyStyle || 'casual'}
-            - Emoji: ${persona.emojiUsage || 'moderate'}
-            - ${persona.lowercasePreference ? 'You type in lowercase' : 'Normal capitalization'}
-            - Average reply length: ~${persona.averageReplyLength || 40} chars
+            - Emoji usage: ${persona.emojiUsage || 'moderate'} (frequency: ${persona.emojiFrequency || 'moderate'})
+            - ${persona.lowercasePreference ? 'You ALWAYS type in lowercase — never capitalize' : 'Normal capitalization'}
+            - Average reply length: ~${persona.averageReplyLength || 40} chars — NEVER exceed this
+            - Sentence length: ${persona.sentenceLength || 'short'}
+            ${(persona.slangPatterns || []).length > 0 ? `- Your slang patterns: ${persona.slangPatterns.join(', ')} — USE THESE` : ''}
+            ${(persona.commonPhrases || []).length > 0 ? `- Phrases you actually use: ${persona.commonPhrases.join(', ')} — USE THESE` : ''}
             `;
 
+            // === REAL reply examples from Instagram (most powerful for style matching) ===
+            if (persona.replyExamples && persona.replyExamples.length > 0) {
+                realExamplesBlock = `\n=== YOUR REAL REPLIES FROM INSTAGRAM — COPY THIS EXACT VIBE ===\n` +
+                    persona.replyExamples
+                        .slice(0, 15)
+                        .map(ex => `Fan: "${ex.commentText}" → You replied: "${ex.creatorReply}"`)
+                        .join('\n') +
+                    `\n^^^ THIS is how YOU actually talk. Match this energy, length, and tone EXACTLY. ^^^`;
+            }
+
+            // === AI-generated style examples ===
+            if (persona.sampleReplies && persona.sampleReplies.length > 0) {
+                styleExamplesBlock = `\n=== YOUR STYLE EXAMPLES ===\n` +
+                    persona.sampleReplies
+                        .map(s => `- "${s.context}" → "${s.reply}"`)
+                        .join('\n');
+            }
+
+            // === Online research / brand context ===
             if (persona.onlineResearch?.niche) {
                 personaContext += `
                 === YOUR BRAND ===
@@ -658,7 +687,6 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
                 - Audience: ${persona.onlineResearch.audienceType || 'general'}
                 `;
             } else if (persona.communicationStyle) {
-                // Strong fallback if no onlineResearch
                 personaContext += `
                 === YOUR BRAND ===
                 - Brand voice: ${persona.communicationStyle}
@@ -672,6 +700,37 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
             customContext = `\n=== CREATOR'S CUSTOM RULES (MUST FOLLOW — these override default behavior) ===\n${customInstructions.map((inst, i) => `${i + 1}. ${inst}`).join('\n')}\n`;
         }
 
+        // === ANTI-AI-SPEAK RULES (BUG 9 fix — shared across all prompt variants) ===
+        const antiAiRules = `
+            === ANTI-AI-SPEAK RULES (CRITICAL — violating these means FAILURE) ===
+            You are NOT a helpful assistant. You are a HUMAN creator texting a fan from your phone.
+
+            NEVER USE THESE WORDS/PHRASES (they instantly expose you as AI):
+            - "I'd love to help you with that"
+            - "Absolutely! Here's what I have"
+            - "Thank you for reaching out"
+            - "I'm glad you're interested"
+            - "Feel free to check out"
+            - "Here is the link you wanted"
+            - "I appreciate your support"
+            - "That means a lot"
+            - "Thanks for the love"
+            - "Stay tuned"
+            - "Don't hesitate to ask"
+            - "I'd be happy to"
+            - "Great question!"
+            - "Of course!"
+            - Any sentence starting with "I" followed by a polite verb
+
+            HOW TO SOUND HUMAN:
+            - Type like you're texting — abbreviations, slang, lowercase all OK
+            - Be SPECIFIC to what they said — generic replies = AI
+            - Keep it SHORT — ${persona?.averageReplyLength ? `under ${persona.averageReplyLength} chars` : 'under 50 chars'}
+            - Use YOUR slang patterns: ${(persona?.slangPatterns || []).join(', ') || 'haha, ikr, fr, ngl, lol, tysm'}
+            - 1 emoji max, only if it's YOUR style
+            - NO hashtags, NO exclamation spam (!!!), NO corporate tone
+        `;
+
         let prompt;
 
         if (matchedAssets.length > 0) {
@@ -679,14 +738,17 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
             You ARE this Instagram creator replying to a DM. Not an assistant. The actual human.
 
             ${personaContext}
+            ${realExamplesBlock}
+            ${styleExamplesBlock}
             ${customContext}
+            ${antiAiRules}
 
             === YOUR PRODUCTS/LINKS TO SHARE ===
             ${assetContext}
 
             === THE DM ===
             @${senderName}: "${incomingText}"
-            ${isGenericMessage ? '(Generic/casual message — naturally drop one link)' : '(They want something specific — share the relevant items directly)'}
+            ${isGenericMessage ? '(Generic/casual message — naturally drop one link after responding)' : '(They want something specific — share the relevant items directly)'}
 
             HARD RULES:
             1. MAX 1-2 short sentences. Like a text message, NOT an essay.
@@ -694,20 +756,7 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
             3. Sound like a FRIEND sharing a link, not a salesperson
             4. ${isGenericMessage ? 'Just casually mention one product after responding' : 'Share the specific product they asked for'}
             5. If multiple products match, still keep it to 2 sentences max — list URLs naturally
-
-            NEVER SAY:
-            - "I'd love to help you with that"
-            - "Absolutely! Here's what I have"
-            - "Thank you for reaching out"
-            - "I'm glad you're interested"
-            - "Feel free to check out"
-            - "Here is the link you wanted" (too robotic)
-            - Any sentence over 20 words
-
-            GOOD EXAMPLES:
-            - "ayyy thanks! btw check this out → mysite.com/course 🔥"
-            - "yoo here's the link → mysite.com/preset"
-            - "haha glad you liked it! grab it here → mysite.com 🙌"
+            6. MATCH YOUR REAL REPLY STYLE shown above — same length, same tone, same energy
 
             SAFETY: If hateful/abusive → reply with just "❤️" and NO links.
             ALWAYS follow Creator's Custom Rules above if any exist.
@@ -720,18 +769,20 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
             You ARE this Instagram creator replying to a DM. Not an assistant. The actual human.
 
             ${personaContext}
+            ${realExamplesBlock}
+            ${styleExamplesBlock}
+            ${antiAiRules}
 
             @${senderName}: "${incomingText}"
 
-            Reply in 1 sentence max. Like a text message. Match your personality.
-            NEVER say "thanks for reaching out" or "I appreciate" or generic stuff.
+            Reply in 1 sentence max. Like a text message. Match your personality and real reply examples above EXACTLY.
             SAFETY: If hateful → just "❤️". Never swear.
 
             Output ONLY your reply. Nothing else.
             `;
         }
 
-        console.log('[AI-Service] Generating smart DM reply with asset context...');
+        console.log('[AI-Service] Generating smart DM reply with asset context + real examples...');
         const result = await generateContentWithFallback(prompt);
         const reply = result.response.text().trim().replace(/^["']|["']$/g, '');
 

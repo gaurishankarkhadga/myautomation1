@@ -242,7 +242,20 @@ function ChatHub() {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     };
 
-    const handleDisconnect = () => {
+    const handleDisconnect = async () => {
+        // FIRST: Tell the backend to stop ALL automation before clearing local state
+        // Without this, webhooks continue to fire indefinitely after disconnect
+        try {
+            if (userId) {
+                await fetch(`${API_BASE_URL}/api/chat/message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, message: 'stop all automation', token })
+                });
+            }
+        } catch (e) {
+            console.error('[Disconnect] Failed to stop automation on backend:', e.message);
+        }
         ['insta_token', 'insta_user_id', 'yt_channel_id', 'yt_channel_title'].forEach(k => localStorage.removeItem(k));
         navigate('/');
     };
