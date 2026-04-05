@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 // ==================== TOKEN SCHEMA ====================
 const tokenSchema = new mongoose.Schema({
     userId: { type: String, required: true, unique: true, index: true },
+    igBusinessAccountId: { type: String, index: true }, // The ID used by webhooks
     accessToken: { type: String, required: true },
     expiresIn: { type: Number },
     createdAt: { type: Date, default: Date.now }
@@ -57,7 +58,7 @@ const autoReplyLogSchema = new mongoose.Schema({
     replyText: { type: String },
     replyId: { type: String },
     status: { type: String, enum: ['pending', 'sent', 'failed'], default: 'pending' },
-    action: { type: String, enum: ['replied', 'hidden', 'skipped', 'comment_to_dm_reply'], default: 'replied' },
+    action: { type: String, enum: ['replied', 'hidden', 'skipped'], default: 'replied' },
     error: { type: String, default: null },
     scheduledAt: { type: Date, default: Date.now },
     repliedAt: { type: Date, default: null }

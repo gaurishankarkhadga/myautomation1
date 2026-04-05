@@ -189,19 +189,53 @@ async function sendDirectMessage(igUserId, recipientIGSID, message, accessToken,
     }
 }
 
+async function sendPrivateReply(commentId, message, accessToken) {
+    try {
+        console.log('[Private-Reply] Sending Comment-to-DM for comment:', commentId);
+
+        const response = await axios.post(
+            `${INSTAGRAM_CONFIG.graphBaseUrl}/${commentId}/private_replies`,
+            {
+                message: message
+            },
+            {
+                params: {
+                    access_token: accessToken
+                },
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        console.log('[Private-Reply] Private reply sent successfully. Response:', JSON.stringify(response.data));
+        return { success: true, data: response.data };
+    } catch (error) {
+        const errorMsg = error.response?.data?.error?.message || error.message;
+        console.error('[Private-Reply] Failed to send private reply:', errorMsg);
+        console.error('[Private-Reply] Full error:', JSON.stringify(error.response?.data, null, 2));
+        return { success: false, error: errorMsg };
+    }
+}
+
+
 async function resolveUserIdMapping(igUserId) {
-    // Check if the webhook ID exactly matches our Token OAuth ID (true for 99% of prod cases)
+    // First, try matching the robust mapped webhook ID (igBusinessAccountId)
+    const tokenByBusinessId = await Token.findOne({ igBusinessAccountId: igUserId });
+    
+    if (tokenByBusinessId) {
+        console.log(`[ID-Mapping] Resolved Webhook ID ${igUserId} -> OAuth User ID ${tokenByBusinessId.userId}`);
+        return tokenByBusinessId.userId; // Return the internal creator mapping ID
+    }
+
+    // Fallback: Check if the webhook ID matches the legacy OAuth ID
     const hasOwnToken = await Token.findOne({ userId: igUserId });
 
     if (hasOwnToken) {
-        // Safe and correct: the webhook ID belongs to this exact user in our DB
+        console.log(`[ID-Mapping] Legacy fallback match for Webhook ID ${igUserId}`);
         return igUserId;
     }
 
-    // IF WE REACH HERE: The webhook triggered with an IG ID that is NOT in our database!
-    // We cannot blindly guess which creator this belongs to by picking a random user.
-    // So we just return the ID as-is. Normal execution will attempt to proceed but will cleanly fail
-    // when it tries to find settings/tokens for this unknown ID, preventing catastrophic cross-user leaks.
     console.log(`[ID-Mapping] Unknown Webhook ID ${igUserId} - proceeding safely without mapping.`);
     return igUserId;
 }
@@ -709,16 +743,37 @@ router.get('/callback', async (req, res) => {
         const expiresIn = longLivedResponse.data.expires_in;
         console.log('[OAuth] Long-lived token received (expires in', expiresIn, 'seconds)');
 
+        // Step 3: Fetch the user's Professional/Business Account ID required for webhooks
+        let igBusinessAccountId = null;
+        try {
+            console.log('[OAuth] Fetching Instagram Business Account ID for mapping...');
+            const profileRes = await axios.get(`${INSTAGRAM_CONFIG.graphBaseUrl}/me`, {
+                params: { fields: 'id,username', access_token: longLivedToken }
+            });
+            igBusinessAccountId = profileRes.data.id;
+            console.log(`[OAuth] Successfully mapped OAuth userId (${userId}) -> Webhook ID (${igBusinessAccountId})`);
+        } catch (profileErr) {
+            console.error('[OAuth] Failed to fetch igBusinessAccountId:', profileErr.message);
+            // We will still attempt to save the token even if this fails
+        }
+
         // Store token in MongoDB
         const userIdStr = String(userId);
+        
+        const tokenUpdateData = {
+            userId: userIdStr,
+            accessToken: longLivedToken,
+            expiresIn,
+            createdAt: new Date()
+        };
+        
+        if (igBusinessAccountId) {
+            tokenUpdateData.igBusinessAccountId = String(igBusinessAccountId);
+        }
+
         await Token.findOneAndUpdate(
             { userId: userIdStr },
-            {
-                userId: userIdStr,
-                accessToken: longLivedToken,
-                expiresIn,
-                createdAt: new Date()
-            },
+            tokenUpdateData,
             { upsert: true, new: true }
         );
 
@@ -1085,14 +1140,14 @@ router.post('/webhook', async (req, res) => {
                                                             if (imgAsset) imageUrl = imgAsset.imageUrl;
                                                         }
 
-                                                        const result = await sendDirectMessage(igUserIdMapped, commentData.senderId, dmMessage, tokenData.accessToken, imageUrl);
+                                                        const result = await sendPrivateReply(commentData.commentId, dmMessage, tokenData.accessToken);
                                                         console.log(`[Comment-to-DM] DM ${result.success ? '✅ sent' : '❌ failed'} to @${commentData.username}: "${dmMessage.substring(0, 50)}..."`);
 
                                                         await DmAutoReplyLog.create({
                                                             senderId: commentData.senderId,
                                                             messageText: `[Comment-to-DM] Comment: "${commentData.text}"`,
                                                             replyText: dmMessage,
-                                                            replyType: imageUrl ? 'image' : 'text',
+                                                            replyType: 'text', // private_replies primarily supports text
                                                             assetsShared: [],
                                                             status: result.success ? 'sent' : 'failed',
                                                             error: result.error || null,
