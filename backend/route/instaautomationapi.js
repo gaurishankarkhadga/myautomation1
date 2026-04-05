@@ -189,14 +189,19 @@ async function sendDirectMessage(igUserId, recipientIGSID, message, accessToken,
     }
 }
 
-async function sendPrivateReply(commentId, message, accessToken) {
+async function sendPrivateReply(igUserId, commentId, message, accessToken) {
     try {
         console.log('[Private-Reply] Sending Comment-to-DM for comment:', commentId);
 
         const response = await axios.post(
-            `${INSTAGRAM_CONFIG.graphBaseUrl}/${commentId}/private_replies`,
+            `${INSTAGRAM_CONFIG.graphBaseUrl}/${igUserId}/messages`,
             {
-                message: message
+                recipient: {
+                    comment_id: commentId
+                },
+                message: {
+                    text: message
+                }
             },
             {
                 params: {
@@ -1140,7 +1145,7 @@ router.post('/webhook', async (req, res) => {
                                                             if (imgAsset) imageUrl = imgAsset.imageUrl;
                                                         }
 
-                                                        const result = await sendPrivateReply(commentData.commentId, dmMessage, tokenData.accessToken);
+                                                        const result = await sendPrivateReply(igUserIdMapped, commentData.commentId, dmMessage, tokenData.accessToken);
                                                         console.log(`[Comment-to-DM] DM ${result.success ? '✅ sent' : '❌ failed'} to @${commentData.username}: "${dmMessage.substring(0, 50)}..."`);
 
                                                         await DmAutoReplyLog.create({
