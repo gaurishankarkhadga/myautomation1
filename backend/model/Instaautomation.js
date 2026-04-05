@@ -57,7 +57,7 @@ const autoReplyLogSchema = new mongoose.Schema({
     replyText: { type: String },
     replyId: { type: String },
     status: { type: String, enum: ['pending', 'sent', 'failed'], default: 'pending' },
-    action: { type: String, enum: ['replied', 'hidden', 'skipped'], default: 'replied' },
+    action: { type: String, enum: ['replied', 'hidden', 'skipped', 'comment_to_dm_reply'], default: 'replied' },
     error: { type: String, default: null },
     scheduledAt: { type: Date, default: Date.now },
     repliedAt: { type: Date, default: null }

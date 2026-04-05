@@ -62,7 +62,7 @@ async function gatherSocialLinks(userId) {
             let igUsername = instaToken.userId;
             try {
                 const axios = require('axios');
-                const profileRes = await axios.get(`https://graph.instagram.com/v24.0/me`, {
+                const profileRes = await axios.get(`https://graph.facebook.com/v18.0/me`, {
                     params: { fields: 'username', access_token: instaToken.accessToken }
                 });
                 if (profileRes.data?.username) igUsername = profileRes.data.username;

@@ -3,7 +3,7 @@ const Campaign = require('../model/Campaign');
 const DealApplication = require('../model/DealApplication');
 const axios = require('axios');
 
-const GRAPH_BASE = `${process.env.INSTAGRAM_GRAPH_API_BASE_URL || 'https://graph.instagram.com'}/v${process.env.INSTAGRAM_GRAPH_API_VERSION || '24.0'}`;
+const GRAPH_BASE = `${process.env.INSTAGRAM_GRAPH_API_BASE_URL || 'https://graph.facebook.com'}/v${process.env.INSTAGRAM_GRAPH_API_VERSION || '18.0'}`;
 
 
 // ==================== HELPERS ====================

@@ -3,7 +3,7 @@ const { WebhookEvent, Token } = require('../model/Instaautomation');
 const { generateContentWithFallback } = require('./geminiClient');
 
 const INSTAGRAM_CONFIG = {
-    graphBaseUrl: `${process.env.INSTAGRAM_GRAPH_API_BASE_URL || 'https://graph.instagram.com'}/v${process.env.INSTAGRAM_GRAPH_API_VERSION || '24.0'}`
+    graphBaseUrl: `${process.env.INSTAGRAM_GRAPH_API_BASE_URL || 'https://graph.facebook.com'}/v${process.env.INSTAGRAM_GRAPH_API_VERSION || '18.0'}`
 };
 
 // In-memory memory of tagged media to prevent analyzing the same viral post 100 times a minute
