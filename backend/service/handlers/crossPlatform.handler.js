@@ -103,7 +103,7 @@ module.exports = {
                 // Disable Instagram comment auto-reply + viral tag
                 try {
                     await AutoReplySetting.updateMany(
-                        {},
+                        { userId },
                         { enabled: false, viralTagEnabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'Comment Auto-Reply + Viral Tag', success: true });
@@ -114,7 +114,7 @@ module.exports = {
                 // Disable Instagram DM auto-reply + autonomous + story mention + inbox triage
                 try {
                     await DmAutoReplySetting.updateMany(
-                        {},
+                        { userId },
                         { enabled: false, autonomousMode: false, storyMentionEnabled: false, inboxTriageEnabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'DM Auto-Reply + Autonomous + Story Mentions', success: true });
@@ -125,7 +125,7 @@ module.exports = {
                 // Disable Comment to DM
                 try {
                     await CommentToDmSetting.updateMany(
-                        {},
+                        { userId },
                         { enabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'Comment to DM', success: true });
@@ -136,7 +136,7 @@ module.exports = {
                 // Disable Gamified Funnel
                 try {
                     await GamifyFunnelSetting.updateMany(
-                        {},
+                        { userId },
                         { enabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'Gamified Funnel', success: true });
