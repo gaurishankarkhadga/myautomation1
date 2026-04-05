@@ -140,7 +140,7 @@ cron.schedule('*/5 * * * *', async () => {
         // Send the comment
         const { mediaId, message } = event.payload;
         await axios.post(
-          `https://graph.facebook.com/v18.0/${mediaId}/comments`,
+          `https://graph.instagram.com/v24.0/${mediaId}/comments`,
           { message },
           {
             params: { access_token: tokenData.accessToken }

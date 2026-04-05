@@ -4,7 +4,7 @@ const axios = require('axios');
 const { generateContentWithFallback } = require('./geminiClient');
 
 // Instagram Graph API base URL
-const GRAPH_BASE = `${process.env.INSTAGRAM_GRAPH_API_BASE_URL || 'https://graph.facebook.com'}/v${process.env.INSTAGRAM_GRAPH_API_VERSION || '18.0'}`;
+const GRAPH_BASE = `${process.env.INSTAGRAM_GRAPH_API_BASE_URL || 'https://graph.instagram.com'}/v${process.env.INSTAGRAM_GRAPH_API_VERSION || '24.0'}`;
 
 
 // ==================== HELPERS ====================
@@ -527,10 +527,9 @@ async function researchCreatorOnline(userId, username) {
  *
  * @param {string} incomingText - The user's DM message
  * @param {Array} creatorAssets - Array of active CreatorAsset documents
- * @param {boolean} forceMatch - If true, treats the message as specific intent regardless of brevity
  * @returns {Promise<{matchedAssets: Array, isGenericMessage: boolean}>}
  */
-async function matchCreatorAssets(incomingText, creatorAssets, forceMatch = false) {
+async function matchCreatorAssets(incomingText, creatorAssets) {
     try {
         if (!creatorAssets || creatorAssets.length === 0) {
             return { matchedAssets: [], isGenericMessage: true };
@@ -577,18 +576,13 @@ async function matchCreatorAssets(incomingText, creatorAssets, forceMatch = fals
         `;
 
         const result = await generateContentWithFallback(prompt);
+        const responseText = result.response.text();
         const cleaned = cleanJsonString(responseText);
         const analysis = JSON.parse(cleaned);
 
         let matchedAssets = [];
-        let isGenericMessage = Boolean(analysis.isGenericMessage);
 
-        // If forceMatch is on (e.g. Comment-to-DM campaign), don't allow generic classification
-        if (forceMatch) {
-            isGenericMessage = false;
-        }
-
-        if (isGenericMessage) {
+        if (analysis.isGenericMessage) {
             // Use default assets
             matchedAssets = creatorAssets.filter(a => a.isDefault).sort((a, b) => b.priority - a.priority);
             console.log(`[AI-Service] Generic DM detected. Using ${matchedAssets.length} default assets.`);
@@ -603,7 +597,7 @@ async function matchCreatorAssets(incomingText, creatorAssets, forceMatch = fals
 
         return {
             matchedAssets,
-            isGenericMessage,
+            isGenericMessage: Boolean(analysis.isGenericMessage),
             matchReason: analysis.matchReason || ''
         };
 

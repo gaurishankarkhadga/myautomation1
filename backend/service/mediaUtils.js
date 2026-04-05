@@ -1,7 +1,7 @@
 const axios = require('axios');
 const CreatorPreference = require('../model/CreatorPreference');
 
-const GRAPH_BASE_URL = 'https://graph.facebook.com/v18.0';
+const GRAPH_BASE_URL = 'https://graph.instagram.com/v21.0';
 
 /**
  * Fetches media from Instagram and filters it based on the user's CreatorPreference (Content Target).

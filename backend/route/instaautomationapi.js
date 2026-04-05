@@ -29,7 +29,7 @@ const INSTAGRAM_CONFIG = {
     redirectUri: process.env.INSTAGRAM_REDIRECT_URI,
     frontendUrl: process.env.FRONTEND_URL,
     oauthBaseUrl: 'https://api.instagram.com/oauth',
-    graphBaseUrl: `${process.env.INSTAGRAM_GRAPH_API_BASE_URL || 'https://graph.facebook.com'}/v${process.env.INSTAGRAM_GRAPH_API_VERSION || '18.0'}`,
+    graphBaseUrl: `${process.env.INSTAGRAM_GRAPH_API_BASE_URL || 'https://graph.instagram.com'}/v${process.env.INSTAGRAM_GRAPH_API_VERSION || '24.0'}`,
     scopes: ['instagram_business_basic', 'instagram_business_manage_messages', 'instagram_business_manage_comments', 'instagram_business_content_publish']
 };
 
@@ -1061,13 +1061,8 @@ router.post('/webhook', async (req, res) => {
                                                     let dmMessage = '';
 
                                                     const creatorAssets = await CreatorAsset.find({ userId: igUserIdMapped, isActive: true }).lean();
-                                                    
-                                                    if (c2dSettings.keyword) {
-                                                        customInstructions.push(`IMPORTANT: This person just commented "${c2dSettings.keyword}" on your post. They want information/links related to this keyword (e.g. your course).`);
-                                                    }
-
                                                     if (creatorAssets.length > 0 && c2dSettings.useAssets !== false) {
-                                                        const matchResult = await aiService.matchCreatorAssets(commentData.text, creatorAssets, true);
+                                                        const matchResult = await aiService.matchCreatorAssets(commentData.text, creatorAssets);
                                                         const dmReply = await aiService.generateSmartDMReply(
                                                             igUserIdMapped,
                                                             commentData.text,

@@ -11,7 +11,7 @@ const CreatorPreference = require('../../model/CreatorPreference');
 const BrandDeal = require('../../model/BrandDeal');
 const axios = require('axios');
 
-const GRAPH_BASE_URL = 'https://graph.facebook.com/v18.0';
+const GRAPH_BASE_URL = 'https://graph.instagram.com/v22.0';
 
 // ==================== STATUS HANDLER ====================
 // Handles: show automation status, active automation dashboard with video details, logs
