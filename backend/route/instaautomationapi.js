@@ -262,6 +262,30 @@ async function resolveUserIdMapping(igUserId) {
         return soleToken.userId;
     }
 
+    // Try 4: MULTI-USER AUTO-HEAL (Validate against Graph API)
+    // If multiple tokens exist, find which token has access to this igUserId
+    console.log(`[ID-Mapping] 🔍 Attempting Graph API validation across ${allTokens.length} tokens for igUserId: ${igUserId}...`);
+    for (const tokenData of allTokens) {
+        try {
+            // Note: We use graph.instagram.com because it's already configured in INSTAGRAM_CONFIG.
+            // If the call succeeds (even if the returned ID is the scoped ID), this token belongs to the account.
+            const checkRes = await axios.get(`${INSTAGRAM_CONFIG.graphBaseUrl}/${igUserId}`, {
+                params: { fields: 'id,username', access_token: tokenData.accessToken }
+            });
+            
+            if (checkRes.data && checkRes.data.id) {
+                console.log(`[ID-Mapping] 🔧 AUTO-HEAL SUCCESS: Token ${tokenData.userId} has access to Webhook Account ${igUserId}. Mapping...`);
+                await Token.findOneAndUpdate(
+                    { userId: tokenData.userId },
+                    { igBusinessAccountId: igUserId }
+                );
+                return tokenData.userId;
+            }
+        } catch (err) {
+            // Token doesn't have access to this igUserId, ignore and try next
+        }
+    }
+
     // No mapping found at all — log a critical warning
     console.error(`[ID-Mapping] ❌ CRITICAL: Cannot map Webhook ID ${igUserId} to any user! Automation WILL NOT WORK for this webhook event.`);
     return igUserId;
@@ -774,14 +798,20 @@ router.get('/callback', async (req, res) => {
         let igBusinessAccountId = null;
         try {
             console.log('[OAuth] Fetching Instagram Business Account ID for mapping...');
+            
+            // First, try to get it directly from /me (if it's already linked or business-scoped)
             const profileRes = await axios.get(`${INSTAGRAM_CONFIG.graphBaseUrl}/me`, {
                 params: { fields: 'id,username', access_token: longLivedToken }
             });
+            
+            // Logic: The webhook ID (entry.id) is often different from the OAuth Scoped ID.
+            // We'll store both. If we find a business account ID via other means, we use it.
+            // If not, Try 4 in resolveUserIdMapping will auto-heal it on the first webhook.
             igBusinessAccountId = profileRes.data.id;
-            console.log(`[OAuth] Successfully mapped OAuth userId (${userId}) -> Webhook ID (${igBusinessAccountId})`);
+            console.log(`[OAuth] Initial mapping for userId (${userId}) -> igBusinessAccountId (${igBusinessAccountId})`);
+            
         } catch (profileErr) {
-            console.error('[OAuth] Failed to fetch igBusinessAccountId:', profileErr.message);
-            // We will still attempt to save the token even if this fails
+            console.error('[OAuth] Failed to fetch account info:', profileErr.message);
         }
 
         // Store token in MongoDB
