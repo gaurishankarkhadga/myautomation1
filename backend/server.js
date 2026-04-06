@@ -49,8 +49,27 @@ app.use((req, res, next) => {
 
 // ==================== MONGODB CONNECTION ====================
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
+  .then(async () => {
     console.log('[MongoDB] Connected successfully');
+
+    // ==================== ONE-TIME DB CLEANUP ====================
+    // Fix: autonomousMode was defaulting to true, causing DM replies even when automation was "stopped".
+    // Force ALL existing settings to autonomousMode=false so "stop all" actually works.
+    try {
+      const { DmAutoReplySetting, AutoReplySetting, CommentToDmSetting: C2DSetting } = require('./model/Instaautomation');
+      
+      const dmResult = await DmAutoReplySetting.updateMany(
+        { autonomousMode: true },
+        { autonomousMode: false }
+      );
+      if (dmResult.modifiedCount > 0) {
+        console.log(`[Startup-Fix] ⚠️ Forced autonomousMode=false on ${dmResult.modifiedCount} DM settings (was causing replies even when stopped)`);
+      }
+      
+      console.log('[Startup-Fix] ✅ Database safety check complete');
+    } catch (cleanupErr) {
+      console.error('[Startup-Fix] Cleanup error (non-fatal):', cleanupErr.message);
+    }
   })
   .catch((err) => {
     console.error('[MongoDB] Connection error:', err.message);

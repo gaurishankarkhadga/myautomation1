@@ -39,7 +39,7 @@ const dmAutoReplySettingSchema = new mongoose.Schema({
     storyMentionMessage: { type: String, default: 'Thank you so much for the mention! ❤️' },
     inboxTriageEnabled: { type: Boolean, default: false },
     // ==================== AUTONOMOUS AI AGENCY FIELDS ====================
-    autonomousMode: { type: Boolean, default: true }, // AI auto-sells assets even when standard reply is off
+    autonomousMode: { type: Boolean, default: false }, // MUST default to false — only enable when user explicitly asks
     customInstructions: [{
         instruction: { type: String, required: true },
         active: { type: Boolean, default: true },
