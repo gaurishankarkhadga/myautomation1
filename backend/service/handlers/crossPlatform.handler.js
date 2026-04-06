@@ -100,42 +100,16 @@ module.exports = {
             if (intent === 'disable_all_automation') {
                 const results = [];
 
-                // ==================== CRITICAL FIX: Find ALL possible user IDs ====================
-                // The webhook uses igBusinessAccountId, but the chat sends OAuth userId.
-                // We MUST disable settings under BOTH IDs to prevent leaks.
-                const Token = require('../../model/Instaautomation').Token;
-                const allUserIds = new Set([userId]); // Start with the chat userId
+                // ==================== CRITICAL FIX: Global WIPE ====================
+                // Because Meta assigns completely different unconnected IDs between OAuth and webhooks,
+                // and the current DB has separated tokens for them, the ONLY bulletproof way to 
+                // stop automation is to disable the setting for EVERY row in the database.
+                // This matches the behavior in the save settings route.
 
-                try {
-                    // Find token by userId to get igBusinessAccountId
-                    const token = await Token.findOne({ userId });
-                    if (token && token.igBusinessAccountId) {
-                        allUserIds.add(token.igBusinessAccountId);
-                    }
-                    // Also try reverse: maybe the userId IS the igBusinessAccountId
-                    const tokenReverse = await Token.findOne({ igBusinessAccountId: userId });
-                    if (tokenReverse) {
-                        allUserIds.add(tokenReverse.userId);
-                    }
-                    // Fallback: if only one token exists, add all its IDs
-                    const allTokens = await Token.find({}).lean();
-                    if (allTokens.length === 1) {
-                        allUserIds.add(allTokens[0].userId);
-                        if (allTokens[0].igBusinessAccountId) {
-                            allUserIds.add(allTokens[0].igBusinessAccountId);
-                        }
-                    }
-                } catch (tokenErr) {
-                    console.error('[DisableAll] Token lookup error:', tokenErr.message);
-                }
-
-                const userIdArray = Array.from(allUserIds);
-                console.log(`[DisableAll] Will disable settings for ALL user IDs: ${userIdArray.join(', ')}`);
-
-                // Disable Instagram comment auto-reply + viral tag for ALL IDs
+                // Disable Instagram comment auto-reply + viral tag for ALL rows
                 try {
                     await AutoReplySetting.updateMany(
-                        { userId: { $in: userIdArray } },
+                        {}, // Empty filter = update EVERY row
                         { enabled: false, viralTagEnabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'Comment Auto-Reply + Viral Tag', success: true });
@@ -143,10 +117,10 @@ module.exports = {
                     results.push({ platform: 'Instagram', feature: 'Comment Auto-Reply', success: false });
                 }
 
-                // Disable Instagram DM auto-reply + autonomous + story mention + inbox triage for ALL IDs
+                // Disable Instagram DM auto-reply + autonomous + story mention + inbox triage for ALL rows
                 try {
                     await DmAutoReplySetting.updateMany(
-                        { userId: { $in: userIdArray } },
+                        {}, // Empty filter = update EVERY row
                         { enabled: false, autonomousMode: false, storyMentionEnabled: false, inboxTriageEnabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'DM Auto-Reply + Autonomous + Story Mentions', success: true });
@@ -154,10 +128,10 @@ module.exports = {
                     results.push({ platform: 'Instagram', feature: 'DM Auto-Reply', success: false });
                 }
 
-                // Disable Comment to DM for ALL IDs
+                // Disable Comment to DM for ALL rows
                 try {
                     await CommentToDmSetting.updateMany(
-                        { userId: { $in: userIdArray } },
+                        {}, // Empty filter = update EVERY row
                         { enabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'Comment to DM', success: true });
@@ -165,10 +139,10 @@ module.exports = {
                     results.push({ platform: 'Instagram', feature: 'Comment to DM', success: false });
                 }
 
-                // Disable Gamified Funnel for ALL IDs
+                // Disable Gamified Funnel for ALL rows
                 try {
                     await GamifyFunnelSetting.updateMany(
-                        { userId: { $in: userIdArray } },
+                        {}, // Empty filter = update EVERY row
                         { enabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'Gamified Funnel', success: true });
