@@ -100,10 +100,42 @@ module.exports = {
             if (intent === 'disable_all_automation') {
                 const results = [];
 
-                // Disable Instagram comment auto-reply + viral tag
+                // ==================== CRITICAL FIX: Find ALL possible user IDs ====================
+                // The webhook uses igBusinessAccountId, but the chat sends OAuth userId.
+                // We MUST disable settings under BOTH IDs to prevent leaks.
+                const Token = require('../../model/Instaautomation').Token;
+                const allUserIds = new Set([userId]); // Start with the chat userId
+
+                try {
+                    // Find token by userId to get igBusinessAccountId
+                    const token = await Token.findOne({ userId });
+                    if (token && token.igBusinessAccountId) {
+                        allUserIds.add(token.igBusinessAccountId);
+                    }
+                    // Also try reverse: maybe the userId IS the igBusinessAccountId
+                    const tokenReverse = await Token.findOne({ igBusinessAccountId: userId });
+                    if (tokenReverse) {
+                        allUserIds.add(tokenReverse.userId);
+                    }
+                    // Fallback: if only one token exists, add all its IDs
+                    const allTokens = await Token.find({}).lean();
+                    if (allTokens.length === 1) {
+                        allUserIds.add(allTokens[0].userId);
+                        if (allTokens[0].igBusinessAccountId) {
+                            allUserIds.add(allTokens[0].igBusinessAccountId);
+                        }
+                    }
+                } catch (tokenErr) {
+                    console.error('[DisableAll] Token lookup error:', tokenErr.message);
+                }
+
+                const userIdArray = Array.from(allUserIds);
+                console.log(`[DisableAll] Will disable settings for ALL user IDs: ${userIdArray.join(', ')}`);
+
+                // Disable Instagram comment auto-reply + viral tag for ALL IDs
                 try {
                     await AutoReplySetting.updateMany(
-                        { userId },
+                        { userId: { $in: userIdArray } },
                         { enabled: false, viralTagEnabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'Comment Auto-Reply + Viral Tag', success: true });
@@ -111,10 +143,10 @@ module.exports = {
                     results.push({ platform: 'Instagram', feature: 'Comment Auto-Reply', success: false });
                 }
 
-                // Disable Instagram DM auto-reply + autonomous + story mention + inbox triage
+                // Disable Instagram DM auto-reply + autonomous + story mention + inbox triage for ALL IDs
                 try {
                     await DmAutoReplySetting.updateMany(
-                        { userId },
+                        { userId: { $in: userIdArray } },
                         { enabled: false, autonomousMode: false, storyMentionEnabled: false, inboxTriageEnabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'DM Auto-Reply + Autonomous + Story Mentions', success: true });
@@ -122,10 +154,10 @@ module.exports = {
                     results.push({ platform: 'Instagram', feature: 'DM Auto-Reply', success: false });
                 }
 
-                // Disable Comment to DM
+                // Disable Comment to DM for ALL IDs
                 try {
                     await CommentToDmSetting.updateMany(
-                        { userId },
+                        { userId: { $in: userIdArray } },
                         { enabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'Comment to DM', success: true });
@@ -133,10 +165,10 @@ module.exports = {
                     results.push({ platform: 'Instagram', feature: 'Comment to DM', success: false });
                 }
 
-                // Disable Gamified Funnel
+                // Disable Gamified Funnel for ALL IDs
                 try {
                     await GamifyFunnelSetting.updateMany(
-                        { userId },
+                        { userId: { $in: userIdArray } },
                         { enabled: false }
                     );
                     results.push({ platform: 'Instagram', feature: 'Gamified Funnel', success: true });
@@ -145,12 +177,11 @@ module.exports = {
                 }
 
                 // ==================== CANCEL ALL PENDING IN-MEMORY TIMEOUTS ====================
-                // Any replies that were already scheduled via setTimeout but haven't fired yet
                 try {
                     const instaRouter = require('../../route/instaautomationapi');
                     if (typeof instaRouter.cancelAllPendingAutomation === 'function') {
                         const cancelled = instaRouter.cancelAllPendingAutomation();
-                        console.log(`[DisableAll] Cancelled pending: ${cancelled.cancelledComments} comments, ${cancelled.cancelledDMs} DMs`);
+                        console.log(`[DisableAll] Cancelled pending: ${cancelled.cancelledComments} comments, ${cancelled.cancelledDMs} DMs, ${cancelled.cancelledC2D || 0} C2D`);
                     }
                 } catch (cancelErr) {
                     console.error('[DisableAll] Failed to cancel pending timeouts:', cancelErr.message);

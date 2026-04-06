@@ -39,6 +39,7 @@ const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN;
 // In-memory pending reply trackers (timeouts can't be stored in DB)
 const pendingReplies = new Map();
 const pendingDMReplies = new Map();
+const pendingC2DReplies = new Map(); // Track Comment-to-DM timeouts for cancellation
 
 // ==================== HELPER FUNCTIONS ====================
 
@@ -225,23 +226,44 @@ async function sendPrivateReply(igUserId, commentId, message, accessToken) {
 
 
 async function resolveUserIdMapping(igUserId) {
-    // First, try matching the robust mapped webhook ID (igBusinessAccountId)
+    // STRATEGY: Try 3 lookups to ALWAYS find the correct OAuth userId.
+    // If we find a mapping, cache it (auto-heal) so it never fails again.
+
+    // Try 1: Match by igBusinessAccountId (the webhook sends this)
     const tokenByBusinessId = await Token.findOne({ igBusinessAccountId: igUserId });
-    
     if (tokenByBusinessId) {
-        console.log(`[ID-Mapping] Resolved Webhook ID ${igUserId} -> OAuth User ID ${tokenByBusinessId.userId}`);
-        return tokenByBusinessId.userId; // Return the internal creator mapping ID
+        console.log(`[ID-Mapping] ✅ Resolved Webhook ID ${igUserId} -> OAuth User ID ${tokenByBusinessId.userId}`);
+        return tokenByBusinessId.userId;
     }
 
-    // Fallback: Check if the webhook ID matches the legacy OAuth ID
-    const hasOwnToken = await Token.findOne({ userId: igUserId });
-
-    if (hasOwnToken) {
-        console.log(`[ID-Mapping] Legacy fallback match for Webhook ID ${igUserId}`);
+    // Try 2: Maybe the webhook ID IS the OAuth userId (some accounts have same ID)
+    const tokenByUserId = await Token.findOne({ userId: igUserId });
+    if (tokenByUserId) {
+        // Auto-heal: save this as igBusinessAccountId too so Try 1 works next time
+        if (!tokenByUserId.igBusinessAccountId) {
+            await Token.findOneAndUpdate({ userId: igUserId }, { igBusinessAccountId: igUserId });
+            console.log(`[ID-Mapping] 🔧 Auto-healed: saved igBusinessAccountId=${igUserId} for userId=${igUserId}`);
+        }
+        console.log(`[ID-Mapping] ✅ Direct match for Webhook ID ${igUserId}`);
         return igUserId;
     }
 
-    console.log(`[ID-Mapping] Unknown Webhook ID ${igUserId} - proceeding safely without mapping.`);
+    // Try 3: FALLBACK — Single-user auto-heal.
+    // If there's only ONE token in the entire DB, the webhook MUST belong to that user.
+    // Save the mapping so this never happens again.
+    const allTokens = await Token.find({}).lean();
+    if (allTokens.length === 1) {
+        const soleToken = allTokens[0];
+        console.log(`[ID-Mapping] 🔧 AUTO-HEAL: Only one user exists. Mapping Webhook ID ${igUserId} -> userId ${soleToken.userId}`);
+        await Token.findOneAndUpdate(
+            { userId: soleToken.userId },
+            { igBusinessAccountId: igUserId }
+        );
+        return soleToken.userId;
+    }
+
+    // No mapping found at all — log a critical warning
+    console.error(`[ID-Mapping] ❌ CRITICAL: Cannot map Webhook ID ${igUserId} to any user! Automation WILL NOT WORK for this webhook event.`);
     return igUserId;
 }
 
@@ -987,6 +1009,36 @@ router.post('/webhook', async (req, res) => {
             for (const entry of body.entry) {
                 const igUserId = String(entry.id);
 
+                // ==================== MASTER KILL SWITCH ====================
+                // Before processing ANY event, check if ALL automation is disabled.
+                // This is the absolute safety net — if the user said "stop all", NOTHING fires.
+                try {
+                    const mappedUserId = await resolveUserIdMapping(igUserId);
+                    const [autoReplyCheck, dmAutoReplyCheck, c2dCheck] = await Promise.all([
+                        AutoReplySetting.findOne({ userId: mappedUserId }).lean(),
+                        DmAutoReplySetting.findOne({ userId: mappedUserId }).lean(),
+                        CommentToDmSetting.findOne({ userId: mappedUserId }).lean()
+                    ]);
+
+                    const anyCommentEnabled = autoReplyCheck?.enabled || false;
+                    const anyDmEnabled = dmAutoReplyCheck?.enabled || dmAutoReplyCheck?.autonomousMode || false;
+                    const anyC2dEnabled = c2dCheck?.enabled || false;
+                    const anyViralTag = autoReplyCheck?.viralTagEnabled || false;
+                    const anyStoryMention = dmAutoReplyCheck?.storyMentionEnabled || false;
+
+                    const anythingEnabled = anyCommentEnabled || anyDmEnabled || anyC2dEnabled || anyViralTag || anyStoryMention;
+
+                    if (!anythingEnabled) {
+                        console.log(`[Webhook] ⛔ MASTER KILL SWITCH: ALL automation is disabled for user ${mappedUserId}. Skipping entire webhook entry.`);
+                        continue; // Skip this entry entirely
+                    }
+
+                    console.log(`[Webhook] ✅ Automation active for ${mappedUserId}: comments=${anyCommentEnabled}, DMs=${anyDmEnabled}, C2D=${anyC2dEnabled}, viral=${anyViralTag}, story=${anyStoryMention}`);
+                } catch (killSwitchErr) {
+                    console.error('[Webhook] Kill switch check failed (proceeding with caution):', killSwitchErr.message);
+                    // On error, we proceed but individual handlers will also check
+                }
+
                 // ---- Handle Comment Events (changes array) ----
                 const changes = entry.changes || [];
                 for (const change of changes) {
@@ -1084,8 +1136,16 @@ router.post('/webhook', async (req, res) => {
                                             const commentReplyText = c2dSettings.commentReply || 'sent! check your DM 🔥';
                                             const commentDelay = Math.floor(Math.random() * (8 - 3 + 1)) + 3; // 3-8s
 
-                                            setTimeout(async () => {
+                                            const c2dCommentTimeoutId = setTimeout(async () => {
                                                 try {
+                                                    // RE-CHECK: Is Comment-to-DM still enabled?
+                                                    const currentC2d = await CommentToDmSetting.findOne({ userId: igUserIdMapped });
+                                                    if (!currentC2d || !currentC2d.enabled) {
+                                                        console.log(`[Comment-to-DM] ⛔ ABORTED comment reply: automation was disabled during delay for comment ${commentData.commentId}`);
+                                                        pendingC2DReplies.delete(`comment_${commentData.commentId}`);
+                                                        return;
+                                                    }
+
                                                     const replyResult = await replyToComment(commentData.commentId, commentReplyText, tokenData.accessToken);
                                                     console.log(`[Comment-to-DM] Comment reply ${replyResult.success ? 'sent' : 'failed'}: "${commentReplyText}"`);
 
@@ -1103,18 +1163,29 @@ router.post('/webhook', async (req, res) => {
                                                     });
                                                 } catch (replyErr) {
                                                     console.error('[Comment-to-DM] Comment reply error:', replyErr.message);
+                                                } finally {
+                                                    pendingC2DReplies.delete(`comment_${commentData.commentId}`);
                                                 }
                                             }, commentDelay * 1000);
+
+                                            // Track for cancellation
+                                            pendingC2DReplies.set(`comment_${commentData.commentId}`, c2dCommentTimeoutId);
 
                                             // ── STEP 2: Send DM to the commenter ──
                                             const dmDelay = commentDelay + Math.floor(Math.random() * (5 - 2 + 1)) + 2;
 
-                                            setTimeout(async () => {
+                                            const c2dDmTimeoutId = setTimeout(async () => {
                                                 try {
+                                                    // RE-CHECK: Is Comment-to-DM still enabled?
+                                                    const currentC2d = await CommentToDmSetting.findOne({ userId: igUserIdMapped });
+                                                    if (!currentC2d || !currentC2d.enabled) {
+                                                        console.log(`[Comment-to-DM] ⛔ ABORTED DM send: automation was disabled during delay for comment ${commentData.commentId}`);
+                                                        pendingC2DReplies.delete(`dm_${commentData.commentId}`);
+                                                        return;
+                                                    }
+
                                                     let customInstructions = [];
                                                     if (c2dSettings.dmMessage && c2dSettings.dmMessage.trim()) {
-                                                        // Pass the creator's exact prompt as a strict AI instruction rather than completely bypassing AI.
-                                                        // This forces Gemini to rewrite their custom string in their authentic tone!
                                                         customInstructions.push(`THE CREATOR WROTE THIS EXACT MESSAGE: "${c2dSettings.dmMessage}". You MUST deliver this exact intent/message, but rewrite it so it sounds perfectly natural in your analyzed persona voice.`);
                                                     }
 
@@ -1133,18 +1204,10 @@ router.post('/webhook', async (req, res) => {
                                                         );
                                                         dmMessage = dmReply.text;
                                                     } else {
-                                                        // If no assets, fallback to standard smart reply with injected context
                                                         dmMessage = await aiService.generateSmartReply(igUserIdMapped, commentData.text, 'dm', commentData.username, customInstructions);
                                                     }
 
                                                     if (dmMessage && dmMessage.trim()) {
-                                                        let imageUrl = null;
-                                                        if (c2dSettings.useAssets !== false) {
-                                                            const assets = await CreatorAsset.find({ userId: igUserIdMapped, isActive: true }).lean();
-                                                            const imgAsset = assets.find(a => a.imageUrl);
-                                                            if (imgAsset) imageUrl = imgAsset.imageUrl;
-                                                        }
-
                                                         const result = await sendPrivateReply(igUserIdMapped, commentData.commentId, dmMessage, tokenData.accessToken);
                                                         console.log(`[Comment-to-DM] DM ${result.success ? '✅ sent' : '❌ failed'} to @${commentData.username}: "${dmMessage.substring(0, 50)}..."`);
 
@@ -1152,7 +1215,7 @@ router.post('/webhook', async (req, res) => {
                                                             senderId: commentData.senderId,
                                                             messageText: `[Comment-to-DM] Comment: "${commentData.text}"`,
                                                             replyText: dmMessage,
-                                                            replyType: 'text', // private_replies primarily supports text
+                                                            replyType: 'text',
                                                             assetsShared: [],
                                                             status: result.success ? 'sent' : 'failed',
                                                             error: result.error || null,
@@ -1162,8 +1225,13 @@ router.post('/webhook', async (req, res) => {
                                                     }
                                                 } catch (dmErr) {
                                                     console.error('[Comment-to-DM] DM send error:', dmErr.message);
+                                                } finally {
+                                                    pendingC2DReplies.delete(`dm_${commentData.commentId}`);
                                                 }
                                             }, dmDelay * 1000);
+
+                                            // Track for cancellation
+                                            pendingC2DReplies.set(`dm_${commentData.commentId}`, c2dDmTimeoutId);
                                         }
                                     } else {
                                         console.log(`[Comment-to-DM] Skipped — keyword "${keyword}" not found in comment.`);
@@ -2664,6 +2732,7 @@ router.get('/my-applications', async (req, res) => {
 function cancelAllPendingAutomation() {
     let cancelledComments = 0;
     let cancelledDMs = 0;
+    let cancelledC2D = 0;
 
     for (const [commentId, timeoutId] of pendingReplies.entries()) {
         clearTimeout(timeoutId);
@@ -2677,8 +2746,15 @@ function cancelAllPendingAutomation() {
     }
     pendingDMReplies.clear();
 
-    console.log(`[CancelAll] Cancelled ${cancelledComments} pending comment replies and ${cancelledDMs} pending DM replies.`);
-    return { cancelledComments, cancelledDMs };
+    // Cancel Comment-to-DM pending timeouts (previously missed!)
+    for (const [key, timeoutId] of pendingC2DReplies.entries()) {
+        clearTimeout(timeoutId);
+        cancelledC2D++;
+    }
+    pendingC2DReplies.clear();
+
+    console.log(`[CancelAll] Cancelled ${cancelledComments} comment replies, ${cancelledDMs} DM replies, ${cancelledC2D} Comment-to-DM replies.`);
+    return { cancelledComments, cancelledDMs, cancelledC2D };
 }
 
 router.cancelAllPendingAutomation = cancelAllPendingAutomation;
