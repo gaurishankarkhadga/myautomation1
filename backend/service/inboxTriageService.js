@@ -45,7 +45,7 @@ async function triageMessage(messageText) {
 /**
  * Generates brand analysis, suggested rate card, and a drafted reply for Collaboration DMs
  */
-async function generateNegotiationDraft(messageText, followersCount, engagementRate = '3%', creatorPersona = null) {
+async function generateNegotiationDraft(messageText, followersCount, engagementRate = '3%', creatorPersona = null, customInstructions = null) {
     if (!messageText || !process.env.GEMINI_API_KEY) return null;
 
     try {
@@ -63,17 +63,27 @@ The creator's communication style:
 WRITE THE DRAFT IN THIS EXACT STYLE — not formal, not corporate.`;
         }
 
+        let customOverrideBlock = '';
+        if (customInstructions) {
+            customOverrideBlock = `
+🔥🔥🔥 CRITICAL OVERRIDE INSTRUCTIONS FROM CREATOR 🔥🔥🔥
+Follow these exact instructions when generating the rate and the draft reply:
+"${customInstructions}"
+`;
+        }
+
         const prompt = `
 A brand just DM'd this creator on Instagram:
 "${messageText}"
 
 Creator stats: ${followersCount} followers, ${engagementRate} engagement.
 ${personaStyle}
+${customOverrideBlock}
 
 Do 3 things:
 1. Extract brand name (guess if unclear)
-2. Calculate a suggested rate ($10 per 1K followers baseline, Reels = 1.5x, Stories = 0.5x)
-3. Draft a SHORT reply (2-3 sentences max) that sounds like the creator casually replying to a DM — NOT a corporate email. Be warm but set clear expectations.
+2. Calculate a suggested rate ($10 per 1K followers baseline, Reels = 1.5x, Stories = 0.5x). Make sure to apply any custom rate overrides provided above.
+3. Draft a SHORT reply (2-3 sentences max) that sounds like the creator casually replying to a DM — NOT a corporate email. Be warm but set clear expectations. Follow custom instructions strictly.
 
 BAD example (too formal): "Thank you for reaching out! We would love to discuss this opportunity further. Please share your budget and I'll provide our rate card."
 GOOD example (natural): "hey! thanks for reaching out 🙌 love your brand. my typical rate for a reel is around $X — wanna chat about what works for both of us?"

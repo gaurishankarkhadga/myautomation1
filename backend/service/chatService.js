@@ -91,6 +91,9 @@ CRITICAL RULES:
 
 AVAILABLE INTENTS:
 ${intentList}
+- deal_action_bulk (handles approval, rejection, or edit dispatch for 1 or multiple brand deals — params: {actions: [{brandName: "Nike", action: "approve", draftOverride: "Custom text?"}]})
+- regenerate_deal_draft (asks the AI to rewrite a draft — params: {brandName: "Nike", instructions: "ask for $1000"})
+- set_deal_rate_rule (overrides global rates — params: {brandIndustry: "sports", minRate: 1000})
 - enable_comment_to_dm (send DM to commenters — params: {keyword?, commentReply?, dmMessage?, useAssets?, targetMedia?, hours?, maxComments?})
 - disable_comment_to_dm (stop comment-to-DM)
 - configure_comment_to_dm (update comment-to-DM settings)
@@ -177,6 +180,16 @@ User: "comment pe dm bhejo 30 ghante ke liye latest reel pe course link ke saath
 User: "when someone comments send DM with my course link and reply sent stop after 2 hours" → [{"intent": "enable_comment_to_dm", "params": {"hours": 2, "commentReply": "sent! 🔥", "useAssets": true}, "confidence": 0.95}]
 User: "auto dm for keyword interested for 48 hours on recent post" → [{"intent": "enable_comment_to_dm", "params": {"keyword": "interested", "hours": 48, "targetMedia": "recent"}, "confidence": 0.95}]
 User: "dm 200 commenters then automatically stop" → [{"intent": "enable_comment_to_dm", "params": {"maxComments": 200}, "confidence": 0.95}]
+DEAL NEGOTIATION EXAMPLES (startup-grade multi-deal CRM operations):
+User: "Approve the Nike deal" → [{"intent": "deal_action_bulk", "params": {"actions": [{"brandName": "Nike", "action": "approve"}]}, "confidence": 0.95}]
+User: "Reject the Sephora deal" → [{"intent": "deal_action_bulk", "params": {"actions": [{"brandName": "Sephora", "action": "reject"}]}, "confidence": 0.95}]
+User: "Approve all deals above 500 dollars but reject the rest" → [{"intent": "deal_action_bulk", "params": {"actions": [{"brandName": "all", "action": "conditional_approve", "condition": ">500"}]}, "confidence": 0.9}]
+User: "Change the Adidas draft to ask for 2000" → [{"intent": "regenerate_deal_draft", "params": {"brandName": "Adidas", "instructions": "Ask for $2000"}, "confidence": 0.95}]
+User: "Offer a Reel instead of a Story" → [{"intent": "regenerate_deal_draft", "params": {"brandName": "recent", "instructions": "Change deliverables to 1 Reel instead of Story"}, "confidence": 0.9}]
+User: "Approve Nike but tell Adidas to double their budget, and reject Puma" → [{"intent": "deal_action_bulk", "params": {"actions": [{"brandName": "Nike", "action": "approve"}, {"brandName": "Puma", "action": "reject"}]}, "confidence": 0.95}, {"intent": "regenerate_deal_draft", "params": {"brandName": "Adidas", "instructions": "Tell them to double their budget"}, "confidence": 0.95}]
+User: "Set latest draft to use my media kit" → [{"intent": "regenerate_deal_draft", "params": {"brandName": "recent", "instructions": "Attach media kit link"}, "confidence": 0.9}]
+User: "Set a global rule: never accept sports deals for under $1000" → [{"intent": "set_deal_rate_rule", "params": {"brandIndustry": "sports", "minRate": 1000}, "confidence": 0.95}]
+User: "Generate a contract summary for the Nike deal" → [{"intent": "generate_contract_summary", "params": {"brandName": "Nike"}, "confidence": 0.95}]
 
 MORNING BRIEFING EXAMPLES:
 User: "good morning" → [{"intent": "get_morning_briefing", "params": {}, "confidence": 0.8}]

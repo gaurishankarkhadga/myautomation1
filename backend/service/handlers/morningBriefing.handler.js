@@ -38,9 +38,15 @@ module.exports = {
                 triageCounts[tag] = (triageCounts[tag] || 0) + 1;
             });
 
-            // Pending deals
+            // Pending Deals (Needs Approval)
             const pendingDeals = conversations.filter(c =>
                 c.negotiationData && c.negotiationData.status === 'drafted'
+            );
+
+            // Ghosted Deals (Follow up needed - 48h passed)
+            const now = new Date();
+            const ghostedDeals = conversations.filter(c =>
+                c.negotiationData && c.negotiationData.status === 'negotiating' && c.negotiationData.followUpDate && new Date(c.negotiationData.followUpDate) <= now
             );
 
             // Custom instructions count
@@ -58,6 +64,7 @@ module.exports = {
                 totalConversations,
                 triageCounts,
                 pendingDeals: pendingDeals.length,
+                ghostedDeals: ghostedDeals.length,
                 assetsShared,
                 customRulesCount
             };
@@ -72,6 +79,7 @@ Rules:
 - Use emojis naturally (max 3-4 total)
 - Lead with the most impactful stat
 - If there are pending brand deals, mention them as exciting news
+- If there are ghosted deals (brands that haven't replied in 48h), tell the creator to "follow up with them".
 - If activity is low/zero, be encouraging ("Quiet day — perfect time to drop new content!")
 - Keep it under 4 sentences
 - NEVER list raw numbers like a report — weave them into natural sentences

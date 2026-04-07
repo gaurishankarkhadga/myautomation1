@@ -114,7 +114,19 @@ const conversationSchema = new mongoose.Schema({
         brandName: { type: String },
         suggestedRate: { type: String },
         draftReply: { type: String },
-        status: { type: String, enum: ['pending', 'drafted'], default: 'pending' }
+        status: { type: String, enum: ['pending', 'drafted', 'negotiating', 'contract_prep', 'won', 'lost', 'rejected', 'approved_and_sent'], default: 'pending' },
+        followUpDate: { type: Date },
+        competitorTags: { type: [String], default: [] },
+        metrics: {
+            requestedDeliverables: { type: String },
+            approvedDeliverables: { type: String },
+            finalRate: { type: String }
+        },
+        history: [{
+            action: { type: String },
+            text: { type: String },
+            timestamp: { type: Date, default: Date.now }
+        }]
     }
 });
 

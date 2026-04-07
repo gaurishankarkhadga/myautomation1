@@ -577,34 +577,72 @@ function ChatHub() {
                                     />
                                 )}
 
-                                {/* ====== DEAL ALERT CARD ====== */}
+                                {/* ====== DEAL ALERT CARD (CRM HUB) ====== */}
                                 {msg.actions?.some(a => a.intent === 'get_morning_briefing' && a.data?.hasPendingDeals) && (
                                     <div className="deal-alert-card">
                                         <div className="deal-alert-header">
                                             <DollarSign size={16} />
-                                            <span>Brand Deal Alerts</span>
+                                            <span>Brand Deal CRM — Pending Approvals</span>
                                         </div>
-                                        {msg.actions.find(a => a.intent === 'get_morning_briefing').data.dealAlerts.map((deal, di) => (
-                                            <div key={di} className="deal-alert-item">
-                                                <div className="deal-brand">
-                                                    <Handshake size={14} />
-                                                    <strong>{deal.brandName}</strong>
-                                                </div>
-                                                <div className="deal-rate">
-                                                    <span>Suggested Rate:</span>
-                                                    <span className="deal-amount">{deal.suggestedRate}</span>
-                                                </div>
-                                                <div className="deal-draft">
-                                                    <p>{deal.draftReply?.substring(0, 120)}...</p>
-                                                </div>
-                                                <button
-                                                    className="deal-approve-btn"
-                                                    onClick={() => sendMessage(`Approve the deal draft for ${deal.brandName}`)}
-                                                >
-                                                    <CheckCircle size={13} /> Approve Draft
-                                                </button>
-                                            </div>
-                                        ))}
+                                        {msg.actions.find(a => a.intent === 'get_morning_briefing').data.dealAlerts.map((deal, di) => {
+                                            const taId = `deal-ta-${di}-${deal.brandName.replace(/\s+/g, '')}`;
+                                            return (
+                                              <div key={di} className="deal-alert-item" style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', marginBottom: '16px', background: 'var(--bg-secondary)' }}>
+                                                  <div className="deal-brand" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                          <Handshake size={16} className="text-blue-500" />
+                                                          <strong style={{ fontSize: '1.1rem' }}>{deal.brandName}</strong>
+                                                      </div>
+                                                      <span className="deal-amount" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary-color)', padding: '4px 10px', borderRadius: '20px', fontWeight: 'bold' }}>
+                                                          {deal.suggestedRate}
+                                                      </span>
+                                                  </div>
+                                                  
+                                                  <div className="deal-draft" style={{ marginBottom: '12px' }}>
+                                                      <label style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '4px', display: 'block', fontWeight: '600' }}>EDIT DRAFT BEFORE SENDING:</label>
+                                                      <textarea 
+                                                          id={taId}
+                                                          defaultValue={deal.draftReply}
+                                                          style={{ width: '100%', minHeight: '80px', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.9rem', resize: 'vertical' }}
+                                                      />
+                                                  </div>
+
+                                                  <div className="deal-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                      <button
+                                                          className="deal-approve-btn"
+                                                          style={{ flex: 1, padding: '8px', background: 'var(--primary-color)', color: 'white', borderRadius: '6px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', border: 'none', cursor: 'pointer' }}
+                                                          onClick={() => {
+                                                              const overrideText = document.getElementById(taId).value;
+                                                              sendMessage(`Action: Approve the deal for brand [${deal.brandName}]. Here is the exact draft override to send: "${overrideText}"`);
+                                                          }}
+                                                      >
+                                                          <Send size={15} /> Approve & Send
+                                                      </button>
+                                                      
+                                                      <button
+                                                          style={{ flex: 1, padding: '8px', background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', borderRadius: '6px', fontWeight: '600', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', border: '1px solid var(--border-color)', cursor: 'pointer' }}
+                                                          onClick={() => {
+                                                              const instr = prompt("How should the AI regenerate this draft? (e.g. 'Ask for $2000' or 'Offer a Reel only')");
+                                                              if(instr) sendMessage(`Regenerate the draft for ${deal.brandName}: ${instr}`);
+                                                          }}
+                                                      >
+                                                          <RotateCcw size={15} /> AI Rewrite
+                                                      </button>
+
+                                                      <button
+                                                          style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '6px', fontWeight: '600', border: 'none', cursor: 'pointer' }}
+                                                          onClick={() => {
+                                                              if(window.confirm(`Are you sure you want to reject the deal from ${deal.brandName}?`)) {
+                                                                  sendMessage(`Reject the deal from ${deal.brandName}`);
+                                                              }
+                                                          }}
+                                                      >
+                                                          <X size={15} /> Reject
+                                                      </button>
+                                                  </div>
+                                              </div>
+                                            )
+                                        })}
                                     </div>
                                 )}
 
