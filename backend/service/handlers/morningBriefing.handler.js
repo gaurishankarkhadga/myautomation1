@@ -110,22 +110,15 @@ Output ONLY the briefing text. No labels, no markdown headers.`;
                 await settings.save();
             }
 
-            // Build deal alerts for frontend
-            const dealAlerts = pendingDeals.map(d => ({
-                brandName: d.negotiationData.brandName,
-                suggestedRate: d.negotiationData.suggestedRate,
-                draftReply: d.negotiationData.draftReply,
-                conversationId: d.conversationId
-            }));
-
+            // Build deal alerts purely as a count now (UI handles display)
             return {
                 success: true,
                 message: briefingText,
                 data: {
                     automationType: 'morning_briefing',
                     stats: dataSummary,
-                    dealAlerts,
-                    hasPendingDeals: dealAlerts.length > 0
+                    hasPendingDeals: pendingDeals.length > 0,
+                    pendingCount: pendingDeals.length
                 }
             };
         } catch (error) {
@@ -133,7 +126,7 @@ Output ONLY the briefing text. No labels, no markdown headers.`;
             return {
                 success: true,
                 message: 'Good morning! I had a small hiccup pulling your stats, but I\'m online and ready to work. What do you need today? 🚀',
-                data: { automationType: 'morning_briefing', stats: {}, dealAlerts: [] }
+                data: { automationType: 'morning_briefing', stats: {} }
             };
         }
     }

@@ -33,6 +33,8 @@ function ChatHub() {
     const [messages, setMessages] = useState([]);
     const [historyMessages, setHistoryMessages] = useState([]);
     const [activeTab, setActiveTab] = useState('current');
+    const [crmData, setCrmData] = useState(null);
+    const [loadingCrm, setLoadingCrm] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [loadingHistory, setLoadingHistory] = useState(true);
@@ -155,6 +157,19 @@ function ChatHub() {
             if (data.success && data.messages.length > 0) setHistoryMessages(data.messages);
         } catch { }
         finally { setLoadingHistory(false); }
+    };
+
+    const loadDealsData = async () => {
+        if (!userId) return;
+        try {
+            setLoadingCrm(true);
+            const res = await fetch(`${API_BASE_URL}/api/chat/deals/${userId}`);
+            const data = await res.json();
+            if (data.success) {
+                setCrmData(data.groupedDeals);
+            }
+        } catch { }
+        finally { setLoadingCrm(false); }
     };
 
     const handleDeleteMessage = async (msgId) => {
@@ -353,6 +368,11 @@ function ChatHub() {
                         <MessageSquare size={14} />
                         <span style={activeTab === 'current' ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Current Chat</span>
                     </button>
+                    <button className={`sidebar-action-btn ${activeTab === 'deals' ? 'active-tab' : ''}`}
+                        onClick={() => { loadDealsData(); setActiveTab('deals'); setSidebarOpen(false); }}>
+                        <Handshake size={14} />
+                        <span style={activeTab === 'deals' ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Deals CRM</span>
+                    </button>
                     <button className={`sidebar-action-btn ${activeTab === 'history' ? 'active-tab' : ''}`}
                         onClick={() => { setActiveTab('history'); setSidebarOpen(false); }}>
                         <RotateCcw size={14} />
@@ -484,7 +504,190 @@ function ChatHub() {
                     </div>
                 </header>
 
-                {/* Messages */}
+                {/* ═══════════════ DEALS CRM BOARD ═══════════════ */}
+                {activeTab === 'deals' && (
+                    <div className="chat-messages" id="deals-crm-board" style={{ padding: '24px', overflowY: 'auto' }}>
+                        {/* CRM Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <div>
+                                <h2 style={{ margin: 0, fontSize: '1.4rem', color: 'var(--text-primary)', fontWeight: 700 }}>
+                                    <Handshake size={22} style={{ verticalAlign: 'middle', marginRight: '8px', color: 'var(--primary-color)' }} />
+                                    Brand Deals CRM
+                                </h2>
+                                <p style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
+                                    All collaboration conversations · AI-powered negotiation
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => loadDealsData()}
+                                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}
+                            >
+                                <RotateCcw size={14} /> Refresh
+                            </button>
+                        </div>
+
+                        {loadingCrm && (
+                            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-tertiary)' }}>
+                                <Loader size={24} className="spin" />
+                                <p style={{ marginTop: '12px' }}>Loading your deals pipeline...</p>
+                            </div>
+                        )}
+
+                        {!loadingCrm && !crmData && (
+                            <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-tertiary)' }}>
+                                <Handshake size={48} style={{ opacity: 0.3, marginBottom: '16px' }} />
+                                <h3 style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>No deals yet</h3>
+                                <p style={{ fontSize: '0.9rem' }}>When brands DM your Instagram, their collaboration offers will appear here automatically.</p>
+                            </div>
+                        )}
+
+                        {!loadingCrm && crmData && (
+                            <div>
+                                {/* ── PIPELINE SECTIONS ── */}
+                                {[
+                                    { key: 'drafted', label: '📋 Pending Approval', color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.25)' },
+                                    { key: 'negotiating', label: '💬 Negotiating', color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', borderColor: 'rgba(59,130,246,0.25)' },
+                                    { key: 'contract_prep', label: '📝 Contract Prep', color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)', borderColor: 'rgba(139,92,246,0.25)' },
+                                    { key: 'won', label: '🏆 Won', color: '#10b981', bg: 'rgba(16,185,129,0.08)', borderColor: 'rgba(16,185,129,0.25)' },
+                                    { key: 'rejected', label: '⛔ Rejected', color: '#ef4444', bg: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.25)' },
+                                    { key: 'lost', label: '💀 Lost / Ghosted', color: '#6b7280', bg: 'rgba(107,114,128,0.08)', borderColor: 'rgba(107,114,128,0.25)' },
+                                ].map(section => {
+                                    const deals = crmData[section.key] || [];
+                                    if (deals.length === 0) return null;
+                                    return (
+                                        <div key={section.key} style={{ marginBottom: '28px' }}>
+                                            {/* Section Header */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', padding: '8px 14px', background: section.bg, border: `1px solid ${section.borderColor}`, borderRadius: '10px' }}>
+                                                <span style={{ fontSize: '1.05rem', fontWeight: 700, color: section.color }}>{section.label}</span>
+                                                <span style={{ marginLeft: 'auto', background: section.color, color: '#fff', padding: '2px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700 }}>{deals.length}</span>
+                                            </div>
+
+                                            {/* Deal Cards */}
+                                            {deals.map((deal, di) => {
+                                                const brand = deal.negotiationData?.brandName || 'Unknown Brand';
+                                                const rate = deal.negotiationData?.suggestedRate || 'N/A';
+                                                const draft = deal.negotiationData?.draftReply || '';
+                                                const history = deal.negotiationData?.history || [];
+                                                const taId = `crm-ta-${section.key}-${di}`;
+                                                const isPending = section.key === 'drafted';
+                                                const isNegotiating = section.key === 'negotiating';
+
+                                                return (
+                                                    <div key={di} style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '18px', marginBottom: '14px', transition: 'box-shadow 0.2s' }}>
+                                                        {/* Brand Header Row */}
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: `linear-gradient(135deg, ${section.color}22, ${section.color}44)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                    <Handshake size={18} style={{ color: section.color }} />
+                                                                </div>
+                                                                <div>
+                                                                    <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>{brand}</strong>
+                                                                    <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', margin: '2px 0 0 0' }}>
+                                                                        {deal.lastMessage?.text?.substring(0, 80) || 'Collaboration inquiry'}...
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <span style={{ background: `${section.color}18`, color: section.color, padding: '5px 14px', borderRadius: '20px', fontWeight: 700, fontSize: '0.9rem' }}>
+                                                                {rate}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Conversation History (AI thread) */}
+                                                        {history.length > 0 && (
+                                                            <div style={{ marginBottom: '12px', padding: '10px 12px', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)', maxHeight: '120px', overflowY: 'auto' }}>
+                                                                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-tertiary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Negotiation Thread</p>
+                                                                {history.slice(-3).map((h, hi) => (
+                                                                    <div key={hi} style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '4px', paddingLeft: '8px', borderLeft: `2px solid ${section.color}40` }}>
+                                                                        <span style={{ fontWeight: 600, color: section.color, marginRight: '6px' }}>{h.action}:</span>
+                                                                        {h.text?.substring(0, 100)}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Editable Draft (only for pending/negotiating) */}
+                                                        {(isPending || isNegotiating) && (
+                                                            <div style={{ marginBottom: '14px' }}>
+                                                                <label style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '6px', display: 'block', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                                    {isPending ? 'AI Draft — Edit Before Sending' : 'Follow-up Message'}
+                                                                </label>
+                                                                <textarea
+                                                                    id={taId}
+                                                                    defaultValue={draft}
+                                                                    style={{ width: '100%', minHeight: '70px', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.88rem', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }}
+                                                                />
+                                                            </div>
+                                                        )}
+
+                                                        {/* Action Buttons (only for pending/negotiating) */}
+                                                        {(isPending || isNegotiating) && (
+                                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const txt = document.getElementById(taId)?.value || draft;
+                                                                        sendMessage(`Action: Approve the deal for brand [${brand}]. Here is the exact draft override to send: "${txt}"`);
+                                                                        addToasts([{ type: 'info', title: 'Dispatching...', message: `Sending deal to ${brand} via Instagram DM` }]);
+                                                                        setTimeout(() => loadDealsData(), 3000);
+                                                                    }}
+                                                                    style={{ flex: 1, padding: '10px', background: 'var(--primary-color)', color: 'white', borderRadius: '8px', fontWeight: 700, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', border: 'none', cursor: 'pointer', fontSize: '0.88rem' }}
+                                                                >
+                                                                    <Send size={15} /> Approve & Send
+                                                                </button>
+
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const instr = prompt(`How should the AI rewrite this draft for ${brand}?\n\nExamples:\n• "Ask for $2000"\n• "Offer a Reel instead of Story"\n• "Add a media kit link"`);
+                                                                        if (instr) {
+                                                                            sendMessage(`Regenerate the draft for ${brand}: ${instr}`);
+                                                                            addToasts([{ type: 'info', title: 'Regenerating...', message: `AI is rewriting the draft for ${brand}` }]);
+                                                                            setTimeout(() => loadDealsData(), 4000);
+                                                                        }
+                                                                    }}
+                                                                    style={{ flex: 1, padding: '10px', background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', borderRadius: '8px', fontWeight: 600, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: '0.88rem' }}
+                                                                >
+                                                                    <RotateCcw size={15} /> AI Rewrite
+                                                                </button>
+
+                                                                <button
+                                                                    onClick={() => {
+                                                                        if (window.confirm(`Reject the deal from ${brand}? This will remove it from your pipeline.`)) {
+                                                                            sendMessage(`Reject the deal from ${brand}`);
+                                                                            addToasts([{ type: 'warning', title: 'Rejected', message: `${brand} removed from pipeline` }]);
+                                                                            setTimeout(() => loadDealsData(), 2000);
+                                                                        }
+                                                                    }}
+                                                                    style={{ padding: '10px 14px', background: 'rgba(239,68,68,0.08)', color: '#ef4444', borderRadius: '8px', fontWeight: 600, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.88rem' }}
+                                                                >
+                                                                    <X size={15} /> Reject
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Contract Button (for contract_prep) */}
+                                                        {section.key === 'contract_prep' && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    sendMessage(`Generate a contract summary for ${brand}`);
+                                                                    addToasts([{ type: 'info', title: 'Generating...', message: `Building contract summary for ${brand}` }]);
+                                                                }}
+                                                                style={{ width: '100%', padding: '10px', background: 'rgba(139,92,246,0.12)', color: '#8b5cf6', borderRadius: '8px', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: '0.88rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}
+                                                            >
+                                                                <DollarSign size={15} /> Generate Contract
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══════════════ CHAT MESSAGES (normal chat view) ═══════════════ */}
+                {activeTab !== 'deals' && (
                 <div className="chat-messages" id="chat-messages">
                     {/* Welcome screen */}
                     {!loadingHistory && messages.length === 0 && activeTab === 'current' && (
@@ -577,73 +780,22 @@ function ChatHub() {
                                     />
                                 )}
 
-                                {/* ====== DEAL ALERT CARD (CRM HUB) ====== */}
+                                {/* ====== DEAL NOTIFICATION (points to CRM tab) ====== */}
                                 {msg.actions?.some(a => a.intent === 'get_morning_briefing' && a.data?.hasPendingDeals) && (
-                                    <div className="deal-alert-card">
-                                        <div className="deal-alert-header">
-                                            <DollarSign size={16} />
-                                            <span>Brand Deal CRM — Pending Approvals</span>
+                                    <button
+                                        className="deal-alert-card"
+                                        onClick={() => { loadDealsData(); setActiveTab('deals'); }}
+                                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '10px', background: 'rgba(59,130,246,0.08)', width: '100%', textAlign: 'left' }}
+                                    >
+                                        <Handshake size={18} style={{ color: 'var(--primary-color)', flexShrink: 0 }} />
+                                        <div style={{ flex: 1 }}>
+                                            <strong style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                                                {msg.actions.find(a => a.intent === 'get_morning_briefing').data.pendingCount || 0} Brand Deal{(msg.actions.find(a => a.intent === 'get_morning_briefing').data.pendingCount || 0) !== 1 ? 's' : ''} Waiting
+                                            </strong>
+                                            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', margin: '2px 0 0 0' }}>Tap to open the Deals CRM →</p>
                                         </div>
-                                        {msg.actions.find(a => a.intent === 'get_morning_briefing').data.dealAlerts.map((deal, di) => {
-                                            const taId = `deal-ta-${di}-${deal.brandName.replace(/\s+/g, '')}`;
-                                            return (
-                                              <div key={di} className="deal-alert-item" style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', marginBottom: '16px', background: 'var(--bg-secondary)' }}>
-                                                  <div className="deal-brand" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                          <Handshake size={16} className="text-blue-500" />
-                                                          <strong style={{ fontSize: '1.1rem' }}>{deal.brandName}</strong>
-                                                      </div>
-                                                      <span className="deal-amount" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary-color)', padding: '4px 10px', borderRadius: '20px', fontWeight: 'bold' }}>
-                                                          {deal.suggestedRate}
-                                                      </span>
-                                                  </div>
-                                                  
-                                                  <div className="deal-draft" style={{ marginBottom: '12px' }}>
-                                                      <label style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '4px', display: 'block', fontWeight: '600' }}>EDIT DRAFT BEFORE SENDING:</label>
-                                                      <textarea 
-                                                          id={taId}
-                                                          defaultValue={deal.draftReply}
-                                                          style={{ width: '100%', minHeight: '80px', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.9rem', resize: 'vertical' }}
-                                                      />
-                                                  </div>
-
-                                                  <div className="deal-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                                      <button
-                                                          className="deal-approve-btn"
-                                                          style={{ flex: 1, padding: '8px', background: 'var(--primary-color)', color: 'white', borderRadius: '6px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', border: 'none', cursor: 'pointer' }}
-                                                          onClick={() => {
-                                                              const overrideText = document.getElementById(taId).value;
-                                                              sendMessage(`Action: Approve the deal for brand [${deal.brandName}]. Here is the exact draft override to send: "${overrideText}"`);
-                                                          }}
-                                                      >
-                                                          <Send size={15} /> Approve & Send
-                                                      </button>
-                                                      
-                                                      <button
-                                                          style={{ flex: 1, padding: '8px', background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', borderRadius: '6px', fontWeight: '600', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', border: '1px solid var(--border-color)', cursor: 'pointer' }}
-                                                          onClick={() => {
-                                                              const instr = prompt("How should the AI regenerate this draft? (e.g. 'Ask for $2000' or 'Offer a Reel only')");
-                                                              if(instr) sendMessage(`Regenerate the draft for ${deal.brandName}: ${instr}`);
-                                                          }}
-                                                      >
-                                                          <RotateCcw size={15} /> AI Rewrite
-                                                      </button>
-
-                                                      <button
-                                                          style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '6px', fontWeight: '600', border: 'none', cursor: 'pointer' }}
-                                                          onClick={() => {
-                                                              if(window.confirm(`Are you sure you want to reject the deal from ${deal.brandName}?`)) {
-                                                                  sendMessage(`Reject the deal from ${deal.brandName}`);
-                                                              }
-                                                          }}
-                                                      >
-                                                          <X size={15} /> Reject
-                                                      </button>
-                                                  </div>
-                                              </div>
-                                            )
-                                        })}
-                                    </div>
+                                        <ChevronRight size={16} style={{ color: 'var(--text-tertiary)' }} />
+                                    </button>
                                 )}
 
                                 <span className="msg-time">
@@ -670,6 +822,7 @@ function ChatHub() {
 
                     <div ref={messagesEndRef} />
                 </div>
+                )}
 
                 {/* Input bar */}
                 <div className="chat-input-bar" id="chat-input-container">

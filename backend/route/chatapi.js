@@ -176,4 +176,38 @@ router.get('/quota', async (req, res) => {
     }
 });
 
+// GET /api/chat/deals/:userId — Get grouped brand deals for the CRM
+router.get('/deals/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const Conversation = require('../model/Instaautomation').Conversation;
+
+        const deals = await Conversation.find({
+            'negotiationData.status': { $exists: true, $ne: 'pending' }
+        }).sort({ lastMessageTime: -1 }).lean();
+
+        // Group by pipeline status for the CRM board
+        const groupedDeals = {
+            drafted: [],
+            negotiating: [],
+            contract_prep: [],
+            won: [],
+            lost: [],
+            rejected: []
+        };
+
+        deals.forEach(deal => {
+            const status = deal.negotiationData.status;
+            if (groupedDeals[status]) {
+                groupedDeals[status].push(deal);
+            }
+        });
+
+        res.json({ success: true, allDeals: deals, groupedDeals });
+    } catch (error) {
+        console.error('[ChatAPI] Error fetching deals:', error.message);
+        res.status(500).json({ success: false, error: 'Failed to fetch deals' });
+    }
+});
+
 module.exports = router;
