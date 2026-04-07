@@ -102,7 +102,7 @@ async function handleMention(userId, commentData) {
 
         if (!process.env.GEMINI_API_KEY) return;
 
-        const result = await generateContentWithFallback(prompt, 'gemini-1.5-flash');
+        const result = await generateContentWithFallback(prompt);
         let responseText = result.response.text().trim();
 
         // Find JSON block
@@ -119,7 +119,7 @@ async function handleMention(userId, commentData) {
             const replyPrompt = `
                 Generate a short, appreciative, and slightly funny generic comment (under 15 words) that a popular creator would leave on a viral video they were heavily tagged in by their fans. Do NOT include quotes, emojis are fine.
             `;
-            const replyResult = await generateContentWithFallback(replyPrompt, 'gemini-1.5-flash');
+            const replyResult = await generateContentWithFallback(replyPrompt);
             const replyMessage = replyResult.response.text().trim().replace(/"/g, '');
 
             // Calculate 24 hours from now

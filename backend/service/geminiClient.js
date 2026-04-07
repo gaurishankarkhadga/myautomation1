@@ -39,10 +39,11 @@ async function generateContentWithFallback(prompt, modelName = 'gemini-2.5-flash
         const errorMessage = error.message || '';
         const isRateLimit = errorMessage.includes('429') || errorMessage.includes('Too Many Requests') || error.status === 429;
         const isInvalidKey = errorMessage.includes('API key not valid') || errorMessage.includes('API_KEY_INVALID') || error.status === 400;
+        const isUnavailable = errorMessage.includes('503') || errorMessage.includes('Service Unavailable') || error.status === 503;
 
-        // If it's a Rate Limit or Invalid Key and we haven't tried all keys yet
-        if ((isRateLimit || isInvalidKey) && attempts < apiKeys.length - 1) {
-            console.warn(`[GeminiClient] API Key failed (${isRateLimit ? 'Rate Limit 429' : 'Invalid Key 400'}). Falling back to next available key... (Attempt ${attempts + 1}/${apiKeys.length - 1})`);
+        // If it's a Rate Limit, Invalid Key, or Service Unavailable and we haven't tried all keys yet
+        if ((isRateLimit || isInvalidKey || isUnavailable) && attempts < apiKeys.length - 1) {
+            console.warn(`[GeminiClient] API Key failed (${isUnavailable ? '503 Busy' : isRateLimit ? '429 Rate' : '400 Invalid'}). Falling back to next... (Attempt ${attempts + 1}/${apiKeys.length - 1})`);
             return await generateContentWithFallback(prompt, modelName, attempts + 1);
         }
 

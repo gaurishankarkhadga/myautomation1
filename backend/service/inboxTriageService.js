@@ -28,7 +28,7 @@ async function triageMessage(messageText) {
             Message to classify: "${messageText}"
         `;
 
-        const result = await generateContentWithFallback(prompt, 'gemini-1.5-flash');
+        const result = await generateContentWithFallback(prompt, 'gemini-2.5-flash');
         const responseText = result.response.text().trim();
 
         // Clean up the output just in case
@@ -91,7 +91,7 @@ GOOD example (natural): "hey! thanks for reaching out 🙌 love your brand. my t
 Return ONLY valid JSON:
 {"brandName": "Name", "suggestedRate": "$X (format)", "draftReply": "the short casual reply"}`;
 
-        const result = await generateContentWithFallback(prompt, 'gemini-1.5-flash');
+        const result = await generateContentWithFallback(prompt, 'gemini-2.5-flash');
         let responseText = result.response.text().trim();
         
         // Ensure JSON extraction
