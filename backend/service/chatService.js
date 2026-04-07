@@ -1,4 +1,4 @@
-const { generateContentWithFallback } = require('./geminiClient');
+const { generateContentWithFallback, repairAIOutput } = require('./geminiClient');
 const fs = require('fs');
 const path = require('path');
 const ChatHistory = require('../model/ChatHistory');
@@ -204,26 +204,61 @@ Return ONLY a valid JSON array. No markdown, no explanation, no extra text. Just
 
     try {
         const result = await generateContentWithFallback(prompt);
-        const responseText = result.response.text().trim();
+        let responseText = result.response.text().trim();
 
-        // Clean the response — remove markdown code fences if present
-        let cleaned = responseText;
-        if (cleaned.startsWith('```')) {
-            cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+        // Stage 1: Use the shared auto-repair utility (strips markdown, preambles, quotes)
+        responseText = repairAIOutput(responseText);
+
+        // Stage 2: Try direct JSON parse
+        let intents;
+        try {
+            intents = JSON.parse(responseText);
+        } catch (parseErr) {
+            // Stage 3: Regex extraction — find a JSON array anywhere in the response
+            const arrayMatch = responseText.match(/\[\s*\{[\s\S]*?\}\s*\]/);
+            if (arrayMatch) {
+                try {
+                    intents = JSON.parse(arrayMatch[0]);
+                } catch (e2) {
+                    intents = null;
+                }
+            }
+
+            // Stage 4: Maybe the model returned a single object instead of an array
+            if (!intents) {
+                const objMatch = responseText.match(/\{[\s\S]*?\}/);
+                if (objMatch) {
+                    try {
+                        const obj = JSON.parse(objMatch[0]);
+                        if (obj.intent) intents = [obj]; // wrap single intent in array
+                    } catch (e3) {
+                        intents = null;
+                    }
+                }
+            }
         }
 
-        const intents = JSON.parse(cleaned);
-
-        if (!Array.isArray(intents)) {
-            console.error('[ChatService] Gemini returned non-array:', cleaned);
-            return [{ intent: 'general_chat', params: {}, confidence: 0.5 }];
+        if (!intents || !Array.isArray(intents) || intents.length === 0) {
+            // Stage 5: Smart fallback — if ALL parsing failed, treat as general_chat
+            // so the creator still gets a helpful response
+            console.error('[ChatService] Could not parse intents from AI response. Treating as general_chat.');
+            console.error('[ChatService] Raw AI response snippet:', responseText.substring(0, 200));
+            return [{ intent: 'general_chat', params: { originalMessage: message }, confidence: 0.5 }];
         }
+
+        // Ensure each intent has the required fields
+        intents = intents.map(i => ({
+            intent: i.intent || 'general_chat',
+            params: i.params || {},
+            confidence: typeof i.confidence === 'number' ? i.confidence : 0.8
+        }));
 
         console.log(`[ChatService] Parsed ${intents.length} intent(s) from: "${message}"`);
         return intents;
     } catch (error) {
         console.error('[ChatService] Intent parsing failed:', error.message);
-        return [{ intent: 'general_chat', params: { error: error.message }, confidence: 0.3 }];
+        // Always recover gracefully — never crash, never leave the creator without a response
+        return [{ intent: 'general_chat', params: { originalMessage: message }, confidence: 0.4 }];
     }
 }
 
