@@ -91,7 +91,7 @@ GOOD example (natural): "hey! thanks for reaching out 🙌 love your brand. my t
 Return ONLY valid JSON:
 {"brandName": "Name", "suggestedRate": "$X (format)", "draftReply": "the short casual reply"}`;
 
-        const result = await generateContentWithFallback(prompt, 'gemini-2.5-flash');
+        const result = await generateContentWithFallback(prompt, 'gemini-1.5-flash');
         let responseText = result.response.text().trim();
         
         // Ensure JSON extraction

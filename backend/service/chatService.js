@@ -203,7 +203,7 @@ USER MESSAGE: "${message}"
 Return ONLY a valid JSON array. No markdown, no explanation, no extra text. Just the JSON array.`;
 
     try {
-        const result = await generateContentWithFallback(prompt, "gemini-2.5-flash");
+        const result = await generateContentWithFallback(prompt, "gemini-1.5-flash");
         const responseText = result.response.text().trim();
 
         // Clean the response — remove markdown code fences if present
@@ -337,7 +337,7 @@ Creator says: "${message}"
 
 Reply SHORT and helpful.`;
 
-        const result = await generateContentWithFallback(chatPrompt, "gemini-2.5-flash");
+        const result = await generateContentWithFallback(chatPrompt, "gemini-1.5-flash");
         chatResponse = result.response.text().trim();
     } catch (error) {
         console.error('[ChatService] Chat response generation failed:', error.message);

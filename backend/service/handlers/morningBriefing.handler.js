@@ -89,7 +89,7 @@ Output ONLY the briefing text. No labels, no markdown headers.`;
 
             let briefingText;
             try {
-                const result = await generateContentWithFallback(prompt, 'gemini-2.5-flash');
+                const result = await generateContentWithFallback(prompt, 'gemini-1.5-flash');
                 briefingText = result.response.text().trim();
             } catch {
                 // Fallback to a simple summary if AI fails
