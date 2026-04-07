@@ -110,7 +110,7 @@ BIO: ${profile.biography || ''}
 
 Return ONLY the niche word(s), nothing else.`;
 
-        const nicheResult = await generateContentWithFallback(nichePrompt, "gemini-2.5-flash");
+        const nicheResult = await generateContentWithFallback(nichePrompt);
         niche = nicheResult.response.text().trim().toLowerCase().replace(/[^a-z\s]/g, '').substring(0, 30) || 'lifestyle';
     } catch (e) {
         console.error('[Marketplace] Niche detection failed, using fallback:', e.message);
@@ -171,7 +171,7 @@ Score the match 0-100 and give 3-4 specific reasons. Consider:
 Return ONLY JSON:
 {"score": 85, "reasons": ["Reason 1", "Reason 2", "Reason 3"]}`;
 
-        const result = await generateContentWithFallback(prompt, "gemini-2.5-flash");
+        const result = await generateContentWithFallback(prompt);
         const parsed = JSON.parse(cleanJsonString(result.response.text()));
         return {
             score: Math.min(100, Math.max(0, parseInt(parsed.score) || 50)),
@@ -231,7 +231,7 @@ Requirements:
 Return ONLY JSON:
 {"subject": "Subject line", "body": "Full email body"}`;
 
-        const result = await generateContentWithFallback(prompt, "gemini-2.5-flash");
+        const result = await generateContentWithFallback(prompt);
         return JSON.parse(cleanJsonString(result.response.text()));
     } catch (e) {
         console.error('[Marketplace] Pitch generation error:', e.message);
