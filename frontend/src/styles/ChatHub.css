@@ -1085,6 +1085,14 @@ body {
     transition: border-color 0.15s;
 }
 
+@media (min-width: 769px) {
+    .input-wrap {
+        width: 80%;
+        margin: 0 auto;
+    }
+}
+
+
 .input-wrap:focus-within {
     border-color: rgba(255, 255, 255, 0.25);
 }

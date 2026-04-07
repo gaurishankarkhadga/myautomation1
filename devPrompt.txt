@@ -1,56 +1,87 @@
-[
-  {
-    "id": "comment_to_dm",
-    "title": "Comment-to-DM Lead Magnet",
-    "concept": "Auto-DM a specific asset (link/PDF) when a follower comments a trigger word.",
-    "value": "Drives massive organic reach and lead generation.",
-    "techStack": "Map keywords to assetId in AutoReplySetting. Trigger DM API upon receiving a matching comment webhook."
-  },
-  {
-    "id": "ai_deal_negotiator",
-    "title": "AI Deal Negotiator & Brand Profiler",
-    "concept": "For DMs tagged 'Collaboration', AI researches the brand, calculates a dynamic rate card based on follower metrics, and auto-drafts a negotiation reply.",
-    "value": "Massive Unique Selling Proposition (USP). Helps creators monetize confidently, justifying premium subscriptions.",
-    "techStack": "Extend inboxTriageService.js. Trigger background AI job to parse brand, check legitimacy, calculate rate, and draft ChatHub reply."
-  },
-  {
-    "id": "gamified_funnels",
-    "title": "Scavenger Hunt / Gamified Funnels",
-    "concept": "Trigger DMs when users comment a hidden Easter egg (e.g., a 1-frame hidden emoji in a Reel or a trivia answer).",
-    "value": "Algorithmic dominance. Forces high repeat views and watch time, increasing virality.",
-    "techStack": "Configure automation listener for specific trivia answers or secret emojis in comments/DMs with conditional success/failure replies."
-  }
-]
+# Execution Plan: The Autonomous AI Agency
 
+This comprehensive plan covers the entire blueprint outlined in the `technical_strategy_v2.md` as well as the newly requested multi-asset execution and ultra-flexible custom intent parsing.
 
+## User Review Required
 
-fetch my all reels from instagram show here
+> [!WARNING]
+> This plan will fundamentally change the core logic of the application. The system will shift from a "dumb" keyword responder to an "always-on" AI employee. Please review the implications in Phase 1 carefully.
 
-Major visible Bugs List:
-1 -> it is not feching specific reeels post etc based on the creator specific need or automation applied. in chathub for conformation 
-2 -> it is not able to stop the automation ( i said stop this automation it can not able to atuoamtion stop)
-3 -> 
+## Proposed Changes
 
+---
 
+### Phase 1: The Core Pivot (Autonomous Routing)
 
+Remove the restrictive visual dashboard toggles from the core webhook processor to allow the AI to handle all intent naturally.
 
+#### [MODIFY] `backend/route/instaautomationapi.js`
+- **Logic Overhaul:** In `scheduleDMAutoReply`, remove the strict `if(!settings.enabled) return;` block. 
+- **New Logic:** If the user has active `CreatorAssets` uploaded, the AI is continuously authorized to scan incoming DMs for explicit purchase intent and reply autonomously based on semantic matching. 
 
+#### [MODIFY] `frontend/src/components/AnalyticsDashboard.jsx` (and related routing)
+- Downgrade the prominence of traditional Visual Dashboards. Shift their status to an "Advanced Settings" menu to reduce beginner overwhelm.
 
+---
 
+### Phase 2: Ultra-Flexible Custom Rules (Extra 1)
 
-Test	Prompt	Result
-Full C2D + 30h	"when user comment give within 30 hour..."	✅ hours: 30, single intent
-Hindi + keyword	"comment pe dm bhejo 6 ghante ke liye..."	✅ keyword: interested, hours: 6
-Max comments	"send dm to first 50 commenters and stop"	✅ maxComments: 50
-Complex combined	"12 hours, 100 max, latest reel, keyword link"	✅ ALL 4 params in ONE intent
-Disable	"stop comment to dm"	✅ enabled: false
-MongoDB data	Direct DB query	✅ Time math exact (0ms diff)
-Status dashboard	"show my automation status dashboard"	✅ Shows C2D with 2h limit, 0/100 processed
-Active badge	/api/chat/active-count/	✅ activeCount: 1, ['📲 C2D']
-Cron expiry	Simulated expired setting	✅ Auto-disabled
-Count limit	Simulated max reached	✅ Auto-disabled
-Custom messages	"reply check DM bro, DM saying..."	✅ Both extracted correctly
-General chat	"hello how are you"	✅ No false C2D trigger
-Hindi disable all	"sab band kar do"	✅ Stops C2D + everything
+Ensure the AI can accept complex, multi-layered constraints from the user via chat, beyond the predefined logic limits.
 
+#### [MODIFY] `backend/model/Instaautomation.js`
+- Add `customInstructions: [String]` to the `dmAutoReplySettingSchema`.
 
+#### [MODIFY] `backend/service/chatService.js` (The Brain)
+- Inject a generic `custom_automation_instruction` into the Gemini intent parser.
+- **Why:** If the user says: *"If anyone asks about nutrition, reply in Hindi but send the exact English ebook link"* – Gemini will capture this complex command.
+- Create a new handler (`customRule.handler.js`) to parse this intent and append it to the DB schema array.
+
+#### [MODIFY] `backend/service/aiService.js`
+- Inside `generateSmartDMReply`, dynamically inject the user's `customInstructions` array directly into the system prompt overriding default conversational behaviors.
+
+---
+
+### Phase 3: Multi-Asset AI Execution (Extra 2)
+
+Ensure the AI can handle users asking for completely distinct products/assets in a single DM simultaneously.
+
+#### [MODIFY] `backend/route/instaautomationapi.js`
+- In `scheduleDMAutoReply`, when `matchResult.matchedAssets` returns more than one asset (e.g. 2 different ebooks).
+- We will update the `sendDirectMessage` timeout logic looping over `matchedAssets`, dispatching multiple Instagram messages sequentially, fully fulfilling the user's request.
+
+---
+
+### Phase 4: Deal Negotiator UI Integration
+
+The `inboxTriageService.js` actively drafts $1,000+ negotiation deals in the background natively. We must expose this to the Creator elegantly.
+
+#### [MODIFY] `frontend/src/components/ChatHub.jsx`
+- Add a new "Draft Review" UI card component.
+- When `ChatHub` mounts or receives data containing `negotiationData` from conversations, it will inject an AI message: *"🔔 Brand Alert! [Brand Name] reached out via DM. Based on your followers, I drafted a reply asking for [Suggested Rate]. Want to read my draft?"*
+
+---
+
+### Phase 5: The "Morning Briefing" Onboarding
+
+Turn the AI into an active manager that reports actions to the boss (the Creator) rather than just waiting.
+
+#### [MODIFY] `backend/service/chatService.js`
+- Create a `get_morning_briefing` intent. This parses the `DmAutoReplyLog` and `WebhookEvent` database over the last 24 hours.
+- Summarizes the data into one sentence: *"Good Morning! While you slept, I sent 14 workout ebook links via DM and successfully hid 2 spam comments on your latest Reel."*
+- Trigger this event automatically on the first ChatHub page load of the day.
+
+## Open Questions
+
+> [!CAUTION]
+> **Safety Guardrails**
+> With the system operating entirely autonomously (Phase 1 and Extra 1), the AI is fully responsible for representing the Creator. Should we introduce a "Confidence Threshold" (e.g. if the intent parser is less than 85% confident, default to a safe 💖 emoji) instead of risking a hallucinated reply?
+
+## Verification Plan
+
+### Automated Tests
+1. **Multi-Asset Injection:** Pass a mock string *"Give me your course and your preset pack"* to `matchCreatorAssets` and assert that the array correctly returns length `2`, and the webhook loop executes two separate `.post` operations.
+
+### Manual Verification
+1. I will log in to the frontend, send a hyper-specific instruction via ChatHub (*"Never mention prices"*).
+2. Trigger the Webhook manually.
+3. Validate the `aiService` observes the flexible instruction injected from the DB and generates a completely price-free text.
