@@ -1168,20 +1168,31 @@ router.post('/webhook', async (req, res) => {
                                                     commentToDmHandled = true;
                                                     await CommentToDmSetting.findOneAndUpdate({ userId: igUserIdMapped }, { $inc: { processedCount: 1 } });
 
-                                                    // ── STEP 1: Reply on the comment ──
-                                                    const commentReplyText = c2dSettings.commentReply || 'sent! check your DM 🔥';
+                                                    // ── STEP 1: Reply on the comment (Dynamic AI) ──
                                                     const commentDelay = Math.floor(Math.random() * (8 - 3 + 1)) + 3;
                                                     setTimeout(async () => {
                                                         try {
                                                             const currentC2d = await CommentToDmSetting.findOne({ userId: igUserIdMapped });
                                                             if (currentC2d && currentC2d.enabled) {
-                                                                const result = await replyToComment(commentData.commentId, commentReplyText, tokenData.accessToken);
+                                                                // Use AI to generate a creative "check your DM" reply
+                                                                let smartReply;
+                                                                try {
+                                                                    const context = [`TELL THEM YOU SENT THE INFO TO THEIR DM. Keep it short and matched to your personality.`];
+                                                                    if (c2dSettings.commentReply) context.push(`INSPIRATION: "${c2dSettings.commentReply}"`);
+                                                                    
+                                                                    smartReply = await aiService.generateSmartReply(igUserIdMapped, commentData.text, 'comment', commentData.username, context);
+                                                                } catch (aiErr) {
+                                                                    console.error('[C2D] AI Comment Reply failed, using fallback:', aiErr.message);
+                                                                    smartReply = c2dSettings.commentReply || 'sent! check your DM 🔥';
+                                                                }
+
+                                                                const result = await replyToComment(commentData.commentId, smartReply, tokenData.accessToken);
                                                                 await AutoReplyLog.create({
                                                                     commentId: commentData.commentId,
                                                                     commentText: commentData.text,
                                                                     commenterUsername: commentData.username,
                                                                     mediaId: commentData.mediaId,
-                                                                    replyText: commentReplyText,
+                                                                    replyText: smartReply,
                                                                     status: result.success ? 'sent' : 'failed',
                                                                     action: 'comment_to_dm_reply',
                                                                     scheduledAt: new Date(),
@@ -1191,7 +1202,7 @@ router.post('/webhook', async (req, res) => {
                                                         } catch (e) { console.error('[C2D] Reply error:', e.message); }
                                                     }, commentDelay * 1000);
 
-                                                    // ── STEP 2: Send DM ──
+                                                    // ── STEP 2: Send DM (Dynamic AI with Asset Context) ──
                                                     const dmDelay = commentDelay + Math.floor(Math.random() * (5 - 2 + 1)) + 2;
                                                     setTimeout(async () => {
                                                         try {
@@ -1202,12 +1213,29 @@ router.post('/webhook', async (req, res) => {
                                                                 let customInstructions = [];
                                                                 if (c2dSettings.dmMessage) customInstructions.push(`CREATOR MESSAGE: "${c2dSettings.dmMessage}"`);
 
-                                                                if (creatorAssets.length > 0 && c2dSettings.useAssets !== false) {
+                                                                try {
+                                                                    // Match assets by intent
                                                                     const matchResult = await aiService.matchCreatorAssets(commentData.text, creatorAssets);
-                                                                    const dmReply = await aiService.generateSmartDMReply(igUserIdMapped, commentData.text, commentData.username, matchResult.matchedAssets.length > 0 ? matchResult.matchedAssets : creatorAssets.slice(0, 3), false, customInstructions);
+                                                                    
+                                                                    // Generate AI DM reply using matched assets (or fallback assets)
+                                                                    const assetsToShare = matchResult.matchedAssets.length > 0 ? matchResult.matchedAssets : creatorAssets.slice(0, 3);
+                                                                    const dmReply = await aiService.generateSmartDMReply(
+                                                                        igUserIdMapped, 
+                                                                        commentData.text, 
+                                                                        commentData.username, 
+                                                                        assetsToShare, 
+                                                                        matchResult.isGenericMessage, 
+                                                                        customInstructions
+                                                                    );
                                                                     dmMessage = dmReply.text;
-                                                                } else {
-                                                                    dmMessage = await aiService.generateSmartReply(igUserIdMapped, commentData.text, 'dm', commentData.username, customInstructions);
+                                                                } catch (aiErr) {
+                                                                    console.error('[C2D] AI DM Reply failed, using fallback:', aiErr.message);
+                                                                    // Fallback: Use manual DM message + top asset links
+                                                                    dmMessage = c2dSettings.dmMessage || 'Here is the link you requested!';
+                                                                    const fallbackAssets = creatorAssets.slice(0, 2);
+                                                                    if (fallbackAssets.length > 0) {
+                                                                        dmMessage += '\n\nLinks:\n' + fallbackAssets.map(a => `${a.title}: ${a.url}`).join('\n');
+                                                                    }
                                                                 }
 
                                                                 if (dmMessage) {
