@@ -27,7 +27,7 @@ function getNextModel(modelName) {
     return genAI.getGenerativeModel({ model: modelName });
 }
 
-async function generateContentWithFallback(prompt, modelName = 'gemini-1.5-flash', attempts = 0) {
+async function generateContentWithFallback(prompt, modelName = 'gemini-2.5-flash', attempts = 0) {
     const model = getNextModel(modelName);
 
     try {

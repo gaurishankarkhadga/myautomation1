@@ -358,8 +358,8 @@ async function generateSmartReply(userId, incomingText, contextType, senderName,
         }
 
         // Call Gemini
-        console.log('[AI-Service] Calling Gemini 1.5 Flash for reply generation...');
-        const result = await generateContentWithFallback(prompt, 'gemini-1.5-flash');
+        console.log('[AI-Service] Calling Gemini 2.5 Flash for reply generation...');
+        const result = await generateContentWithFallback(prompt);
         const reply = result.response.text().trim();
 
         // Strip surrounding quotes if Gemini wraps the reply
@@ -410,7 +410,7 @@ Rules:
 - Casual slang, abbreviations, or emoji-only comments are GENUINE
 - Simple reactions like "nice", "wow", "🔥" are GENUINE`;
 
-        const result = await generateContentWithFallback(prompt, 'gemini-1.5-flash');
+        const result = await generateContentWithFallback(prompt);
         const responseText = result.response.text().trim();
         const cleaned = cleanJsonString(responseText);
         const parsed = JSON.parse(cleaned);
@@ -486,7 +486,7 @@ async function researchCreatorOnline(userId, username) {
         Be honest but helpful. Never fabricate specific facts.
         `;
 
-        const result = await generateContentWithFallback(prompt, 'gemini-1.5-flash');
+        const result = await generateContentWithFallback(prompt);
         const responseText = result.response.text();
         const cleaned = cleanJsonString(responseText);
         const research = JSON.parse(cleaned);
@@ -575,7 +575,7 @@ async function matchCreatorAssets(incomingText, creatorAssets) {
         - Questions about pricing, courses, links, products = SPECIFIC
         `;
 
-        const result = await generateContentWithFallback(prompt, 'gemini-1.5-flash');
+        const result = await generateContentWithFallback(prompt);
         const responseText = result.response.text();
         const cleaned = cleanJsonString(responseText);
         const analysis = JSON.parse(cleaned);
@@ -783,7 +783,7 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
         }
 
         console.log('[AI-Service] Generating smart DM reply with asset context + real examples...');
-        const result = await generateContentWithFallback(prompt, 'gemini-1.5-flash');
+        const result = await generateContentWithFallback(prompt);
         const reply = result.response.text().trim().replace(/^["']|["']$/g, '');
 
         if (!reply || reply.length === 0) {
