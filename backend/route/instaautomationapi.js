@@ -1909,6 +1909,8 @@ router.get('/dm-auto-reply/settings', async (req, res) => {
             success: false,
             error: 'Failed to fetch DM auto-reply settings',
             message: error.message
+        });
+    }
 });
 
 // ==================== GLOBAL NEGOTIATION PREFERENCES API ====================
