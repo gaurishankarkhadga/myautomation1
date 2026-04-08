@@ -116,7 +116,7 @@ Return ONLY valid JSON:
  * Handles end-to-end autonomous negotiation for Brand Deals.
  * Decides whether to reply directly to the DM or flag for creator approval once terms are set.
  */
-async function continueAutonomousNegotiation(history, followersCount, engagementRate = '3%', creatorPersona = null, customInstructions = null) {
+async function continueAutonomousNegotiation(history, followersCount, engagementRate = '3%', creatorPersona = null, customInstructions = null, negotiationPreferences = null) {
     if (!history || history.length === 0 || !process.env.GEMINI_API_KEY) return null;
 
     try {
@@ -142,6 +142,28 @@ EXTREMELY IMPORTANT - CREATOR'S CUSTOM RULES:
 Follow these rules above everything else.`;
         }
 
+        let preferencesBlock = '';
+        if (negotiationPreferences) {
+            preferencesBlock = `
+CREATOR'S NON-NEGOTIABLE LAWS (15-POINT MATRIX):
+You MUST enforce these settings perfectly. If a brand offers something outside these laws, you politely counter-offer.
+- Accepted Deliverables: ${negotiationPreferences.acceptedDeliverables?.join(', ') || 'Any'}
+- Min Cash Target: ${negotiationPreferences.minimumCashTarget ? '$'+negotiationPreferences.minimumCashTarget : 'Open'}
+- Max Asking Target: ${negotiationPreferences.maximumAskTarget ? '$'+negotiationPreferences.maximumAskTarget : 'Open'}
+- Barter Accepted: ${negotiationPreferences.barterAcceptance === false ? 'No, cash only' : 'Yes'}
+- Payment Terms: ${negotiationPreferences.paymentTerms || 'Standard'}
+- Usage Rights Limits: ${negotiationPreferences.usageRightsLimits || 'Standard'}
+- Exclusivity Limits: ${negotiationPreferences.exclusivityLimits || 'Standard'}
+- Revisions Included: ${negotiationPreferences.revisionsIncluded || 'Standard'}
+- Delivery Timeline: ${negotiationPreferences.deliveryTimeline || 'Standard'}
+- Required Free Product: ${negotiationPreferences.requiredFreeProduct ? 'Yes' : 'No'}
+- Affiliate Links: ${negotiationPreferences.affiliateLinks ? 'Allowed' : 'No commission-only deals'}
+- Blocked Industries: ${negotiationPreferences.blockedIndustries?.join(', ') || 'None'}
+- Contract Sign-Off: ${negotiationPreferences.contractSignOff || 'Flexible'}
+- Content Format: ${negotiationPreferences.contentFormat || 'Standard'}
+- Brief Requirement: ${negotiationPreferences.creativeBriefRequirement || 'Required'}`;
+        }
+
         const formattedHistory = history.map(h => `${h.role === 'user' ? 'Brand' : 'You'}: ${h.text}`).join('\n');
 
         const prompt = `
@@ -157,6 +179,7 @@ CREATOR STATS:
 
 ${personaStyle}
 ${customOverride}
+${preferencesBlock}
 
 STRATEGIC NEGOTIATION FRAMEWORK & SET COMPULSORY QUESTIONS (FOLLOW STRICTLY):
 

@@ -46,7 +46,25 @@ const dmAutoReplySettingSchema = new mongoose.Schema({
         createdAt: { type: Date, default: Date.now }
     }],
     confidenceThreshold: { type: Number, default: 0.7, min: 0.1, max: 1.0 }, // Min confidence to send a reply
-    lastBriefingAt: { type: Date, default: null } // Track when morning briefing was last shown
+    lastBriefingAt: { type: Date, default: null }, // Track when morning briefing was last shown
+    // ==================== CREATOR GLOBAL DEAL RULE MATRIX (15-POINT) ====================
+    negotiationPreferences: {
+        acceptedDeliverables: { type: [String], default: [] },
+        minimumCashTarget: { type: Number, default: null },
+        maximumAskTarget: { type: Number, default: null },
+        barterAcceptance: { type: Boolean, default: null },
+        paymentTerms: { type: String, default: "" },
+        usageRightsLimits: { type: String, default: "" },
+        exclusivityLimits: { type: String, default: "" },
+        revisionsIncluded: { type: String, default: "" },
+        deliveryTimeline: { type: String, default: "" },
+        requiredFreeProduct: { type: Boolean, default: null },
+        affiliateLinks: { type: Boolean, default: null },
+        blockedIndustries: { type: [String], default: [] },
+        contractSignOff: { type: String, default: "" },
+        contentFormat: { type: String, default: "" },
+        creativeBriefRequirement: { type: String, default: "" }
+    }
 });
 
 // ==================== AUTO-REPLY LOG (Comments) ====================

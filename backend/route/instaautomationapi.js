@@ -1378,7 +1378,8 @@ router.post('/webhook', async (req, res) => {
                                 '100,000', 
                                 '5%', 
                                 creatorPersona, 
-                                (dmSettings.customInstructions || []).map(ci => ci.instruction).join('\n')
+                                (dmSettings.customInstructions || []).map(ci => ci.instruction).join('\n'),
+                                dmSettings.negotiationPreferences
                             ).then(async (aiDecision) => {
                                 if (!aiDecision) return;
 
@@ -1908,7 +1909,50 @@ router.get('/dm-auto-reply/settings', async (req, res) => {
             success: false,
             error: 'Failed to fetch DM auto-reply settings',
             message: error.message
+});
+
+// ==================== GLOBAL NEGOTIATION PREFERENCES API ====================
+
+// Route: Get Deal Negotiator Settings (15-question wizard)
+router.get('/deal-negotiator/settings', async (req, res) => {
+    try {
+        const userId = req.query.userId;
+        if (!userId) return res.status(400).json({ success: false, error: 'userId is required' });
+
+        const settings = await DmAutoReplySetting.findOne({ userId }).lean();
+        
+        res.json({
+            success: true,
+            data: settings?.negotiationPreferences || {}
         });
+    } catch (error) {
+        console.error('[Deal-Negotiator] Settings fetch error:', error.message);
+        res.status(500).json({ success: false, error: 'Failed to fetch settings' });
+    }
+});
+
+// Route: Update Deal Negotiator Settings (15-question wizard)
+router.post('/deal-negotiator/settings', async (req, res) => {
+    try {
+        const { userId, negotiationPreferences } = req.body;
+        if (!userId || !negotiationPreferences) {
+            return res.status(400).json({ success: false, error: 'userId and negotiationPreferences required' });
+        }
+
+        const updatedSettings = await DmAutoReplySetting.findOneAndUpdate(
+            { userId },
+            { $set: { negotiationPreferences } },
+            { new: true, upsert: true }
+        );
+
+        res.json({
+            success: true,
+            message: 'Negotiator settings saved successfully',
+            data: updatedSettings.negotiationPreferences
+        });
+    } catch (error) {
+        console.error('[Deal-Negotiator] Settings save error:', error.message);
+        res.status(500).json({ success: false, error: 'Failed to save settings' });
     }
 });
 
