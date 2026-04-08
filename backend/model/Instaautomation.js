@@ -69,6 +69,7 @@ const dmAutoReplySettingSchema = new mongoose.Schema({
 
 // ==================== AUTO-REPLY LOG (Comments) ====================
 const autoReplyLogSchema = new mongoose.Schema({
+    userId: { type: String, required: true, index: true }, // [FIX] Multi-Tenant Isolation
     commentId: { type: String, required: true },
     commentText: { type: String },
     commenterUsername: { type: String },
@@ -86,6 +87,7 @@ autoReplyLogSchema.index({ scheduledAt: -1 });
 
 // ==================== AUTO-REPLY LOG (DMs) ====================
 const dmAutoReplyLogSchema = new mongoose.Schema({
+    userId: { type: String, required: true, index: true }, // [FIX] Multi-Tenant Isolation
     senderId: { type: String, required: true },
     senderIGSID: { type: String },
     messageText: { type: String },
@@ -111,6 +113,7 @@ dmAutoReplyLogSchema.index({ scheduledAt: -1 });
 // ==================== MESSAGE SCHEMA ====================
 const messageSchema = new mongoose.Schema({
     messageId: { type: String },
+    userId: { type: String, required: true, index: true }, // [FIX] Multi-Tenant Isolation
     senderId: { type: String, required: true, index: true },
     recipientId: { type: String },
     text: { type: String },
@@ -122,6 +125,7 @@ const messageSchema = new mongoose.Schema({
 // ==================== CONVERSATION SCHEMA ====================
 const conversationSchema = new mongoose.Schema({
     conversationId: { type: String, required: true, unique: true, index: true },
+    userId: { type: String, required: true, index: true }, // [FIX] Multi-Tenant Isolation
     senderId: { type: String, required: true },
     recipientId: { type: String, required: true },
     lastMessage: { type: Object },

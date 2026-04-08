@@ -1304,12 +1304,18 @@ router.post('/webhook', async (req, res) => {
                         console.log('[Webhook] Message text:', messageData.text);
 
                         // Store message in DB
-                        await Message.create(messageData);
+                        let igUserIdMapped = null;
+                        try {
+                            igUserIdMapped = await resolveUserIdMapping(igUserId);
+                            messageData.userId = igUserIdMapped; // [FIX] Attach userId to message
+                            await Message.create(messageData);
+                        } catch (err) {
+                            console.error('[Webhook] Failed to save message natively:', err.message);
+                        }
 
                         // Triage the message to determine priority
                         let priorityTag = 'Untriaged';
                         try {
-                            const igUserIdMapped = await resolveUserIdMapping(igUserId);
                             const dmSettings = await DmAutoReplySetting.findOne({ userId: igUserIdMapped });
                             if (dmSettings && dmSettings.inboxTriageEnabled) {
                                 priorityTag = await inboxTriageService.triageMessage(messageData.text);
@@ -1328,6 +1334,7 @@ router.post('/webhook', async (req, res) => {
                             { conversationId },
                             {
                                 conversationId,
+                                userId: igUserIdMapped, // [FIX] Force Platform ID onto Conversation
                                 senderId,
                                 recipientId,
                                 lastMessage: messageData,
@@ -1341,7 +1348,7 @@ router.post('/webhook', async (req, res) => {
                         // ==================== FEATURE: AI DEAL NEGOTIATOR (AUTONOMOUS) ====================
                         if (priorityTag === 'Collaboration') {
                             console.log('[Webhook] 🤖 Entering Autonomous AI Deal Negotiation Flow...');
-                            const igUserIdMapped = await resolveUserIdMapping(igUserId);
+                            // igUserIdMapped is already resolved above
                             
                             // 1. Get creator context (Persona + Default Assets/Rates)
                             const [creatorPersona, dmSettings, tokenData] = await Promise.all([
@@ -1552,9 +1559,12 @@ router.post('/send-message', async (req, res) => {
 // Route: Get All Conversations
 router.get('/conversations', async (req, res) => {
     try {
-        console.log('[Messaging] Fetching all conversations');
+        const userId = req.query.userId;
+        if (!userId) return res.status(400).json({ success: false, error: 'userId is required' });
 
-        const allConversations = await Conversation.find().lean();
+        console.log(`[Messaging] Fetching all conversations for ${userId}`);
+
+        const allConversations = await Conversation.find({ userId }).lean(); // [FIX] Isolated fetch
 
         const conversations = allConversations.map(conv => {
             const hoursSinceLastMessage = (Date.now() - conv.lastMessageTime) / (1000 * 60 * 60);
@@ -1593,10 +1603,12 @@ router.get('/conversations', async (req, res) => {
 router.get('/messages/:senderId', async (req, res) => {
     try {
         const { senderId } = req.params;
+        const userId = req.query.userId;
+        if (!userId) return res.status(400).json({ success: false, error: 'userId is required' });
 
-        console.log('[Messaging] Fetching messages from:', senderId);
+        console.log(`[Messaging] Fetching messages from ${senderId} for ${userId}`);
 
-        const messages = await Message.find({ senderId }).sort({ received: 1 }).lean();
+        const messages = await Message.find({ senderId, userId }).sort({ received: 1 }).lean(); // [FIX] Isolated fetch
 
         res.json({
             success: true,

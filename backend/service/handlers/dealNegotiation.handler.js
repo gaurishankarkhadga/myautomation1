@@ -39,8 +39,10 @@ async function dispatchMessage(recipientIGSID, igBusinessAccountId, textMessage)
  * Utility to find a target conversation based on a dynamic target string.
  */
 async function findTargetConversation(userId, targetStr) {
-    let query = { 'negotiationData.status': { $in: ['drafted', 'negotiating'] } };
-    
+    let query = { 
+        userId: userId, // [FIX] Strict Multi-Tenant Enforcement
+        'negotiationData.status': { $in: ['drafted', 'negotiating'] } 
+    };
     if (targetStr && targetStr.toLowerCase() !== 'all' && targetStr.toLowerCase() !== 'recent') {
         const regexStr = targetStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape
         query['negotiationData.brandName'] = { $regex: new RegExp(regexStr, 'i') };
