@@ -190,6 +190,11 @@ User: "Approve Nike but tell Adidas to double their budget, and reject Puma" →
 User: "Set latest draft to use my media kit" → [{"intent": "regenerate_deal_draft", "params": {"brandName": "recent", "instructions": "Attach media kit link"}, "confidence": 0.9}]
 User: "Set a global rule: never accept sports deals for under $1000" → [{"intent": "set_deal_rate_rule", "params": {"brandIndustry": "sports", "minRate": 1000}, "confidence": 0.95}]
 User: "Generate a contract summary for the Nike deal" → [{"intent": "generate_contract_summary", "params": {"brandName": "Nike"}, "confidence": 0.95}]
+User: "From now, handle all sponsorships with complete clarity and transparency" → [{"intent": "add_custom_instruction", "params": {"instruction": "Handle all sponsorships with complete clarity and transparency. Always communicate rates, deliverables, and timelines clearly to brands."}, "confidence": 0.95}]
+User: "Handle my brand deals with full transparency" → [{"intent": "add_custom_instruction", "params": {"instruction": "Handle all brand deals and sponsorships with full transparency and clear communication"}, "confidence": 0.95}]
+User: "Always be clear about my rates with brands" → [{"intent": "add_custom_instruction", "params": {"instruction": "Always be clear and transparent about rates when communicating with brands and sponsors"}, "confidence": 0.95}]
+User: "Negotiate all deals professionally" → [{"intent": "add_custom_instruction", "params": {"instruction": "Negotiate all brand deals and sponsorships professionally with clear communication"}, "confidence": 0.9}]
+User: "Enable brand deal automation" → [{"intent": "add_custom_instruction", "params": {"instruction": "Automatically handle incoming brand deal inquiries with professional responses and rate transparency"}, "confidence": 0.9}]
 
 MORNING BRIEFING EXAMPLES:
 User: "good morning" → [{"intent": "get_morning_briefing", "params": {}, "confidence": 0.8}]

@@ -66,11 +66,25 @@ module.exports = {
     async execute(intent, params, context) {
         const { userId } = context;
 
+        // Validate context and userId
+        if (!userId) {
+            console.error('[Handler:dealNegotiation] Missing userId in context');
+            return { success: false, message: 'User context missing. Please refresh and try again.' };
+        }
+
+        // Validate params
+        if (!params || typeof params !== 'object') {
+            console.error('[Handler:dealNegotiation] Invalid params:', params);
+            return { success: false, message: 'Invalid parameters received.' };
+        }
+
         try {
             // ==================== DEAL ACTION BULK ====================
             if (intent === 'deal_action_bulk') {
                 const actions = params.actions || [];
-                if (actions.length === 0) return { success: false, message: 'No concrete deal actions identified.' };
+                if (!Array.isArray(actions) || actions.length === 0) {
+                    return { success: false, message: 'No concrete deal actions identified. Try: "Approve the Nike deal"' };
+                }
 
                 let resultsLog = [];
                 for (const act of actions) {
@@ -133,6 +147,10 @@ module.exports = {
             if (intent === 'regenerate_deal_draft') {
                 const targetBrand = params.brandName || 'recent';
                 const instructions = params.instructions || 'Rewrite it to sound better.';
+
+                if (!instructions || instructions.trim().length === 0) {
+                    return { success: false, message: 'Please provide instructions for how to rewrite the draft.' };
+                }
                 
                 const targetDeals = await findTargetConversation(userId, targetBrand);
                 if (targetDeals.length === 0) {
@@ -186,7 +204,11 @@ module.exports = {
             // ==================== SET DEAL RATE RULE ====================
             if (intent === 'set_deal_rate_rule') {
                 const brandIndustry = params.brandIndustry || 'all';
-                const minRate = params.minRate || 0;
+                const minRate = parseInt(params.minRate) || 0;
+
+                if (minRate <= 0) {
+                    return { success: false, message: 'Please provide a valid minimum rate amount (e.g., "Set minimum rate to $500 for fashion brands").' };
+                }
 
                 // We leverage custom rules stored in DmAutoReplySetting seamlessly
                 const settings = await DmAutoReplySetting.findOne({ userId });
@@ -219,10 +241,10 @@ module.exports = {
             }
 
         } catch (error) {
-            console.error('[Handler:dealNegotiation] Error:', error.message);
+            console.error('[Handler:dealNegotiation] Critical error:', error.message, error.stack);
             return {
                 success: false,
-                message: `Failed to completely process your deal commands: ${error.message}`
+                message: `Failed to process your deal command: ${error.message}. Please try again or rephrase your request.`
             };
         }
     }
