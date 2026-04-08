@@ -1057,15 +1057,16 @@ router.post('/webhook', async (req, res) => {
                     const anyC2dEnabled = c2dCheck?.enabled || false;
                     const anyViralTag = autoReplyCheck?.viralTagEnabled || false;
                     const anyStoryMention = dmAutoReplyCheck?.storyMentionEnabled || false;
+                    const anyInboxTriage = dmAutoReplyCheck?.inboxTriageEnabled || false;
 
-                    const anythingEnabled = anyCommentEnabled || anyDmEnabled || anyC2dEnabled || anyViralTag || anyStoryMention;
+                    const anythingEnabled = anyCommentEnabled || anyDmEnabled || anyC2dEnabled || anyViralTag || anyStoryMention || anyInboxTriage;
 
                     if (!anythingEnabled) {
                         console.log(`[Webhook] ⛔ MASTER KILL SWITCH: ALL automation is disabled for user ${mappedUserId}. Skipping entire webhook entry.`);
                         continue; // Skip this entry entirely
                     }
 
-                    console.log(`[Webhook] ✅ Automation active for ${mappedUserId}: comments=${anyCommentEnabled}, DMs=${anyDmEnabled}, C2D=${anyC2dEnabled}, viral=${anyViralTag}, story=${anyStoryMention}`);
+                    console.log(`[Webhook] ✅ Automation active for ${mappedUserId}: comments=${anyCommentEnabled}, DMs=${anyDmEnabled}, C2D=${anyC2dEnabled}, viral=${anyViralTag}, story=${anyStoryMention}, triage=${anyInboxTriage}`);
                 } catch (killSwitchErr) {
                     console.error('[Webhook] Kill switch check failed (proceeding with caution):', killSwitchErr.message);
                     // On error, we proceed but individual handlers will also check
