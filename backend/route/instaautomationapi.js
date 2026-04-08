@@ -1338,30 +1338,88 @@ router.post('/webhook', async (req, res) => {
                             { upsert: true, new: true }
                         );
 
-                        // ==================== FEATURE: AI DEAL NEGOTIATOR ====================
+                        // ==================== FEATURE: AI DEAL NEGOTIATOR (AUTONOMOUS) ====================
                         if (priorityTag === 'Collaboration') {
-                            console.log('[Webhook] Triggering background AI Deal Negotiator...');
-                            // Fetch creator persona for natural voice
+                            console.log('[Webhook] 🤖 Entering Autonomous AI Deal Negotiation Flow...');
                             const igUserIdMapped = await resolveUserIdMapping(igUserId);
-                            const creatorPersona = await CreatorPersona.findOne({ userId: igUserIdMapped }).lean();
-                            // Fire and forget background task
-                            inboxTriageService.generateNegotiationDraft(messageData.text, '100,000', '5%', creatorPersona)
-                                .then(async (draft) => {
-                                    if (draft) {
-                                        console.log('[Webhook] Deal Negotiation Draft generated for:', draft.brandName);
-                                        await Conversation.findOneAndUpdate(
-                                            { conversationId },
-                                            {
-                                                negotiationData: {
-                                                    brandName: draft.brandName,
-                                                    suggestedRate: draft.suggestedRate,
-                                                    draftReply: draft.draftReply,
-                                                    status: 'drafted'
-                                                }
-                                            }
-                                        );
-                                    }
-                                }).catch(err => console.error('[Webhook] Failed to generate deal draft:', err.message));
+                            
+                            // 1. Get creator context (Persona + Default Assets/Rates)
+                            const [creatorPersona, dmSettings, tokenData] = await Promise.all([
+                                CreatorPersona.findOne({ userId: igUserIdMapped }).lean(),
+                                DmAutoReplySetting.findOne({ userId: igUserIdMapped }).lean(),
+                                Token.findOne({ userId: igUserIdMapped }).lean()
+                            ]);
+
+                            // 2. Update conversation with new incoming message
+                            const conversation = await Conversation.findOneAndUpdate(
+                                { conversationId },
+                                { 
+                                    $push: { 
+                                        "negotiationData.history": { 
+                                            action: 'received', 
+                                            text: messageData.text, 
+                                            timestamp: new Date() 
+                                        } 
+                                    } 
+                                },
+                                { new: true, upsert: true }
+                            );
+
+                            // 3. Prepare history for AI (map roles)
+                            const chatHistory = (conversation.negotiationData.history || []).map(h => ({
+                                role: h.action === 'sent' ? 'assistant' : 'user',
+                                text: h.text
+                            }));
+
+                            // 4. Run Autonomous Brain
+                            // We use a high followers count default unless we can fetch it (placeholder 100k)
+                            inboxTriageService.continueAutonomousNegotiation(
+                                chatHistory, 
+                                '100,000', 
+                                '5%', 
+                                creatorPersona, 
+                                (dmSettings.customInstructions || []).map(ci => ci.instruction).join('\n')
+                            ).then(async (aiDecision) => {
+                                if (!aiDecision) return;
+
+                                if (aiDecision.action === 'REPLY' && aiDecision.replyText && tokenData?.accessToken) {
+                                    console.log(`[Webhook] 🤖 AI chose to REPLY: "${aiDecision.replyText}"`);
+                                    
+                                    // Send the DM
+                                    await sendDirectMessage(igUserId, senderId, aiDecision.replyText, tokenData.accessToken);
+
+                                    // Store reply in history
+                                    await Conversation.findOneAndUpdate(
+                                        { conversationId },
+                                        { 
+                                            $push: { 
+                                                "negotiationData.history": { 
+                                                    action: 'sent', 
+                                                    text: aiDecision.replyText, 
+                                                    timestamp: new Date() 
+                                                } 
+                                            },
+                                            "negotiationData.status": 'negotiating',
+                                            "negotiationData.brandName": aiDecision.brandName || conversation.negotiationData.brandName,
+                                            "negotiationData.suggestedRate": aiDecision.suggestedRate || conversation.negotiationData.suggestedRate,
+                                            "negotiationData.metrics.requestedDeliverables": aiDecision.deliverables || conversation.negotiationData.metrics.requestedDeliverables
+                                        }
+                                    );
+                                } else if (aiDecision.action === 'REQUIRE_APPROVAL') {
+                                    console.log(`[Webhook] 🤖 AI requires APPROVAL for deal: ${aiDecision.approvalSummary}`);
+                                    
+                                    await Conversation.findOneAndUpdate(
+                                        { conversationId },
+                                        { 
+                                            "negotiationData.status": 'drafted',
+                                            "negotiationData.draftReply": aiDecision.approvalSummary,
+                                            "negotiationData.suggestedRate": aiDecision.suggestedRate,
+                                            "negotiationData.brandName": aiDecision.brandName,
+                                            "negotiationData.metrics.requestedDeliverables": aiDecision.deliverables
+                                        }
+                                    );
+                                }
+                            }).catch(err => console.error('[Webhook] Autonomous Negotation Error:', err.message));
                         }
 
                         // If you also want to update ChatHistory directly here, you could find the ChatHistory doc and push a message with the tag

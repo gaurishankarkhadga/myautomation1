@@ -103,16 +103,23 @@ module.exports = {
                             const dispatchRes = await dispatchMessage(deal.senderId, deal.recipientId, messageToSend);
                             
                             if (dispatchRes.success) {
-                                // Transition to 'negotiating'
-                                deal.negotiationData.status = 'negotiating';
-                                // Follow up in 48 hours
-                                deal.negotiationData.followUpDate = new Date(Date.now() + 48 * 60 * 60 * 1000);
-                                deal.negotiationData.history.push({ action: 'sent', text: messageToSend, timestamp: new Date() });
+                                // If it was already in drafted status (meaning negotiated), move to won/contract_prep
+                                if (deal.negotiationData.status === 'drafted' || deal.priorityTag === 'Collaboration') {
+                                    deal.negotiationData.status = 'won';
+                                } else {
+                                    deal.negotiationData.status = 'negotiating';
+                                }
+
+                                deal.negotiationData.history.push({ 
+                                    action: 'sent', 
+                                    text: `APPROVED: ${messageToSend}`, 
+                                    timestamp: new Date() 
+                                });
                                 await deal.save();
                                 
                                 await DmAutoReplyLog.create({
                                     senderId: deal.senderId,
-                                    messageText: '[DEAL DISPATCH]',
+                                    messageText: '[DEAL APPROVED]',
                                     replyText: messageToSend,
                                     status: 'sent',
                                     action: 'brand_deal_negotiation',
@@ -120,9 +127,9 @@ module.exports = {
                                     repliedAt: new Date()
                                 });
 
-                                resultsLog.push(`✅ **${brandName}**: Dispatch successful.`);
+                                resultsLog.push(`✅ **${brandName}**: Deal approved and confirmation sent! Status updated to WON.`);
                             } else {
-                                resultsLog.push(`❌ **${brandName}**: Dispatch failed (${dispatchRes.message})`);
+                                resultsLog.push(`❌ **${brandName}**: Approval message failed to send (${dispatchRes.message})`);
                             }
                         } else if (act.action === 'reject') {
                             deal.negotiationData.status = 'rejected';
