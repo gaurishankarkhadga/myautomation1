@@ -94,6 +94,8 @@ ${intentList}
 - deal_action_bulk (handles approval, rejection, or edit dispatch for 1 or multiple brand deals — params: {actions: [{brandName: "Nike", action: "approve", draftOverride: "Custom text?"}]})
 - regenerate_deal_draft (asks the AI to rewrite a draft — params: {brandName: "Nike", instructions: "ask for $1000"})
 - set_deal_rate_rule (overrides global rates — params: {brandIndustry: "sports", minRate: 1000})
+- enable_inbox_triage (turns ON the AI brand negotiator/inbox triage — params: {})
+- disable_inbox_triage (turns OFF the AI brand negotiator/inbox triage)
 - enable_comment_to_dm (send DM to commenters — params: {keyword?, commentReply?, dmMessage?, useAssets?, targetMedia?, hours?, maxComments?})
 - disable_comment_to_dm (stop comment-to-DM)
 - configure_comment_to_dm (update comment-to-DM settings)
@@ -143,6 +145,8 @@ User: "update my biolink theme to glass" → [{"intent": "update_biolink", "para
 User: "biolink bana do modern wala" → [{"intent": "create_biolink", "params": {"style": "modern"}, "confidence": 0.9}]
 User: "if dm fails send 'hey will reply soon'" → [{"intent": "set_dm_fallback", "params": {"message": "hey will reply soon"}, "confidence": 0.9}]
 User: "run for 1 hour only on latest post, 30 comments max" → [{"intent": "set_content_target", "params": {"target": "recent"}, "confidence": 0.9}, {"intent": "set_time_limit", "params": {"hours": 1}, "confidence": 0.9}, {"intent": "set_comment_limit", "params": {"maxReplies": 30}, "confidence": 0.9}]
+User: "you need handle my brand negoseator from now ok so activate it" → [{"intent": "enable_inbox_triage", "params": {}, "confidence": 0.95}]
+User: "stop the brand deal bot" → [{"intent": "disable_inbox_triage", "params": {}, "confidence": 0.95}]
 
 CUSTOM INSTRUCTION EXAMPLES (ultra-flexible):
 User: "never mention prices in DMs" → [{"intent": "add_custom_instruction", "params": {"instruction": "Never mention prices in DM replies"}, "confidence": 0.95}]
