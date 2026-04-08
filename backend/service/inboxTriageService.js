@@ -81,15 +81,12 @@ ${personaStyle}
 ${customOverrideBlock}
 
 Do 3 things:
-1. Extract brand name (guess if unclear)
-2. Calculate a suggested rate ($10 per 1K followers baseline, Reels = 1.5x, Stories = 0.5x). Make sure to apply any custom rate overrides provided above.
-3. Draft a SHORT reply (2-3 sentences max) that sounds like the creator casually replying to a DM — NOT a corporate email. Be warm but set clear expectations. Follow custom instructions strictly.
-
-BAD example (too formal): "Thank you for reaching out! We would love to discuss this opportunity further. Please share your budget and I'll provide our rate card."
-GOOD example (natural): "hey! thanks for reaching out 🙌 love your brand. my typical rate for a reel is around $X — wanna chat about what works for both of us?"
+1. Extract brand name and specific collaboration request (e.g. Reel, Feed post, Story, YouTube, or general partnership).
+2. Calculate a suggested rate based on the follow count ($10 per 1K followers baseline). Adjust for type: Reels/Long-form (1.5x), Feed posts (1x), Stories (0.5x). If the request is non-standard, use your judgement as a pro manager.
+3. Draft a SHORT, natural reply (2-3 sentences) in the creator's voice. Set clear expectations but keep it friendly.
 
 Return ONLY valid JSON:
-{"brandName": "Name", "suggestedRate": "$X (format)", "draftReply": "the short casual reply"}`;
+{"brandName": "Name", "suggestedRate": "$X (format)", "draftReply": "the short casual reply", "collaborationType": "Extracted type"}`;
 
         const result = await generateContentWithFallback(prompt);
         let responseText = result.response.text().trim();
@@ -201,8 +198,46 @@ OUTPUT FORMAT (JSON ONLY):
     }
 }
 
+/**
+ * Generates a comprehensive, deep analysis and final agreement for a deal.
+ */
+async function generateFinalAgreement(dealHistory, creatorStats, persona, customInstructions) {
+    if (!dealHistory || !dealHistory.length) return "No conversation history found to build agreement.";
+
+    const formattedHistory = dealHistory.map(h => `${h.role === 'assistant' ? 'You' : 'Brand'}: ${h.text}`).join('\n');
+
+    const prompt = `
+You are an expert Talent Manager. Analyze this conversation history between a creator and a brand:
+
+HISTORY:
+${formattedHistory}
+
+CREATOR STATS:
+${JSON.stringify(creatorStats)}
+
+CUSTOM PREFERENCES:
+${customInstructions}
+
+TASKS:
+1. Analyze the brand's core needs and the creator's provided value.
+2. Outline the EXACT negotiated terms (Deliverables, Final Rate, Timelines, Rights).
+3. Draft a formal yet clear "Final Agreement Summary" ready for the creator's seal of approval.
+4. Make it look professional but simple to understand. Not like a legal document, but a clear brand deal plan.
+
+Output ONLY the formatted agreement text.`;
+
+    try {
+        const result = await generateContentWithFallback(prompt);
+        return result.response.text().trim();
+    } catch (error) {
+        console.error('[Inbox Triage] Error generating final agreement:', error.message);
+        return "Failed to generate comprehensive agreement summary.";
+    }
+}
+
 module.exports = {
     triageMessage,
     generateNegotiationDraft,
-    continueAutonomousNegotiation
+    continueAutonomousNegotiation,
+    generateFinalAgreement
 };

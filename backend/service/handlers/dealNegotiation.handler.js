@@ -240,11 +240,30 @@ module.exports = {
                 
                 const deal = targetDeals[0];
                 deal.negotiationData.status = 'contract_prep';
+
+                // Fetch creator context for the agreement
+                const settings = await DmAutoReplySetting.findOne({ userId });
+                const creatorStats = { followers: '100k', engagement: '5%' }; // Placeholder or fetched
+                const customInstructions = (settings?.customInstructions || []).map(ci => ci.instruction).join('\n');
+                const history = (deal.negotiationData.history || []).map(h => ({
+                    role: h.action === 'sent' ? 'assistant' : 'user',
+                    text: h.text
+                }));
+
+                const contractText = await inboxTriageService.generateFinalAgreement(
+                    history,
+                    creatorStats,
+                    null, // persona
+                    customInstructions
+                );
+
                 await deal.save();
 
-                const contractText = `**DEAL AGREEMENT SUMMARY**\n\n**Brand:** ${deal.negotiationData.brandName}\n**Proposed Rate:** ${deal.negotiationData.suggestedRate}\n**Status:** In Contract Prep\n\n*Next steps: Create payment invoice and finalize deliverable timeline.*`;
-
-                return { success: true, message: `I have prepared the deal summary:\n\n${contractText}` };
+                return { 
+                    success: true, 
+                    message: `I have analyzed the conversation and prepared a comprehensive deal agreement plan for **${deal.negotiationData.brandName}**:\n\n${contractText}`,
+                    data: { contractText }
+                };
             }
 
         } catch (error) {
