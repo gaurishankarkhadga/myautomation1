@@ -51,7 +51,7 @@ app.use((req, res, next) => {
 });
 
 // Connect to MongoDB with better error handling
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/creatorhub')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/sotix')
   .then(async () => {
     console.log('✅ Connected to MongoDB');
     
@@ -78,7 +78,7 @@ if (!fs.existsSync(uploadsDir)) {
 // Root route
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'CreatorHub API Server', 
+    message: 'Sotix API Server', 
     status: 'running',
     timestamp: new Date().toISOString()
   });

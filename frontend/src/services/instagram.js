@@ -71,7 +71,7 @@ export const authService = {
     async register(userData) {
         const response = await api.post('/auth/register', userData);
         if (response.token) {
-            localStorage.setItem('creatorhub_token', response.token);
+            localStorage.setItem('sotix_token', response.token);
         }
         return response;
     },
@@ -80,19 +80,19 @@ export const authService = {
     async login(credentials) {
         const response = await api.post('/auth/login', credentials);
         if (response.token) {
-            localStorage.setItem('creatorhub_token', response.token);
+            localStorage.setItem('sotix_token', response.token);
         }
         return response;
     },
 
     // Logout
     logout() {
-        localStorage.removeItem('creatorhub_token');
+        localStorage.removeItem('sotix_token');
         window.location.href = '/login';
     },
 
     // Check if logged in
     isAuthenticated() {
-        return !!localStorage.getItem('creatorhub_token');
+        return !!localStorage.getItem('sotix_token');
     }
 };

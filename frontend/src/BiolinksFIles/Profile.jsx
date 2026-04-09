@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, Mail, AtSign, Camera, Plus, Link, Pencil, Trash2, ExternalLink, 
-  Globe, ShieldCheck, TrendingUp, Zap, Gift, DollarSign, Layout, ChevronRight, ArrowLeft 
+  Globe, ShieldCheck, TrendingUp, Zap, Gift, DollarSign, Layout, ChevronRight, ArrowLeft, RefreshCw, Copy, CheckCircle
 } from 'lucide-react';
 import axios from 'axios';
 import { getBioLinkAuthHeaders } from './config';
@@ -33,17 +33,16 @@ const Profile = () => {
   const fetchUserProfile = async () => {
     try {
       const instaToken = localStorage.getItem('insta_token');
-      const instaUserId = localStorage.getItem('insta_user_id');
       const ytChannelId = localStorage.getItem('yt_channel_id');
 
       if (!instaToken && !ytChannelId) {
-        throw new Error('No social account connected. Please connect Instagram or YouTube first.');
+        throw new Error('No social account connected.');
       }
 
       let name = 'Creator';
       let email = 'No email provided';
       let username = 'creator';
-      let profileImage = '/default-avatar.png';
+      let profileImage = '';
 
       if (instaToken) {
         try {
@@ -52,9 +51,9 @@ const Profile = () => {
             const data = res.data.data;
             name = data.username || 'Instagram User';
             username = data.username || 'user';
-            profileImage = data.profile_picture_url || '/default-avatar.png';
+            profileImage = data.profile_picture_url || '';
           }
-        } catch (e) { console.error('IG profile fetch error', e); }
+        } catch (e) { console.error('IG fetch error', e); }
       } else if (ytChannelId) {
         try {
           const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/youtube/profile?channelId=${ytChannelId}`);
@@ -62,26 +61,21 @@ const Profile = () => {
             const data = res.data.data;
             name = data.title || 'YouTube Creator';
             username = data.title?.toLowerCase().replace(/\s+/g, '_') || 'user';
-            profileImage = data.thumbnailUrl || '/default-avatar.png';
+            profileImage = data.thumbnailUrl || '';
           }
-        } catch (e) { console.error('YT profile fetch error', e); }
+        } catch (e) { console.error('YT fetch error', e); }
       }
 
-      // Fallback to local storage if available
-      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-
       setProfileData({
-        name: name || storedUser.name || 'User',
-        email: email || storedUser.email || 'No email',
-        username: username || storedUser.username || 'username',
-        profileImage: profileImage,
+        name,
+        email,
+        username,
+        profileImage,
         linktreeLinks: []
       });
-
       setIsLoading(false);
     } catch (err) {
-      console.error('Profile fetch error:', err);
-      setError(err.message || 'Failed to load profile. Please connect an account.');
+      setError(err.message || 'Failed to load profile.');
       setIsLoading(false);
     }
   };
@@ -89,353 +83,176 @@ const Profile = () => {
   const fetchUserBiolinks = async () => {
     try {
       setIsBiolinksLoading(true);
-      const instaUserId = localStorage.getItem('insta_user_id');
-      const ytChannelId = localStorage.getItem('yt_channel_id');
-      if (!instaUserId && !ytChannelId) return;
-
       const headers = getBioLinkAuthHeaders();
-
-      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/data`, {
-        headers
-      });
-      const list = Array.isArray(response.data?.biolinks)
-        ? response.data.biolinks
-        : (response.data?.biolink ? [response.data.biolink] : []);
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/data`, { headers });
+      const list = Array.isArray(response.data?.biolinks) ? response.data.biolinks : (response.data?.biolink ? [response.data.biolink] : []);
       setBiolinks(list);
-    } catch (err) {
-      console.error('Error fetching biolinks:', err);
-    } finally {
-      setIsBiolinksLoading(false);
-    }
+    } catch (err) { console.error('Biolinks error:', err); }
+    finally { setIsBiolinksLoading(false); }
   };
 
-  const handleEditBiolink = (id) => {
-    navigate('/biolink/editor', { state: { id } });
-  };
+  const handleEditBiolink = (id) => navigate('/biolink/editor', { state: { id } });
 
   const handleDeleteBiolink = async (id) => {
-    if (!id) return;
-    const confirmDelete = window.confirm('Are you sure you want to delete this BioLink?');
-    if (!confirmDelete) return;
+    if (!window.confirm('Delete this BioLink?')) return;
     try {
-      const headers = { ...getBioLinkAuthHeaders(), 'Content-Type': 'application/json' };
-
       await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/remove`, {
-        headers,
+        headers: getBioLinkAuthHeaders(),
         data: { id }
       });
-      setMessage('BioLink deleted');
+      setMessage('BioLink Deleted');
       fetchUserBiolinks();
       setTimeout(() => setMessage(''), 2000);
-    } catch (err) {
-      console.error('Error deleting biolink:', err);
-      setMessage(err.response?.data?.error || 'Failed to delete BioLink');
-      setTimeout(() => setMessage(''), 3000);
-    }
-  };
-
-  const handleLinktreeChange = (e) => {
-    setNewLinktree(e.target.value);
+    } catch (e) { setMessage('Failed to delete'); }
   };
 
   const createLinktreeLink = async () => {
-    if (!newLinktree.trim()) {
-      setMessage('Please enter a valid link name');
-      return;
-    }
-
+    if (!newLinktree.trim()) return;
     try {
-      const headers = { ...getBioLinkAuthHeaders(), 'Content-Type': 'application/json' };
-
-      // Create new linktree link
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/profile/linktree`,
-        { linkName: newLinktree },
-        { headers }
-      );
-
-      // Update profile data with new linktree links
-      setProfileData({
-        ...profileData,
-        linktreeLinks: response.data.linktreeLinks
-      });
-
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/profile/linktree`, { linkName: newLinktree }, { headers: getBioLinkAuthHeaders() });
+      setProfileData({ ...profileData, linktreeLinks: response.data.linktreeLinks });
       setNewLinktree('');
-      setMessage('Linktree link created successfully!');
-
-      // Clear message after 3 seconds
-      setTimeout(() => {
-        setMessage('');
-      }, 3000);
-    } catch (err) {
-      console.error('Error creating linktree link:', err);
-      setMessage(err.response?.data?.error || 'Failed to create linktree link');
-    }
+      setMessage('Asset Added');
+      setTimeout(() => setMessage(''), 2000);
+    } catch (e) { setMessage('Failed to add asset'); }
   };
 
-  const copyLinkToClipboard = (linkName) => {
-    const hostname = window.location.origin;
-    const link = `${hostname}/${profileData.username}/${linkName}`;
-
-    navigator.clipboard.writeText(link)
-      .then(() => {
-        setMessage('Link copied to clipboard!');
-        setTimeout(() => {
-          setMessage('');
-        }, 3000);
-      })
-      .catch(() => {
-        setMessage('Failed to copy link');
-      });
+  const copyToClipboard = (linkName) => {
+    const link = `${window.location.origin}/${profileData.username}/${linkName}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setMessage('Link Copied');
+      setTimeout(() => setMessage(''), 2000);
+    });
   };
 
-  // --- Sub-render Functions ---
-
-  const renderProfileSidebar = () => (
-    <div className="custom-profile-card">
-      <div className="custom-profile-avatar-container">
-        <img
-          src={profileData.profileImage || '/default-avatar.png'}
-          alt="Profile Avatar"
-          className="custom-profile-avatar"
-          onError={(e) => { e.target.src = '/default-avatar.png'; }}
-        />
-        <div className="custom-avatar-overlay">
-          <Camera size={20} />
-        </div>
-      </div>
-
-      <div className="custom-profile-details-list">
-        <div className="custom-profile-detail-item">
-          <div className="custom-detail-icon"><User size={18} /></div>
-          <div className="custom-detail-content">
-            <label>Display Name</label>
-            <div className="custom-detail-value">{profileData.name}</div>
-          </div>
-        </div>
-
-        <div className="custom-profile-detail-item">
-          <div className="custom-detail-icon"><AtSign size={18} /></div>
-          <div className="custom-detail-content">
-            <label>Username</label>
-            <div className="custom-detail-value">@{profileData.username}</div>
-          </div>
-        </div>
-
-        <div className="custom-profile-detail-item">
-          <div className="custom-detail-icon"><Mail size={18} /></div>
-          <div className="custom-detail-content">
-            <label>Email Address</label>
-            <div className="custom-detail-value">{profileData.email}</div>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ width: '100%', marginTop: 'auto', paddingTop: '2rem' }}>
-        <button className="btn-link" style={{ width: '100%', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-          <ShieldCheck size={18} /> Verify Account
-        </button>
-      </div>
+  if (isLoading) return (
+    <div className="ep-loader">
+      <RefreshCw size={32} className="ep-spin" />
+      <p>Building Universe...</p>
     </div>
   );
-
-  const renderBioLinkHub = () => (
-    <div className="custom-biolinks-section">
-      <div className="section-headline">
-        <h2><Layout size={24} /> BioLink Hub</h2>
-        <button
-          className="custom-create-button"
-          onClick={() => navigate('/biolink/editor', { state: { new: true, reset: true } })}
-        >
-          <Plus size={16} /> New BioLink
-        </button>
-      </div>
-
-      {isBiolinksLoading ? (
-        <div className="custom-profile-loading"><div className="custom-loading-spinner"></div></div>
-      ) : (
-        <div className="biolinks-grid">
-          <div className="biolink-card create-new-card" onClick={() => navigate('/biolink/editor', { state: { new: true, reset: true } })}>
-            <div className="plus-icon-wrap"><Plus size={32} /></div>
-            <span style={{ fontWeight: 600 }}>Create New</span>
-          </div>
-          
-          {biolinks?.map((b) => (
-            <div key={b._id} className="biolink-card">
-              <div className="biolink-card-header">
-                <div className="biolink-avatar">
-                  {b?.profile?.avatar ? (
-                    <img
-                      src={b.profile.avatar.startsWith('http') ? b.profile.avatar : `${import.meta.env.VITE_API_BASE_URL}${b.profile.avatar}`}
-                      alt="Avatar"
-                    />
-                  ) : (
-                    <div className="avatar-fallback">{(b?.profile?.displayName || b?.username || 'B').substring(0, 1)}</div>
-                  )}
-                </div>
-                <div className="biolink-meta">
-                  <div className="biolink-title">{b?.profile?.displayName || b?.username || 'Untitled'}</div>
-                  <div className="biolink-subtitle">p/{b?.username || 'draft'}</div>
-                </div>
-                <div style={{ marginLeft: 'auto' }}>
-                   <div className="module-status" style={{ fontSize: '10px' }}>Active</div>
-                </div>
-              </div>
-              <div className="biolink-card-actions">
-                <button className="btn-edit" onClick={() => handleEditBiolink(b._id)}>
-                  <Pencil size={14} /> Edit
-                </button>
-                <button className="btn-link" onClick={() => b.username && window.open(`/p/${b.username}`, '_blank')}>
-                  <ExternalLink size={14} /> View
-                </button>
-                <button className="btn-delete" onClick={() => handleDeleteBiolink(b._id)}>
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const renderAutomationModules = () => (
-    <div className="automation-section">
-      <div className="section-headline">
-        <h2><Zap size={24} /> Automation Center</h2>
-      </div>
-      <div className="automation-modules-grid">
-        <div className="module-card">
-          <Gift size={32} style={{ marginBottom: '1rem', color: 'var(--accent-purple)' }} />
-          <h3>Brand Collabs</h3>
-          <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-            Manage exclusive deals and partnership requests in one place.
-          </p>
-          <div className="module-status">
-            <TrendingUp size={14} /> 12 New Deals
-          </div>
-          <ChevronRight size={20} style={{ position: 'absolute', right: '1.5rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
-        </div>
-
-        <div className="module-card">
-          <DollarSign size={32} style={{ marginBottom: '1rem', color: 'var(--accent-blue)' }} />
-          <h3>Affiliate Hub</h3>
-          <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-            Track earnings and manage all your affiliate product links globally.
-          </p>
-          <div className="module-status">
-             Coming Soon
-          </div>
-          <ChevronRight size={20} style={{ position: 'absolute', right: '1.5rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderDigitalAssets = () => (
-    <div className="custom-linktree-section">
-      <div className="section-headline">
-        <h2><Globe size={24} /> Digital Assets</h2>
-      </div>
-      
-      <div className="custom-create-linktree">
-        <div className="custom-input-group">
-          <input
-            type="text"
-            value={newLinktree}
-            onChange={handleLinktreeChange}
-            placeholder="Link Name (e.g. MyStore)"
-            className="custom-linktree-input"
-          />
-          <button className="custom-create-button" onClick={createLinktreeLink}>
-            <Plus size={16} /> Add Link
-          </button>
-        </div>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginTop: '0.75rem', paddingLeft: '0.5rem' }}>
-          Universal URL: {window.location.origin}/{profileData.username || 'user'}/[link-name]
-        </p>
-      </div>
-
-      <div className="custom-linktree-list">
-        {profileData.linktreeLinks?.map((link, index) => (
-          <div key={index} className="custom-linktree-item">
-            <div className="custom-link-details">
-              <div className="custom-link-name">{link.linkName}</div>
-              <div className="custom-link-url">/{profileData.username}/{link.linkName}</div>
-            </div>
-            <button className="btn-link" style={{ padding: '0.5rem 1rem' }} onClick={() => copyLinkToClipboard(link.linkName)}>
-              Copy Link
-            </button>
-          </div>
-        ))}
-        {(!profileData.linktreeLinks || profileData.linktreeLinks.length === 0) && (
-          <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-dim)', border: '1px dashed var(--glass-border)', borderRadius: '1rem' }}>
-            No secondary digital assets found.
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // --- Main Render Lifecycle ---
-
-  if (isLoading) {
-    return (
-      <div className="custom-profile-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="custom-loading-spinner"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="custom-profile-page">
-        <div className="custom-profile-error">
-          <ShieldCheck size={48} style={{ marginBottom: '1rem' }} />
-          <h3>Session Required</h3>
-          <p>{error}</p>
-          <button onClick={() => navigate('/')} className="custom-create-button" style={{ marginTop: '1rem' }}>Connect Account</button>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="custom-profile-page">
-      {message && <div className="custom-message-alert">{message}</div>}
-
-      <div className="custom-profile-header">
-        <div className="header-title-wrap">
-          <button 
-            className="assets-back-btn" 
-            onClick={() => navigate('/')} 
-            aria-label="Back to ChatHub"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
-               <line x1="19" y1="12" x2="5" y2="12"></line>
-               <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-          </button>
-          <div className="header-text-container">
-            <h1>Creator Universe</h1>
-            <p>Global Command Center & Automation Hub</p>
-          </div>
-        </div>
-        <div className="quick-stats-pills" style={{ display: 'flex', gap: '1rem' }}>
-          <div className="module-status"><Zap size={14} /> Total Presence: {biolinks.length}</div>
-          <div className="module-status"><Globe size={14} /> Public</div>
-        </div>
-      </div>
-
-      <div className="custom-profile-content">
-        {renderProfileSidebar()}
+    <div className="ep-page">
+      <div className="ep-container">
         
-        <div className="dashboard-sections">
-          {renderBioLinkHub()}
-          {renderAutomationModules()}
-          {renderDigitalAssets()}
-        </div>
+        <header className="ep-header">
+          <button className="ep-back-btn" onClick={() => navigate('/chat')} aria-label="Go Back">
+            <ArrowLeft size={24} strokeWidth={2.5} />
+          </button>
+          <div className="ep-pills">
+            <div className="ep-pill"><Zap size={14} /> Active</div>
+            <div className="ep-pill"><Globe size={14} /> Public</div>
+          </div>
+        </header>
+
+        {/* PROFILE SECTION */}
+        <section className="ep-profile-card">
+          <div className="ep-avatar-wrap">
+            <img 
+               className="ep-avatar" 
+               src={profileData.profileImage || `https://ui-avatars.com/api/?name=${profileData.username}&background=000&color=fff`} 
+               alt="Avatar" 
+            />
+          </div>
+          <div>
+            <h1 className="ep-name">{profileData.name}</h1>
+            <p className="ep-username">@{profileData.username}</p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+             <button className="ep-icon-btn" aria-label="Change Camera"><Camera size={20} /></button>
+             <button className="ep-icon-btn" aria-label="Verify account"><ShieldCheck size={20} /></button>
+          </div>
+        </section>
+
+        {/* BIOLINKS SECTION */}
+        <section className="ep-section">
+          <div className="ep-section-head">
+            <h2 className="ep-section-title"><Layout size={20} /> BioLinks</h2>
+            <button className="ep-pill" onClick={() => navigate('/biolink/editor', { state: { new: true, reset: true } })}>
+              <Plus size={12} /> New Link
+            </button>
+          </div>
+          
+          <div className="ep-card">
+            {isBiolinksLoading ? <RefreshCw size={20} className="ep-spin" /> : (
+              <div className="ep-biolinks-list">
+                {biolinks.map(b => (
+                  <div key={b._id} className="ep-biolink-item">
+                    <div className="ep-biolink-info">
+                      <div className="ep-biolink-title">{b?.profile?.displayName || b?.username}</div>
+                      <div className="ep-biolink-path">p/{b?.username}</div>
+                    </div>
+                    <div className="ep-actions">
+                      <button className="ep-icon-btn" onClick={() => b.username && window.open(`/p/${b.username}`, '_blank')} aria-label="View Link">
+                        <ExternalLink size={18} />
+                      </button>
+                      <button className="ep-edit-btn" onClick={() => handleEditBiolink(b._id)}>
+                        <Pencil size={16} /> Edit
+                      </button>
+                      <button className="ep-icon-btn" style={{ color: '#f87171' }} onClick={() => handleDeleteBiolink(b._id)} aria-label="Delete Link">
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {biolinks.length === 0 && <p style={{ opacity: 0.3, textAlign: 'center', fontSize: '0.85rem' }}>No BioLinks found.</p>}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* AUTOMATION BENTO */}
+        <section className="ep-section">
+            <h2 className="ep-section-title"><Zap size={20} /> Automation</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="ep-card" style={{ padding: '20px', textAlign: 'center' }} onClick={() => navigate('/chat')}>
+                    <Gift size={24} style={{ color: '#a78bfa', margin: '0 auto 10px' }} />
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Campaigns</div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.4 }}>Direct Collabs</div>
+                </div>
+                <div className="ep-card" style={{ padding: '20px', textAlign: 'center' }}>
+                    <DollarSign size={24} style={{ color: '#3b82f6', margin: '0 auto 10px' }} />
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Affiliates</div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.4 }}>Coming Soon</div>
+                </div>
+            </div>
+        </section>
+
+        {/* DIGITAL ASSETS */}
+        <section className="ep-section">
+          <h2 className="ep-section-title"><Globe size={20} /> My Store Assets</h2>
+          <div className="ep-card">
+            <div className="ep-asset-input-wrap">
+               <input 
+                  type="text" 
+                  className="ep-input" 
+                  placeholder="Asset Nickname (e.g. MyStore)" 
+                  value={newLinktree} 
+                  onChange={(e) => setNewLinktree(e.target.value)}
+                />
+               <button className="ep-add-btn" onClick={createLinktreeLink}><Plus size={20} /></button>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+              {profileData.linktreeLinks?.map((link, i) => (
+                <div key={i} className="ep-asset-item">
+                   <div className="ep-asset-name">{link.linkName}</div>
+                   <button className="ep-copy-btn" onClick={() => copyToClipboard(link.linkName)}>
+                      <Copy size={12} /> Copy
+                   </button>
+                </div>
+              ))}
+              {(!profileData.linktreeLinks || profileData.linktreeLinks.length === 0) && (
+                 <p style={{ opacity: 0.3, textAlign: 'center', fontSize: '0.85rem', margin: '10px 0' }}>No assets yet.</p>
+              )}
+            </div>
+          </div>
+        </section>
+
       </div>
+
+      {message && <div className="ep-toast"><CheckCircle size={18} /> {message}</div>}
     </div>
   );
 };

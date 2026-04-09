@@ -51,7 +51,7 @@ function Connect() {
             <div className="connect-glass-panel">
                 <div className="connect-brand">
                     <Zap size={36} strokeWidth={2} />
-                    <h1>CreatorHub</h1>
+                    <h1>Sotix</h1>
                 </div>
                 <h2>Start Automating</h2>
                 <p className="connect-subtitle">

@@ -94,13 +94,13 @@ const DataDeletion = () => {
                 <div className="alternative-methods">
                     <h2>Alternative: Disconnect Only</h2>
                     <p>
-                        If you simply want to stop CreatorHub from accessing your social media accounts without deleting your CreatorHub account, you can revoke access directly from the platforms:
+                        If you simply want to stop Sotix from accessing your social media accounts without deleting your Sotix account, you can revoke access directly from the platforms:
                     </p>
                     <div className="disconnect-instructions">
                         <h3>Disconnect Google / YouTube:</h3>
                         <ol>
                             <li>Go to your <a href="https://security.google.com/settings/security/permissions" target="_blank" rel="noopener noreferrer">Google Security Settings</a>.</li>
-                            <li>Find "CreatorHub" in the list of third-party apps with account access.</li>
+                            <li>Find "Sotix" in the list of third-party apps with account access.</li>
                             <li>Select it and click <strong>"Remove Access"</strong>.</li>
                         </ol>
                         <p><em>Revoking access will immediately stop all YouTube automations.</em></p>
@@ -109,7 +109,7 @@ const DataDeletion = () => {
                         <ol>
                             <li>Go to your Instagram App or web browser.</li>
                             <li>Navigate to <strong>Settings &gt; Security &gt; Apps and Websites</strong>.</li>
-                            <li>Find "CreatorHub" under Active apps and click <strong>"Remove"</strong>.</li>
+                            <li>Find "Sotix" under Active apps and click <strong>"Remove"</strong>.</li>
                         </ol>
                     </div>
                 </div>
@@ -126,7 +126,7 @@ const DataDeletion = () => {
                 </section>
 
                 <footer className="policy-footer">
-                    <p><strong>CreatorHub</strong></p>
+                    <p><strong>Sotix</strong></p>
                     <p>Committed to data privacy and user control.</p>
                 </footer>
             </div>

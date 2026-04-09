@@ -5,11 +5,12 @@ import {
     Package, User, MessageSquare, Mail, Handshake,
     Instagram, Youtube, CheckCircle, Circle, Loader,
     Bot, Activity, ChevronRight, RotateCcw, Link2, Trash2,
-    Sunrise, Sparkles, DollarSign, AlertTriangle
+    Sunrise, Sparkles, DollarSign, AlertTriangle, Scale
 } from 'lucide-react';
 import ToastNotification, { useToasts } from './ToastNotification';
 import BioLinkChatPreview from './chat/BioLinkChatPreview';
 import AutomationChatPreview from './chat/AutomationChatPreview';
+import DealNegotiatorSettings from './DealNegotiatorSettings';
 import '../styles/ChatHub.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -38,6 +39,7 @@ function ChatHub() {
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [loadingHistory, setLoadingHistory] = useState(true);
+    const [showNegotiatorRules, setShowNegotiatorRules] = useState(false);
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [connections, setConnections] = useState({ instagram: false, youtube: false });
@@ -322,7 +324,7 @@ function ChatHub() {
                 <button className="mob-icon-btn" onClick={() => setSidebarOpen(true)} id="mob-menu-open" aria-label="Open menu">
                     <Menu size={20} />
                 </button>
-                <span className="mob-brand"><Zap size={16} strokeWidth={2.5} /> CreatorHub</span>
+                <span className="mob-brand"><Zap size={16} strokeWidth={2.5} /> Sotix</span>
                 {activeAutomations.count > 0 && (
                     <span className="mob-active-pill">{activeAutomations.count} Active</span>
                 )}
@@ -337,7 +339,7 @@ function ChatHub() {
                 <div className="sidebar-top">
                     <div className="sidebar-brand">
                         <Zap size={18} strokeWidth={2.5} />
-                        <span>CreatorHub</span>
+                        <span>Sotix</span>
                     </div>
                     <button className="mob-icon-btn close-btn" onClick={() => setSidebarOpen(false)} id="mob-sidebar-close" aria-label="Close sidebar">
                         <X size={18} />
@@ -507,7 +509,7 @@ function ChatHub() {
                         </button>
                         <Bot size={20} strokeWidth={1.8} className="bot-icon" />
                         <div>
-                            <h1 className="chat-title">CreatorHub AI</h1>
+                            <h1 className="chat-title">Sotix AI</h1>
                             <p className="chat-subtitle">Your social media command center</p>
                         </div>
                     </div>
@@ -526,8 +528,8 @@ function ChatHub() {
                 {activeTab === 'deals' && (
                     <div className="chat-messages" id="deals-crm-board" style={{ padding: '24px', overflowY: 'auto' }}>
                         {/* CRM Header */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <div>
+                        <div className="crm-header-row" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '16px' }}>
+                            <div style={{ minWidth: '200px' }}>
                                 <h2 style={{ margin: 0, fontSize: '1.4rem', color: 'var(--text-primary)', fontWeight: 700 }}>
                                     <Handshake size={22} style={{ verticalAlign: 'middle', marginRight: '8px', color: 'var(--primary-color)' }} />
                                     Brand Deals CRM
@@ -536,12 +538,20 @@ function ChatHub() {
                                     All collaboration conversations · AI-powered negotiation
                                 </p>
                             </div>
-                            <button
-                                onClick={() => loadDealsData()}
-                                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}
-                            >
-                                <RotateCcw size={14} /> Refresh
-                            </button>
+                             <div style={{ display: 'flex', gap: '10px' }}>
+                                <button
+                                    onClick={() => setShowNegotiatorRules(true)}
+                                    style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(139, 92, 246, 0.3)', background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}
+                                >
+                                    <Scale size={14} /> Negotiation Laws
+                                </button>
+                                <button
+                                    onClick={() => loadDealsData()}
+                                    style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}
+                                >
+                                    <RotateCcw size={14} /> Refresh
+                                </button>
+                            </div>
                         </div>
 
                         {loadingCrm && (
@@ -551,7 +561,7 @@ function ChatHub() {
                             </div>
                         )}
 
-                        {!loadingCrm && !crmData && (
+                        {!loadingCrm && !crmData && !showNegotiatorRules && (
                             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-tertiary)' }}>
                                 <Handshake size={48} style={{ opacity: 0.3, marginBottom: '16px' }} />
                                 <h3 style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>No deals yet</h3>
@@ -559,7 +569,13 @@ function ChatHub() {
                             </div>
                         )}
 
-                        {!loadingCrm && crmData && (
+                        {showNegotiatorRules && (
+                            <div style={{ animation: 'fadeIn 0.3s ease' }}>
+                                <DealNegotiatorSettings userId={userId} onBack={() => setShowNegotiatorRules(false)} />
+                            </div>
+                        )}
+
+                        {!loadingCrm && crmData && !showNegotiatorRules && (
                             <div>
                                 {/* ── PIPELINE SECTIONS ── */}
                                 {[
@@ -720,7 +736,7 @@ function ChatHub() {
                     {!loadingHistory && messages.length === 0 && activeTab === 'current' && (
                         <div className="chat-welcome" id="chat-welcome">
                             <div className="welcome-icon-wrap"><Zap size={28} strokeWidth={2} /></div>
-                            <h2 className="welcome-title">Welcome to CreatorHub AI</h2>
+                            <h2 className="welcome-title">Welcome to Sotix AI</h2>
                             <p className="welcome-sub">Tell me what you need — I'll handle everything behind the scenes.</p>
                             <div className="suggested-grid" id="suggested-prompts">
                                 {SUGGESTED_PROMPTS.map(({ icon: Icon, text, label }, i) => (

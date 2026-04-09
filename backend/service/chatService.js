@@ -57,7 +57,7 @@ function getIntentList() {
 async function parseIntents(message, context) {
     const intentList = getIntentList();
 
-    const prompt = `You are the AI brain of CreatorHub — a social media management platform for creators.
+    const prompt = `You are the AI brain of Sotix — a social media management platform for creators.
 Your job: understand ANYTHING the creator says (no matter how vague, messy, or creative) and convert it into structured action intents.
 
 CRITICAL RULES:
@@ -359,7 +359,7 @@ async function formatResponse(message, actionResults, hasChat, context) {
             ? `\n\nI also just executed these actions for the creator:\n${actionResults.map(r => `- ${formatIntentTitle(r.intent)}: ${r.success ? 'Success' : 'Failed'} — ${r.message}`).join('\n')}`
             : '';
 
-        const chatPrompt = `You are CreatorHub AI — the creator's AI employee, not a chatbot.
+        const chatPrompt = `You are Sotix AI — the creator's AI employee, not a chatbot.
 Talk like a chill coworker, not a corporate assistant. Use emojis naturally. Be SHORT.
 ${contextInfo}
 

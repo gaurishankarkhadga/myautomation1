@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
-import '../styles/BrandDeals.css';
+import { 
+    DollarSign, Palette, Scale, Save, ArrowLeft, 
+    ShieldCheck, RefreshCw, CheckCircle2, ChevronRight
+} from 'lucide-react';
+import './DealNegotiatorSettings.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -8,7 +12,6 @@ function DealNegotiatorSettings({ userId, onBack }) {
     const [saving, setSaving] = useState(false);
     const [toast, setToast] = useState('');
     
-    // 15-Point Matrix State
     const [prefs, setPrefs] = useState({
         acceptedDeliverables: [],
         minimumCashTarget: '',
@@ -41,14 +44,10 @@ function DealNegotiatorSettings({ userId, onBack }) {
             const res = await fetch(`${API_BASE_URL}/api/instagram/deal-negotiator/settings?userId=${userId}`);
             const data = await res.json();
             if (data.success && data.data) {
-                setPrefs({
-                    ...prefs,
-                    ...data.data,
-                    // Handle array fields for controlled inputs if needed
-                });
+                setPrefs({ ...prefs, ...data.data });
             }
         } catch (e) {
-            console.error('Fetch settings error:', e);
+            console.error('Fetch error:', e);
         }
         setLoading(false);
     };
@@ -63,12 +62,12 @@ function DealNegotiatorSettings({ userId, onBack }) {
             });
             const data = await res.json();
             if (data.success) {
-                showToast('✅ 15-Point Rules Saved! AI is now bound by these laws.');
+                showToast('Settings Saved Successfully');
             } else {
-                showToast(`❌ Error: ${data.error}`);
+                showToast(`Error: ${data.error}`);
             }
         } catch (e) {
-            showToast(`❌ Saving failed: ${e.message}`);
+            showToast(`Saving failed: ${e.message}`);
         }
         setSaving(false);
     };
@@ -78,123 +77,153 @@ function DealNegotiatorSettings({ userId, onBack }) {
     };
 
     if (loading) {
-        return <div className="mp-loading"><div className="mp-loading-pulse"></div><p>Loading your AI rules...</p></div>;
+        return (
+            <div className="dns-loader">
+                <RefreshCw size={24} className="dns-spin" />
+                <p>Loading AI Laws...</p>
+            </div>
+        );
     }
 
     return (
-        <div className="mp-applications">
-            <div className="mp-header-top" style={{ marginBottom: '20px' }}>
-                <div>
-                    <h2 className="mp-title">🤖 AI Negotiator Matrix</h2>
-                    <p className="mp-subtitle">Set your 15 non-negotiable laws. The AI will strictly enforce them globally.</p>
+        <div className="dns-container">
+            <header className="dns-header">
+                <div className="dns-title-area">
+                    <h2>Sponsorship Laws</h2>
+                    <p>Global non-negotiable rules for AI negotiation.</p>
                 </div>
-                <button onClick={handleSave} disabled={saving} className="mp-sync-btn" style={{ background: '#69f0ae', color: '#1a1a2e' }}>
-                    {saving ? 'Saving...' : '💾 Save Global Rules'}
-                </button>
+                <div className="dns-actions">
+                    <button className="dns-btn dns-btn-back" onClick={onBack}>
+                        <ArrowLeft size={18} /> Back
+                    </button>
+                    <button className="dns-btn dns-btn-save" onClick={handleSave} disabled={saving}>
+                        {saving ? <RefreshCw size={18} className="dns-spin" /> : <Save size={18} />}
+                        Save Changes
+                    </button>
+                </div>
+            </header>
+
+            <div className="dns-grid">
+                {/* ZONE 1: FINANCIALS */}
+                <section className="dns-card">
+                    <div className="dns-section-head">
+                        <div className="dns-icon-box" style={{ background: 'rgba(74, 222, 128, 0.15)', color: 'var(--green)' }}>
+                            <DollarSign size={20} />
+                        </div>
+                        <h3 className="dns-card-title">Financials</h3>
+                    </div>
+
+                    <div className="dns-form-group">
+                        <label className="dns-label">Min Fee ($ Floor)</label>
+                        <input type="number" className="dns-input" value={prefs.minimumCashTarget} onChange={(e) => handleChange('minimumCashTarget', e.target.value)} placeholder="0.00" />
+                    </div>
+
+                    <div className="dns-form-group">
+                        <label className="dns-label">Max Fee ($ Goal)</label>
+                        <input type="number" className="dns-input" value={prefs.maximumAskTarget} onChange={(e) => handleChange('maximumAskTarget', e.target.value)} placeholder="0.00" />
+                    </div>
+
+                    <div className="dns-form-group">
+                        <label className="dns-label">Payment Terms</label>
+                        <input type="text" className="dns-input" value={prefs.paymentTerms} onChange={(e) => handleChange('paymentTerms', e.target.value)} placeholder="e.g. 50% upfront" />
+                    </div>
+
+                    <label className="dns-checkbox-row">
+                        <input type="checkbox" className="dns-checkbox" checked={prefs.barterAcceptance} onChange={(e) => handleChange('barterAcceptance', e.target.checked)} />
+                        <div className="dns-cb-text">
+                            <strong>Accept Barter</strong>
+                            <span>Allow product-only exchange.</span>
+                        </div>
+                    </label>
+
+                    <label className="dns-checkbox-row">
+                        <input type="checkbox" className="dns-checkbox" checked={prefs.affiliateLinks} onChange={(e) => handleChange('affiliateLinks', e.target.checked)} />
+                        <div className="dns-cb-text">
+                            <strong>Accept Affiliate</strong>
+                            <span>Allow commission-based deals.</span>
+                        </div>
+                    </label>
+                </section>
+
+                {/* ZONE 2: CREATIVE */}
+                <section className="dns-card">
+                    <div className="dns-section-head">
+                        <div className="dns-icon-box" style={{ background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24' }}>
+                            <Palette size={20} />
+                        </div>
+                        <h3 className="dns-card-title">Creative</h3>
+                    </div>
+
+                    <div className="dns-form-group">
+                        <label className="dns-label">Accepted Deliverables</label>
+                        <input type="text" className="dns-input" value={prefs.acceptedDeliverables?.join(', ') || ''} onChange={(e) => handleChange('acceptedDeliverables', e.target.value ? e.target.value.split(',').map(s => s.trim()) : [])} placeholder="Reels, Stories, Posts" />
+                    </div>
+
+                    <div className="dns-form-group">
+                        <label className="dns-label">Content Format</label>
+                        <input type="text" className="dns-input" value={prefs.contentFormat} onChange={(e) => handleChange('contentFormat', e.target.value)} placeholder="e.g. UGC style" />
+                    </div>
+
+                    <div className="dns-form-group">
+                        <label className="dns-label">Brief Requirement</label>
+                        <input type="text" className="dns-input" value={prefs.creativeBriefRequirement} onChange={(e) => handleChange('creativeBriefRequirement', e.target.value)} placeholder="e.g. PDF Required" />
+                    </div>
+
+                    <div className="dns-form-group">
+                        <label className="dns-label">Revisions</label>
+                        <input type="text" className="dns-input" value={prefs.revisionsIncluded} onChange={(e) => handleChange('revisionsIncluded', e.target.value)} placeholder="e.g. 1 Free Round" />
+                    </div>
+
+                    <label className="dns-checkbox-row">
+                        <input type="checkbox" className="dns-checkbox" checked={prefs.requiredFreeProduct} onChange={(e) => handleChange('requiredFreeProduct', e.target.checked)} />
+                        <div className="dns-cb-text">
+                            <strong>Ship Product First</strong>
+                            <span>Physical item must arrive first.</span>
+                        </div>
+                    </label>
+                </section>
+
+                {/* ZONE 3: LEGAL */}
+                <section className="dns-card">
+                    <div className="dns-section-head">
+                        <div className="dns-icon-box" style={{ background: 'rgba(167, 139, 250, 0.15)', color: '#a78bfa' }}>
+                            <Scale size={20} />
+                        </div>
+                        <h3 className="dns-card-title">Legal</h3>
+                    </div>
+
+                    <div className="dns-form-group">
+                        <label className="dns-label">Usage Rights</label>
+                        <input type="text" className="dns-input" value={prefs.usageRightsLimits} onChange={(e) => handleChange('usageRightsLimits', e.target.value)} placeholder="e.g. 30 Days Ads" />
+                    </div>
+
+                    <div className="dns-form-group">
+                        <label className="dns-label">Exclusivity</label>
+                        <input type="text" className="dns-input" value={prefs.exclusivityLimits} onChange={(e) => handleChange('exclusivityLimits', e.target.value)} placeholder="e.g. 14 Days Competitive" />
+                    </div>
+
+                    <div className="dns-form-group">
+                        <label className="dns-label">Delivery Timeline</label>
+                        <input type="text" className="dns-input" value={prefs.deliveryTimeline} onChange={(e) => handleChange('deliveryTimeline', e.target.value)} placeholder="e.g. 10 Working Days" />
+                    </div>
+
+                    <div className="dns-form-group">
+                        <label className="dns-label">Blocked Industries</label>
+                        <input type="text" className="dns-input" value={prefs.blockedIndustries?.join(', ') || ''} onChange={(e) => handleChange('blockedIndustries', e.target.value ? e.target.value.split(',').map(s => s.trim()) : [])} placeholder="Gambling, Adult, Crypto" />
+                    </div>
+
+                    <div className="dns-form-group">
+                        <label className="dns-label">Contract Pref</label>
+                        <input type="text" className="dns-input" value={prefs.contractSignOff} onChange={(e) => handleChange('contractSignOff', e.target.value)} placeholder="Standard Release only" />
+                    </div>
+                </section>
             </div>
 
-            <div className="deal-settings-grid" style={{ display: 'grid', gap: '20px', paddingBottom: '30px' }}>
-                
-                {/* FINANCIALS */}
-                <div className="settings-card" style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '12px' }}>
-                    <h3 style={{ marginTop: 0, color: '#64b5f6' }}>💰 Financial Boundaries</h3>
-                    
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px' }}>1. Minimum Cash Target ($ Floor)</label>
-                        <input type="number" value={prefs.minimumCashTarget} onChange={(e) => handleChange('minimumCashTarget', e.target.value)} placeholder="e.g. 500" style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
-                        <span style={{ fontSize: '0.8rem', color: '#888' }}>AI will instantly counter anything below this.</span>
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px' }}>2. Maximum Ask Target ($ Ceiling)</label>
-                        <input type="number" value={prefs.maximumAskTarget} onChange={(e) => handleChange('maximumAskTarget', e.target.value)} placeholder="e.g. 2000" style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px' }}>3. Payment Terms</label>
-                        <input type="text" value={prefs.paymentTerms} onChange={(e) => handleChange('paymentTerms', e.target.value)} placeholder="e.g. 50% upfront, 50% before posting" style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem', cursor: 'pointer' }}>
-                            <input type="checkbox" checked={prefs.barterAcceptance} onChange={(e) => handleChange('barterAcceptance', e.target.checked)} />
-                            4. Do you accept Barter (Free Products with NO cash)?
-                        </label>
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem', cursor: 'pointer' }}>
-                            <input type="checkbox" checked={prefs.affiliateLinks} onChange={(e) => handleChange('affiliateLinks', e.target.checked)} />
-                            5. Do you accept Affiliate/Commission ONLY deals?
-                        </label>
-                    </div>
+            {toast && (
+                <div className="dns-toast">
+                    <CheckCircle2 size={20} color="var(--green)" /> {toast}
                 </div>
-
-                {/* CREATIVE & SCOPE */}
-                <div className="settings-card" style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '12px' }}>
-                    <h3 style={{ marginTop: 0, color: '#ffab40' }}>🎨 Creative Scope & Deliverables</h3>
-                    
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px' }}>6. Accepted Deliverables</label>
-                        <input type="text" value={prefs.acceptedDeliverables?.join(', ')} onChange={(e) => handleChange('acceptedDeliverables', e.target.value.split(', '))} placeholder="e.g. Reels, Story, YouTube Integration" style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px' }}>7. Content Format / Tone</label>
-                        <input type="text" value={prefs.contentFormat} onChange={(e) => handleChange('contentFormat', e.target.value)} placeholder="e.g. UGC style, Dedicated Review, Sketch" style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px' }}>8. Creative Brief Requirement</label>
-                        <input type="text" value={prefs.creativeBriefRequirement} onChange={(e) => handleChange('creativeBriefRequirement', e.target.value)} placeholder="e.g. AI must acquire full written brief before accepting" style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px' }}>9. Revisions Included</label>
-                        <input type="text" value={prefs.revisionsIncluded} onChange={(e) => handleChange('revisionsIncluded', e.target.value)} placeholder="e.g. 1 free round, $100 per extra round" style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem', cursor: 'pointer' }}>
-                            <input type="checkbox" checked={prefs.requiredFreeProduct} onChange={(e) => handleChange('requiredFreeProduct', e.target.checked)} />
-                            10. Even on paid deals, must they send the physical product?
-                        </label>
-                    </div>
-                </div>
-
-                {/* RIGHTS & LEGAL */}
-                <div className="settings-card" style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '12px' }}>
-                    <h3 style={{ marginTop: 0, color: '#ce93d8' }}>⚖️ Rights & Legal</h3>
-                    
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px' }}>11. Usage Rights Limits</label>
-                        <input type="text" value={prefs.usageRightsLimits} onChange={(e) => handleChange('usageRightsLimits', e.target.value)} placeholder="e.g. 30 days paid ads allowed, nothing more" style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px' }}>12. Exclusivity Limits</label>
-                        <input type="text" value={prefs.exclusivityLimits} onChange={(e) => handleChange('exclusivityLimits', e.target.value)} placeholder="e.g. 30-day competitor block max" style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px' }}>13. Minimum Delivery Timeline</label>
-                        <input type="text" value={prefs.deliveryTimeline} onChange={(e) => handleChange('deliveryTimeline', e.target.value)} placeholder="e.g. 7 days minimum from product receipt" style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                        <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px' }}>14. Blocked Industries</label>
-                        <input type="text" value={prefs.blockedIndustries?.join(', ')} onChange={(e) => handleChange('blockedIndustries', e.target.value.split(', '))} placeholder="e.g. Gambling, Crypto, Fast Fashion" style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px' }}>15. Contract Preference</label>
-                        <input type="text" value={prefs.contractSignOff} onChange={(e) => handleChange('contractSignOff', e.target.value)} placeholder="e.g. We require brands to sign our standard agreement" style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
-                    </div>
-                </div>
-
-            </div>
-            
-            {toast && <div className="mp-toast" style={{ bottom: '20px' }}>{toast}</div>}
+            )}
         </div>
     );
 }

@@ -185,9 +185,6 @@ function BrandDeals({ userId, token }) {
                         <button onClick={syncCJDeals} disabled={syncing} className="mp-sync-btn">
                             {syncing ? <><span className="mp-spinner-sm"></span> Syncing...</> : '🔄 Sync CJ Deals'}
                         </button>
-                        <button onClick={() => setView('ai-settings')} className={`mp-view-btn ${view === 'ai-settings' ? 'active' : ''}`} style={{ borderColor: view === 'ai-settings' ? '#69f0ae' : '', color: view === 'ai-settings' ? '#69f0ae' : '' }}>
-                            🤖 AI Negotiator Rules
-                        </button>
                         <button onClick={() => setView('marketplace')} className={`mp-view-btn ${view === 'marketplace' ? 'active' : ''}`}>
                             🏪 Campaigns
                         </button>
@@ -197,11 +194,6 @@ function BrandDeals({ userId, token }) {
                     </div>
                 </div>
             </div>
-
-            {/* AI NEGOTIATOR SETTINGS VIEW */}
-            {view === 'ai-settings' && (
-                <DealNegotiatorSettings userId={userId} />
-            )}
 
             {/* MARKETPLACE VIEW */}
             {view === 'marketplace' && (

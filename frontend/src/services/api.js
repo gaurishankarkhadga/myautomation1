@@ -12,7 +12,7 @@ const api = axios.create({
 
 //Request interceptor to add auth token
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('creatorhub_token');
+    const token = localStorage.getItem('sotix_token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -27,7 +27,7 @@ api.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             // Token expired or invalid
-            localStorage.removeItem('creatorhub_token');
+            localStorage.removeItem('sotix_token');
             window.location.href = '/login';
         }
         return Promise.reject(error.response?.data || error.message);

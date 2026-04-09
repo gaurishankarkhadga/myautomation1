@@ -1,0 +1,154 @@
+/* ============================================================
+   DealNegotiatorSettings.css — Mobile-First Material Laws
+   ============================================================ */
+
+.dns-container { 
+    max-width: 100%; 
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    color: var(--text-primary);
+}
+
+.dns-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 0 4px;
+}
+
+@media (min-width: 768px) {
+    .dns-header { flex-direction: row; align-items: center; justify-content: space-between; }
+}
+
+.dns-title-area h2 { 
+    font-size: 1.5rem; 
+    font-weight: 800; 
+    margin: 0; 
+    letter-spacing: -0.02em; 
+}
+
+.dns-title-area p { 
+    font-size: 0.875rem; 
+    opacity: 0.5; 
+    margin: 4px 0 0; 
+}
+
+.dns-actions { 
+    display: flex; 
+    gap: 10px; 
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .dns-actions { width: auto; }
+}
+
+.dns-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 48px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    transition: transform 0.1s, filter 0.2s;
+    border: none;
+    white-space: nowrap;
+}
+
+.dns-btn:active { transform: scale(0.98); }
+.dns-btn-back { background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); }
+.dns-btn-save { background: var(--green); color: #000; }
+
+.dns-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding-bottom: 80px;
+}
+
+@media (min-width: 1024px) {
+    .dns-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.dns-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.dns-section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.dns-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dns-card-title { font-size: 1.125rem; font-weight: 700; margin: 0; }
+.dns-form-group { display: flex; flex-direction: column; gap: 8px; }
+.dns-label { font-size: 0.8125rem; font-weight: 600; opacity: 0.6; display: flex; align-items: center; gap: 6px; }
+
+.dns-input {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    height: 48px;
+    padding: 0 16px;
+    color: #fff;
+    font-size: 0.9375rem;
+    width: 100%;
+    outline: none;
+}
+
+.dns-input:focus { border-color: var(--green); }
+
+.dns-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 14px;
+    cursor: pointer;
+}
+
+.dns-checkbox { width: 22px; height: 22px; accent-color: var(--green); flex-shrink: 0; }
+.dns-cb-text strong { display: block; font-size: 0.875rem; margin-bottom: 2px; }
+.dns-cb-text span { font-size: 0.75rem; opacity: 0.4; }
+
+.dns-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dns-spin { animation: dns-spin 1s linear infinite; }
+@keyframes dns-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.dns-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; opacity: 0.5; }

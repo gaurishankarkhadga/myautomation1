@@ -1,4 +1,4 @@
-# CreatorHub Backend - Complete Code Documentation & Architecture Map
+# Sotix Backend - Complete Code Documentation & Architecture Map
 
 This document serves as a comprehensive map of the backend services, models, and routes. Use this to quickly navigate the codebase without having to read every file individually.
 

@@ -11,7 +11,7 @@ const PrivacyPolicy = () => {
                 <section>
                     <h2>1. Introduction</h2>
                     <p>
-                        CreatorHub ("we," "our," or "us") is committed to protecting your privacy and being fully transparent about how we handle your data.
+                        Sotix ("we," "our," or "us") is committed to protecting your privacy and being fully transparent about how we handle your data.
                         This Privacy Policy explicitly explains how we collect, use, disclose, and safeguard your
                         information when you use our creator management platform, including our Instagram and YouTube automation tools.
                     </p>
@@ -26,7 +26,7 @@ const PrivacyPolicy = () => {
                     <h2>2. Information We Collect</h2>
 
                     <h3>2.1 Account Information</h3>
-                    <p>When you register for CreatorHub, we collect:</p>
+                    <p>When you register for Sotix, we collect:</p>
                     <ul>
                         <li>Name and email address</li>
                         <li>Encrypted account passwords</li>
@@ -58,10 +58,10 @@ const PrivacyPolicy = () => {
                     <div className="compliance-highlight">
                         <h4>Google API Services User Data Policy Compliance</h4>
                         <p>
-                            <strong>CreatorHub's use and transfer to any other app of information received from Google APIs will strictly adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements.</strong>
+                            <strong>Sotix's use and transfer to any other app of information received from Google APIs will strictly adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements.</strong>
                         </p>
                         <p>
-                            We do not use Google Workspace APIs to develop, improve, or train generalized AI and/or machine learning models. User data retrieved via Google APIs is only used to provide the specific automation and analytics features displayed within the CreatorHub application.
+                            We do not use Google Workspace APIs to develop, improve, or train generalized AI and/or machine learning models. User data retrieved via Google APIs is only used to provide the specific automation and analytics features displayed within the Sotix application.
                         </p>
                     </div>
 
@@ -93,7 +93,7 @@ const PrivacyPolicy = () => {
                     <ul>
                         <li><strong>With Your Consent:</strong> When you explicitly direct us to share data (e.g., utilizing a third-party affiliate integration).</li>
                         <li><strong>Service Providers:</strong> Trusted third-party vendors (like AWS/Render for database hosting, or Gemini for AI processing) who require access to operate the platform. These providers are strictly bound by confidentiality agreements.</li>
-                        <li><strong>Legal Compliance:</strong> If required by law, subpoena, or reasonable requests from law enforcement to protect the rights, property, or safety of CreatorHub, our users, or the public.</li>
+                        <li><strong>Legal Compliance:</strong> If required by law, subpoena, or reasonable requests from law enforcement to protect the rights, property, or safety of Sotix, our users, or the public.</li>
                         <li><strong>Business Transfers:</strong> In the event of a merger, acquisition, or sale of assets, user data may be transferred, provided the acquiring party agrees to respect this Privacy Policy.</li>
                     </ul>
                 </section>
@@ -127,7 +127,7 @@ const PrivacyPolicy = () => {
                     </ul>
 
                     <h3>6.1 Revoking Third-Party Access</h3>
-                    <p>You have full control to instantly sever CreatorHub's access to your social accounts at any time:</p>
+                    <p>You have full control to instantly sever Sotix's access to your social accounts at any time:</p>
                     <ul>
                         <li><strong>Google / YouTube:</strong> You may instantly revoke our app's access to your Google account via the <a href="https://security.google.com/settings/security/permissions" target="_blank" rel="noopener noreferrer">Google Security Settings page</a>. Doing so will immediately stop all YouTube automation.</li>
                         <li><strong>Meta / Instagram:</strong> You may revoke access via your Instagram App under Settings &gt; Security &gt; Apps and Websites.</li>
@@ -153,13 +153,13 @@ const PrivacyPolicy = () => {
                     <h2>9. Contact Us</h2>
                     <p>If you have any questions, concerns, or requests regarding this Privacy Policy or your data, please contact our Data Protection Officer:</p>
                     <ul>
-                        <li><strong>Email:</strong> privacy@creatorhub.com</li>
+                        <li><strong>Email:</strong> privacy@sotix.com</li>
                         <li><strong>Data Deletion Workflow:</strong> <a href="/data-deletion">Submit a Deletion Request</a></li>
                     </ul>
                 </section>
 
                 <footer className="policy-footer">
-                    <p><strong>CreatorHub</strong></p>
+                    <p><strong>Sotix</strong></p>
                     <p>Built for Creators. Designed for Compliance.</p>
                 </footer>
             </div>

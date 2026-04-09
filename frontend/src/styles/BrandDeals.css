@@ -809,6 +809,160 @@
     box-shadow: 0 4px 12px rgba(0, 230, 118, 0.3);
 }
 
+/* ---- Elite AI Negotiator Matrix ---- */
+.deal-settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    padding: 0.5rem 0 3rem 0;
+}
+
+.settings-card {
+    background: linear-gradient(145deg, rgba(20, 40, 30, 0.6), rgba(10, 20, 15, 0.8));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(105, 240, 174, 0.1);
+    border-radius: 20px;
+    padding: 1.8rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.settings-card:hover {
+    border-color: rgba(105, 240, 174, 0.25);
+    transform: translateY(-4px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(105, 240, 174, 0.05);
+}
+
+.settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.settings-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #e8f5e9;
+}
+
+.settings-label span {
+    color: #69f0ae;
+    font-family: monospace;
+    font-size: 1rem;
+}
+
+.settings-input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(105, 240, 174, 0.08);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.settings-input:focus {
+    outline: none;
+    background: rgba(10, 20, 15, 0.5);
+    border-color: rgba(105, 240, 174, 0.5);
+    box-shadow: 0 0 0 4px rgba(105, 240, 174, 0.05);
+}
+
+.settings-input::placeholder {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.settings-help {
+    font-size: 0.78rem;
+    color: rgba(200, 230, 200, 0.45);
+    line-height: 1.4;
+    font-style: italic;
+}
+
+.settings-checkbox-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.8rem 1rem;
+    background: rgba(105, 240, 174, 0.03);
+    border: 1px solid rgba(105, 240, 174, 0.05);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.settings-checkbox-wrap:hover {
+    background: rgba(105, 240, 174, 0.06);
+    border-color: rgba(105, 240, 174, 0.15);
+}
+
+.settings-checkbox-wrap input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #69f0ae;
+    cursor: pointer;
+    margin: 0;
+}
+
+.settings-checkbox-wrap div {
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-checkbox-wrap strong {
+    font-size: 0.88rem;
+    color: #e8f5e9;
+}
+
+.settings-checkbox-wrap span {
+    font-size: 0.75rem;
+    color: rgba(105, 240, 174, 0.6);
+}
+
+.settings-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 0.5rem;
+}
+
+.settings-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+}
+
+.settings-card-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+/* Financials Variant */
+.variant-finance .settings-card-icon { background: rgba(100, 181, 246, 0.12); color: #64b5f6; }
+.variant-finance .settings-card-title { color: #64b5f6; }
+
+/* Creative Variant */
+.variant-creative .settings-card-icon { background: rgba(255, 171, 64, 0.12); color: #ffab40; }
+.variant-creative .settings-card-title { color: #ffab40; }
+
+/* Legal Variant */
+.variant-legal .settings-card-icon { background: rgba(206, 147, 216, 0.12); color: #ce93d8; }
+.variant-legal .settings-card-title { color: #ce93d8; }
+
 /* ---- Toast ---- */
 .mp-toast {
     position: fixed;
