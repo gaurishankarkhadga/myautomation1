@@ -183,6 +183,7 @@ router.get('/deals/:userId', async (req, res) => {
         const Conversation = require('../model/Instaautomation').Conversation;
 
         const deals = await Conversation.find({
+            userId: userId,
             'negotiationData.status': { $exists: true, $ne: 'pending' }
         }).sort({ lastMessageTime: -1 }).lean();
 
@@ -207,6 +208,26 @@ router.get('/deals/:userId', async (req, res) => {
     } catch (error) {
         console.error('[ChatAPI] Error fetching deals:', error.message);
         res.status(500).json({ success: false, error: 'Failed to fetch deals' });
+    }
+});
+
+// DELETE /api/chat/deals/:conversationId — Delete a specific deal
+router.delete('/deals/:conversationId', async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const Conversation = require('../model/Instaautomation').Conversation;
+
+        // Either delete the entire conversation or just reset the negotiationData status
+        // User said "delete button so I can manually delete or through ai in suppose I want to clean something from deal tab"
+        // Let's remove the negotiationData status so it drops from the pipeline, but keeps the chat history if needed.
+        // Wait, often they just want to delete the whole deal pipeline reference. We can just delete the document or reset `negotiationData.status`.
+        // Deleting the document entirely is simplest and ensures it's clean.
+        await Conversation.findByIdAndDelete(conversationId);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[ChatAPI] Error deleting deal:', error.message);
+        res.status(500).json({ success: false, error: 'Failed to delete deal' });
     }
 });
 

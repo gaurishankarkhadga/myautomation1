@@ -33,8 +33,8 @@ module.exports = {
                     CreatorPersona.findOne({ userId }).lean(),
                     CreatorAsset.countDocuments({ userId, isActive: true }),
                     CreatorPreference.findOne({ userId }).lean(),
-                    AutoReplyLog.countDocuments({}),
-                    DmAutoReplyLog.countDocuments({}),
+                    AutoReplyLog.countDocuments({ userId }),
+                    DmAutoReplyLog.countDocuments({ userId }),
                     BrandDeal.findOne({ userId }).sort({ analysisTimestamp: -1 }).lean()
                 ]);
 
@@ -71,7 +71,7 @@ module.exports = {
                 ];
 
                 // Fetch conversation priority tags
-                const conversations = await require('../../model/Instaautomation').Conversation.find({ senderId: { $ne: userId } }).lean();
+                const conversations = await require('../../model/Instaautomation').Conversation.find({ userId, senderId: { $ne: userId } }).lean();
                 const priorityCounts = { 'Collaboration': 0, 'Support': 0, 'Fan Mail': 0, 'Spam': 0, 'Other': 0 };
                 conversations.forEach(c => {
                     if (priorityCounts[c.priorityTag] !== undefined) priorityCounts[c.priorityTag]++;
@@ -245,7 +245,7 @@ module.exports = {
             // ==================== COMMENT LOG ====================
             if (intent === 'get_comments_log') {
                 const limit = params.limit || 10;
-                const logs = await AutoReplyLog.find({})
+                const logs = await AutoReplyLog.find({ userId })
                     .sort({ scheduledAt: -1 })
                     .limit(limit)
                     .lean();
@@ -273,7 +273,7 @@ module.exports = {
             // ==================== DM LOG ====================
             if (intent === 'get_dm_log') {
                 const limit = params.limit || 10;
-                const logs = await DmAutoReplyLog.find({})
+                const logs = await DmAutoReplyLog.find({ userId })
                     .sort({ scheduledAt: -1 })
                     .limit(limit)
                     .lean();

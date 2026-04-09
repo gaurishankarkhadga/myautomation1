@@ -18,9 +18,9 @@ module.exports = {
 
             // Fetch all activity in last 24h in parallel
             const [dmLogs, commentLogs, conversations, settings] = await Promise.all([
-                DmAutoReplyLog.find({ scheduledAt: { $gte: twentyFourHoursAgo } }).lean(),
-                AutoReplyLog.find({ scheduledAt: { $gte: twentyFourHoursAgo } }).lean(),
-                Conversation.find({ lastMessageTime: { $gte: twentyFourHoursAgo.getTime() } }).lean(),
+                DmAutoReplyLog.find({ userId, scheduledAt: { $gte: twentyFourHoursAgo } }).lean(),
+                AutoReplyLog.find({ userId, scheduledAt: { $gte: twentyFourHoursAgo } }).lean(),
+                Conversation.find({ userId, lastMessageTime: { $gte: twentyFourHoursAgo.getTime() } }).lean(),
                 DmAutoReplySetting.findOne({ userId })
             ]);
 

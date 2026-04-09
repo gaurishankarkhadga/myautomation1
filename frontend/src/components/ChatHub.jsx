@@ -193,6 +193,24 @@ function ChatHub() {
         }
     };
 
+    const handleDeleteDeal = async (dealId) => {
+        if (!window.confirm("Are you sure you want to delete this deal? This action cannot be undone.")) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/chat/deals/${dealId}`, {
+                method: 'DELETE'
+            });
+            const data = await res.json();
+            if (data.success) {
+                addToasts([{ type: 'success', title: 'Deleted', message: 'Deal deleted successfully.' }]);
+                loadDealsData();
+            } else {
+                addToasts([{ type: 'error', title: 'Error', message: data.error || 'Failed to delete deal.' }]);
+            }
+        } catch {
+            addToasts([{ type: 'error', title: 'Error', message: 'Network error deleting deal.' }]);
+        }
+    };
+
     const handleClearHistory = async () => {
         if (!window.confirm("Are you sure you want to delete your entire chat history?")) return;
         try {
@@ -587,9 +605,18 @@ function ChatHub() {
                                                                     </p>
                                                                 </div>
                                                             </div>
-                                                            <span style={{ background: `${section.color}18`, color: section.color, padding: '5px 14px', borderRadius: '20px', fontWeight: 700, fontSize: '0.9rem' }}>
-                                                                {rate}
-                                                            </span>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                <span style={{ background: `${section.color}18`, color: section.color, padding: '5px 14px', borderRadius: '20px', fontWeight: 700, fontSize: '0.9rem' }}>
+                                                                    {rate}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => handleDeleteDeal(deal._id)}
+                                                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                    title="Delete Deal"
+                                                                >
+                                                                    <Trash2 size={16} />
+                                                                </button>
+                                                            </div>
                                                         </div>
 
                                                         {/* Conversation History (AI thread) */}
