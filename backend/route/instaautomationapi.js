@@ -1357,7 +1357,26 @@ router.post('/webhook', async (req, res) => {
                                 Token.findOne({ userId: igUserIdMapped }).lean()
                             ]);
 
-                            // 2. Update conversation with new incoming message
+                            // SAFETY: If no settings exist yet, skip negotiation silently
+                            if (!tokenData || !tokenData.accessToken) {
+                                console.log('[Webhook] 🤖 Skipping negotiation — no access token found.');
+                            } else {
+
+                            // 2. Fetch real follower count from Instagram API
+                            let realFollowers = '100,000';
+                            let realEngagement = '5%';
+                            try {
+                                const profileRes = await axios.get(`${INSTAGRAM_CONFIG.graphBaseUrl}/me`, {
+                                    params: { fields: 'followers_count,media_count', access_token: tokenData.accessToken }
+                                });
+                                if (profileRes.data?.followers_count) {
+                                    realFollowers = profileRes.data.followers_count.toLocaleString();
+                                }
+                            } catch (profileErr) {
+                                console.log('[Webhook] Could not fetch follower count, using default:', profileErr.message);
+                            }
+
+                            // 3. Update conversation with new incoming message
                             const conversation = await Conversation.findOneAndUpdate(
                                 { conversationId },
                                 { 
@@ -1372,21 +1391,27 @@ router.post('/webhook', async (req, res) => {
                                 { new: true, upsert: true }
                             );
 
-                            // 3. Prepare history for AI (map roles)
+                            // 4. Prepare history for AI (map roles)
                             const chatHistory = (conversation.negotiationData.history || []).map(h => ({
                                 role: h.action === 'sent' ? 'assistant' : 'user',
                                 text: h.text
                             }));
 
-                            // 4. Run Autonomous Brain
-                            // We use a high followers count default unless we can fetch it (placeholder 100k)
+                            // 5. Extract creator's custom instructions and negotiation preferences (null-safe)
+                            const customInstructionsText = (dmSettings?.customInstructions || [])
+                                .filter(ci => ci.active)
+                                .map(ci => ci.instruction)
+                                .join('\n');
+                            const negPrefs = dmSettings?.negotiationPreferences || null;
+
+                            // 6. Run Autonomous Brain with real stats and preferences
                             inboxTriageService.continueAutonomousNegotiation(
                                 chatHistory, 
-                                '100,000', 
-                                '5%', 
+                                realFollowers, 
+                                realEngagement, 
                                 creatorPersona, 
-                                (dmSettings.customInstructions || []).map(ci => ci.instruction).join('\n'),
-                                dmSettings.negotiationPreferences
+                                customInstructionsText,
+                                negPrefs
                             ).then(async (aiDecision) => {
                                 if (!aiDecision) return;
 
@@ -1428,6 +1453,7 @@ router.post('/webhook', async (req, res) => {
                                     );
                                 }
                             }).catch(err => console.error('[Webhook] Autonomous Negotation Error:', err.message));
+                            } // end else (tokenData exists)
                         }
 
                         // If you also want to update ChatHistory directly here, you could find the ChatHistory doc and push a message with the tag

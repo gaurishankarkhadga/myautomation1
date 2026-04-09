@@ -177,13 +177,20 @@ module.exports = {
                     timestamp: new Date()
                 });
 
-                // Generate new draft
+                // Generate new draft — fetch creator's rules so the regeneration respects them
+                const CreatorPersona = require('../../model/CreatorPersona');
+                const [persona, dmSettingsForDraft] = await Promise.all([
+                    CreatorPersona.findOne({ userId }).lean(),
+                    DmAutoReplySetting.findOne({ userId }).lean()
+                ]);
+
                 const newDraftData = await inboxTriageService.generateNegotiationDraft(
                     originalMessage, 
                     'Context Override', 
                     originalRate, 
-                    null, // persona
-                    instructions // Custom Override instructions implementation required in inboxTriageService
+                    persona,
+                    instructions,
+                    dmSettingsForDraft?.negotiationPreferences || null
                 );
 
                 if (newDraftData && newDraftData.draftReply) {

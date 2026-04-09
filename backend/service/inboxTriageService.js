@@ -45,7 +45,7 @@ async function triageMessage(messageText) {
 /**
  * Generates brand analysis, suggested rate card, and a drafted reply for Collaboration DMs
  */
-async function generateNegotiationDraft(messageText, followersCount, engagementRate = '3%', creatorPersona = null, customInstructions = null) {
+async function generateNegotiationDraft(messageText, followersCount, engagementRate = '3%', creatorPersona = null, customInstructions = null, negotiationPreferences = null) {
     if (!messageText || !process.env.GEMINI_API_KEY) return null;
 
     try {
@@ -72,6 +72,32 @@ Follow these exact instructions when generating the rate and the draft reply:
 `;
         }
 
+        let preferencesBlock = '';
+        if (negotiationPreferences) {
+            preferencesBlock = `
+CREATOR'S NON-NEGOTIABLE LAWS (15-POINT MATRIX):
+These are the creator's absolute rules. Use them to evaluate this initial inquiry and set your strategy.
+- Accepted Deliverables: ${negotiationPreferences.acceptedDeliverables?.join(', ') || 'Any'}
+- Min Cash Target: ${negotiationPreferences.minimumCashTarget ? '$'+negotiationPreferences.minimumCashTarget : 'Open'}
+- Max Asking Target: ${negotiationPreferences.maximumAskTarget ? '$'+negotiationPreferences.maximumAskTarget : 'Open'}
+- Barter Accepted: ${negotiationPreferences.barterAcceptance === false ? 'NEVER — cash only, reject barter immediately' : 'Yes'}
+- Payment Terms: ${negotiationPreferences.paymentTerms || 'Standard'}
+- Usage Rights Limits: ${negotiationPreferences.usageRightsLimits || 'Standard'}
+- Exclusivity Limits: ${negotiationPreferences.exclusivityLimits || 'Standard'}
+- Revisions Included: ${negotiationPreferences.revisionsIncluded || 'Standard'}
+- Delivery Timeline: ${negotiationPreferences.deliveryTimeline || 'Standard'}
+- Required Free Product: ${negotiationPreferences.requiredFreeProduct ? 'Yes, must send product' : 'No'}
+- Affiliate Links: ${negotiationPreferences.affiliateLinks ? 'Allowed' : 'No commission-only deals'}
+- Blocked Industries: ${negotiationPreferences.blockedIndustries?.join(', ') || 'None'}
+- Contract Sign-Off: ${negotiationPreferences.contractSignOff || 'Flexible'}
+- Content Format: ${negotiationPreferences.contentFormat || 'Standard'}
+- Brief Requirement: ${negotiationPreferences.creativeBriefRequirement || 'Required'}
+
+IMPORTANT: If the brand's initial message mentions a blocked industry, reject immediately. 
+If they mention barter/free product only and barter is NOT accepted, make it clear cash is required.
+Factor the minimum rate into your suggested rate calculation.`;
+        }
+
         const prompt = `
 You are an Elite Talent Manager representing a top-tier Instagram creator. A brand just DM'd this creator:
 "${messageText}"
@@ -79,10 +105,11 @@ You are an Elite Talent Manager representing a top-tier Instagram creator. A bra
 Creator stats: ${followersCount} followers, ${engagementRate} engagement.
 ${personaStyle}
 ${customOverrideBlock}
+${preferencesBlock}
 
 YOUR TASK: Do NOT just blindly suggest a rate or ask "what do you suggest". If the brand's request is totally vague (like "let's collab" or "I want to sponsor something"), you must act as a strict gatekeeper.
 1. Perform an internal analysis of the DM. What is missing? (Brand name? Product? Deliverables? Timeline? Budget?)
-2. Calculate an internal baseline rate ONLY if they are asking for rates for specific deliverables. ($10 per 1K followers baseline, Reels=1.5x, Stories=0.5x). If you don't know the deliverables yet, the rate should simply be "TBD - Awaiting Scope".
+2. Calculate an internal baseline rate ONLY if they are asking for rates for specific deliverables. ($10 per 1K followers baseline, Reels=1.5x, Stories=0.5x). If you don't know the deliverables yet, the rate should simply be "TBD - Awaiting Scope". NEVER go below the creator's minimum cash target if set.
 3. Draft a SHORT, sharp, natural reply (1-2 sentences) in the creator's voice to extract the missing information. Do NOT quote prices yet. Ask for the scope or the specific product first. Be professional but firm.
 
 Return ONLY valid JSON:
