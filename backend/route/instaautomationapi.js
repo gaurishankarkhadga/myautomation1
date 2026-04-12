@@ -1300,22 +1300,29 @@ router.post('/webhook', async (req, res) => {
                             console.error('[Webhook] Failed to save message natively:', err.message);
                         }
 
-                        // Triage the message to determine priority
-                        let priorityTag = 'Untriaged';
-                        try {
-                            const dmSettings = await DmAutoReplySetting.findOne({ userId: igUserIdMapped });
-                            if (dmSettings && dmSettings.inboxTriageEnabled) {
-                                priorityTag = await inboxTriageService.triageMessage(messageData.text);
-                                console.log(`[Webhook] Inbox Triage tagged as: ${priorityTag}`);
-                            }
-                        } catch (err) {
-                            console.error('[Webhook] Failed to query user settings for triage:', err.message);
-                        }
-
                         // Update conversation in DB
                         const conversationId = `${senderId}_${recipientId}`;
                         const existingConv = await Conversation.findOne({ conversationId });
                         const currentUnread = existingConv ? existingConv.unreadCount : 0;
+                        const isActivelyNegotiating = existingConv && existingConv.negotiationData && ['negotiating', 'drafted', 'contract_prep'].includes(existingConv.negotiationData.status);
+
+                        // Triage the message to determine priority
+                        let priorityTag = 'Untriaged';
+                        
+                        if (isActivelyNegotiating) {
+                            priorityTag = 'Collaboration';
+                            console.log(`[Webhook] Deal Lock Active. Forcing priority to Collaboration to prevent deal drop.`);
+                        } else {
+                            try {
+                                const dmSettings = await DmAutoReplySetting.findOne({ userId: igUserIdMapped });
+                                if (dmSettings && dmSettings.inboxTriageEnabled) {
+                                    priorityTag = await inboxTriageService.triageMessage(messageData.text);
+                                    console.log(`[Webhook] Inbox Triage tagged as: ${priorityTag}`);
+                                }
+                            } catch (err) {
+                                console.error('[Webhook] Failed to query user settings for triage:', err.message);
+                            }
+                        }
 
                         await Conversation.findOneAndUpdate(
                             { conversationId },
