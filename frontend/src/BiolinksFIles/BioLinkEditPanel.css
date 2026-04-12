@@ -3127,3 +3127,61 @@
     padding: 16px 40px;
   }
 }
+
+/* Mobile View Adjustments */
+@media (max-width: 900px) {
+  .mobile-preview-side { display: none; }
+  
+  .edit-toolbar { padding: 0.5rem 1rem; }
+  
+  .section-nav-btn { min-width: 70px; padding: 1rem 0.75rem; font-size: 0.65rem; }
+  
+  .slider-slide { padding: 1.25rem 1rem; }
+  
+  .content-action-buttons { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+  .content-action-btn { padding: 0.75rem 0.5rem; border-radius: 12px; }
+  .content-action-btn span { font-size: 0.6rem; }
+  
+  .simple-link-row { 
+    grid-template-columns: 1fr; 
+    gap: 0.75rem; 
+    padding: 1rem;
+  }
+  
+  .link-drag-zone { height: 20px; width: 100%; display: flex; justify-content: center; }
+  
+  .remove-btn-simple { position: absolute; top: 0.5rem; right: 0.5rem; width: 32px; height: 32px; }
+}
+
+/* Element Picker Popup */
+.element-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(10px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.element-picker-card {
+  background: #0a0a0a;
+  border: 1px solid var(--sotix-border);
+  border-radius: 28px;
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  box-shadow: var(--sotix-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Smooth Scrollbars for Desktop */
+@media (min-width: 1024px) {
+  .slider-slide::-webkit-scrollbar { width: 6px; }
+  .slider-slide::-webkit-scrollbar-track { background: transparent; }
+  .slider-slide::-webkit-scrollbar-thumb { background: var(--sotix-surface-3); border-radius: 10px; }
+}

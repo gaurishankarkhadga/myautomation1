@@ -140,13 +140,14 @@ cron.schedule('*/5 * * * *', async () => {
       eventType: 'viral_tag_scheduled_reply',
       processed: false,
       scheduledAt: { $lte: new Date() }
-    });
+    }).limit(100); // [FIX] Added pagination to prevent OOM on viral spikes
 
     if (pendingEvents.length === 0) return;
 
-    console.log(`[Cron] Found ${pendingEvents.length} pending viral tag replies.`);
+    console.log(`[Cron] Processing ${pendingEvents.length} pending viral tag replies with rate-limit protection...`);
 
-    for (const event of pendingEvents) {
+    for (let i = 0; i < pendingEvents.length; i++) {
+        const event = pendingEvents[i];
       try {
         const tokenData = await Token.findOne({ userId: event.userId });
         if (!tokenData) {
@@ -169,7 +170,17 @@ cron.schedule('*/5 * * * *', async () => {
         console.log(`[Cron] Successfully posted viral tag reply to media ${mediaId}`);
         event.processed = true;
         await event.save();
+
+        // [FIX] Intentional delay to respect rate limits and yield event loop
+        await new Promise(resolve => setTimeout(resolve, 800));
+
       } catch (err) {
+        // [FIX] If we hit a 429 Rate Limit, we must abort the entire batch
+        if (err.response && err.response.status === 429) {
+            console.error('[Cron] 🛑 INSTAGRAM RATE LIMIT (429) REACHED. Aborting batch processing for this cycle.');
+            break; 
+        }
+
         console.error(`[Cron] Error processing event ${event._id}:`, err.response?.data || err.message);
         // Mark as processed anyway so we don't infinitely retry failed ones immediately
         event.processed = true;

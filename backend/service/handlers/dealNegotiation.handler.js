@@ -38,20 +38,25 @@ async function dispatchMessage(recipientIGSID, igBusinessAccountId, textMessage)
 /**
  * Utility to find a target conversation based on a dynamic target string.
  */
-async function findTargetConversation(userId, targetStr) {
+async function findTargetConversation(userId, targetStr, dealId = null) {
     let query = { 
         userId: userId, // [FIX] Strict Multi-Tenant Enforcement
-        'negotiationData.status': { $in: ['drafted', 'negotiating'] } 
     };
-    if (targetStr && targetStr.toLowerCase() !== 'all' && targetStr.toLowerCase() !== 'recent') {
-        const regexStr = targetStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape
-        query['negotiationData.brandName'] = { $regex: new RegExp(regexStr, 'i') };
+    if (dealId) {
+        query._id = dealId;
+    } else {
+        query['negotiationData.status'] = { $in: ['drafted', 'negotiating'] };
+        if (targetStr && targetStr.toLowerCase() !== 'all' && targetStr.toLowerCase() !== 'recent') {
+            const regexStr = targetStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape
+            query['negotiationData.brandName'] = { $regex: new RegExp(regexStr, 'i') };
+        }
     }
 
     // Attempt to find by specific brand, else just pick the most recently active drafted deal
     let deals = await Conversation.find(query).sort({ lastMessageTime: -1 }).limit(10);
     
     if (deals.length === 0) return [];
+    if (dealId) return deals;
     
     if (targetStr && targetStr.toLowerCase() === 'all') {
         return deals;
@@ -90,7 +95,7 @@ module.exports = {
 
                 let resultsLog = [];
                 for (const act of actions) {
-                    const targetDeals = await findTargetConversation(userId, act.brandName);
+                    const targetDeals = await findTargetConversation(userId, act.brandName, act.dealId);
                     
                     if (targetDeals.length === 0) {
                         resultsLog.push(`❌ ${act.brandName ? act.brandName : 'Deal'}: Not found in active negotiations.`);
@@ -161,7 +166,7 @@ module.exports = {
                     return { success: false, message: 'Please provide instructions for how to rewrite the draft.' };
                 }
                 
-                const targetDeals = await findTargetConversation(userId, targetBrand);
+                const targetDeals = await findTargetConversation(userId, targetBrand, params.dealId);
                 if (targetDeals.length === 0) {
                     return { success: false, message: `Could not find an active drafted deal for "${targetBrand}".` };
                 }
@@ -244,7 +249,7 @@ module.exports = {
             // ==================== GENERATE CONTRACT SUMMARY ====================
             if (intent === 'generate_contract_summary') {
                 const targetBrand = params.brandName || 'recent';
-                const targetDeals = await findTargetConversation(userId, targetBrand);
+                const targetDeals = await findTargetConversation(userId, targetBrand, params.dealId);
                 if (targetDeals.length === 0) return { success: false, message: `Could not find a deal for "${targetBrand}" to build a contract for.` };
                 
                 const deal = targetDeals[0];

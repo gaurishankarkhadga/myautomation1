@@ -248,22 +248,9 @@ async function resolveUserIdMapping(igUserId) {
         return igUserId;
     }
 
-    // Try 3: FALLBACK — Single-user auto-heal.
-    // If there's only ONE token in the entire DB, the webhook MUST belong to that user.
-    // Save the mapping so this never happens again.
-    const allTokens = await Token.find({}).lean();
-    if (allTokens.length === 1) {
-        const soleToken = allTokens[0];
-        console.log(`[ID-Mapping] 🔧 AUTO-HEAL: Only one user exists. Mapping Webhook ID ${igUserId} -> userId ${soleToken.userId}`);
-        await Token.findOneAndUpdate(
-            { userId: soleToken.userId },
-            { igBusinessAccountId: igUserId }
-        );
-        return soleToken.userId;
-    }
-
-    // Try 4: MULTI-USER AUTO-HEAL (Validate against Graph API)
+    // Try 3: MULTI-USER AUTO-HEAL (Validate against Graph API)
     // If multiple tokens exist, find which token has access to this igUserId
+    const allTokens = await Token.find({}).lean();
     console.log(`[ID-Mapping] 🔍 Attempting Graph API validation across ${allTokens.length} tokens for igUserId: ${igUserId}...`);
     for (const tokenData of allTokens) {
         try {

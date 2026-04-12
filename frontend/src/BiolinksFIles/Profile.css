@@ -195,7 +195,7 @@
   padding: 0;
 }
 
-.ep-icon-btn svg, 
+.ep-icon-btn svg,
 .ep-edit-btn svg {
   stroke: currentColor;
   display: block;
@@ -339,6 +339,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }

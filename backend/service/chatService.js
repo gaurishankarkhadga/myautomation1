@@ -91,8 +91,8 @@ CRITICAL RULES:
 
 AVAILABLE INTENTS:
 ${intentList}
-- deal_action_bulk (handles approval, rejection, or edit dispatch for 1 or multiple brand deals — params: {actions: [{brandName: "Nike", action: "approve", draftOverride: "Custom text?"}]})
-- regenerate_deal_draft (asks the AI to rewrite a draft — params: {brandName: "Nike", instructions: "ask for $1000"})
+- deal_action_bulk (handles approval, rejection, or edit dispatch for 1 or multiple brand deals — params: {actions: [{dealId: "Optional _id", brandName: "Nike", action: "approve", draftOverride: "Custom text?"}]})
+- regenerate_deal_draft (asks the AI to rewrite a draft — params: {dealId: "Optional _id", brandName: "Nike", instructions: "ask for $1000"})
 - set_deal_rate_rule (overrides global rates — params: {brandIndustry: "sports", minRate: 1000})
 - enable_inbox_triage (turns ON the AI brand negotiator/inbox triage — params: {})
 - disable_inbox_triage (turns OFF the AI brand negotiator/inbox triage)

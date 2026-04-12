@@ -5,7 +5,8 @@ import {
     Package, User, MessageSquare, Mail, Handshake,
     Instagram, Youtube, CheckCircle, Circle, Loader,
     Bot, Activity, ChevronRight, RotateCcw, Link2, Trash2,
-    Sunrise, Sparkles, DollarSign, AlertTriangle, Scale
+    Sunrise, Sparkles, DollarSign, AlertTriangle, Scale,
+    TrendingUp, Eye, BarChart, Plus
 } from 'lucide-react';
 import ToastNotification, { useToasts } from './ToastNotification';
 import BioLinkChatPreview from './chat/BioLinkChatPreview';
@@ -46,6 +47,7 @@ function ChatHub() {
     const [connectingPlatform, setConnectingPlatform] = useState(null);
     const [activeAutomations, setActiveAutomations] = useState({ count: 0, list: [] });
     const [quota, setQuota] = useState(null);
+    const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
@@ -276,6 +278,14 @@ function ChatHub() {
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     };
+    
+    const handleNewChat = () => {
+        setMessages([]);
+        setActiveTab('current');
+        setInputValue('');
+        inputRef.current?.focus();
+        setSidebarOpen(false);
+    };
 
     const handleDisconnect = async () => {
         // FIRST: Tell the backend to stop ALL automation before clearing local state
@@ -321,13 +331,33 @@ function ChatHub() {
 
             {/* Mobile header bar */}
             <header className="mobile-header">
-                <button className="mob-icon-btn" onClick={() => setSidebarOpen(true)} id="mob-menu-open" aria-label="Open menu">
-                    <Menu size={20} />
-                </button>
-                <span className="mob-brand"><Zap size={16} strokeWidth={2.5} /> Sotix</span>
-                {activeAutomations.count > 0 && (
-                    <span className="mob-active-pill">{activeAutomations.count} Active</span>
-                )}
+                <div className="mob-header-slot left">
+                    <button className="mob-icon-btn" onClick={() => setSidebarOpen(true)} id="mob-menu-open" aria-label="Open menu">
+                        <Menu size={20} />
+                    </button>
+                </div>
+                
+                <div className="mob-header-slot center">
+                    <span className="mob-brand">Sotix AI</span>
+                </div>
+                
+                <div className="mob-header-slot right">
+                    {profile && (
+                        <button 
+                            className="nav-profile-btn" 
+                            onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                            id="mob-profile-trigger"
+                        >
+                            <div className="nav-avatar-wrapper">
+                                {profile.profile_picture_url 
+                                    ? <img src={profile.profile_picture_url} alt={profile.username} className="nav-avatar" />
+                                    : <div className="nav-avatar-placeholder"><User size={16} /></div>
+                                }
+                                {activeAutomations.count > 0 && <span className="nav-status-dot-glow" />}
+                            </div>
+                        </button>
+                    )}
+                </div>
             </header>
 
             {/* Sidebar overlay (mobile) */}
@@ -339,44 +369,18 @@ function ChatHub() {
                 <div className="sidebar-top">
                     <div className="sidebar-brand">
                         <Zap size={18} strokeWidth={2.5} />
-                        <span>Sotix</span>
+                        <span>Sotix AI</span>
                     </div>
                     <button className="mob-icon-btn close-btn" onClick={() => setSidebarOpen(false)} id="mob-sidebar-close" aria-label="Close sidebar">
                         <X size={18} />
                     </button>
                 </div>
 
-                {/* Profile card */}
-                {profile && (
-                    <div className="sidebar-profile-card" id="sidebar-profile">
-                        {profile.profile_picture_url
-                            ? <img src={profile.profile_picture_url} alt={profile.username} className="sidebar-avatar" />
-                            : <div className="sidebar-avatar-placeholder"><User size={20} /></div>
-                        }
-                        <div className="sidebar-profile-info">
-                            <span className="sidebar-username">@{profile.username}</span>
-                            <span className="sidebar-followers">{profile.followers_count?.toLocaleString()} followers</span>
-                        </div>
-                        <CheckCircle size={14} className="connected-check" />
-                    </div>
-                )}
-
-                {/* Active automations */}
-                <div className="sidebar-section">
-                    <p className="sidebar-section-label">Automations</p>
-                    <button
-                        className={`active-badge-btn ${activeAutomations.count > 0 ? 'is-active' : ''}`}
-                        onClick={() => { sendMessage('Show my active automations with video details'); setSidebarOpen(false); }}
-                        id="active-automations-badge"
-                    >
-                        <Activity size={15} />
-                        <span className="ab-label">
-                            {activeAutomations.count > 0 ? `${activeAutomations.count} Running` : 'None Active'}
-                        </span>
-                        {activeAutomations.count > 0 && (
-                            <span className="ab-detail">{activeAutomations.list.join(' · ')}</span>
-                        )}
-                        <ChevronRight size={13} className="ab-arrow" />
+                {/* New Chat Primary Action */}
+                <div className="sidebar-new-chat-section">
+                    <button className="sidebar-new-chat-btn" onClick={handleNewChat} id="sidebar-new-chat">
+                        <Plus size={16} strokeWidth={2.5} />
+                        <span>New Chat</span>
                     </button>
                 </div>
 
@@ -514,15 +518,89 @@ function ChatHub() {
                         </div>
                     </div>
                     <div className="chat-header-right">
-                        {profile && <span className="header-username">@{profile.username}</span>}
-                        {activeAutomations.count > 0 && (
-                            <span className="header-active-pill">
-                                <span className="live-dot" />
-                                {activeAutomations.count} Active
-                            </span>
+                        {profile && (
+                            <div className="nav-profile-wrapper">
+                                <button 
+                                    className="nav-profile-btn" 
+                                    onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                                    id="desk-profile-trigger"
+                                >
+                                    <div className="nav-profile-status">
+                                        <span className="nav-username">@{profile.username}</span>
+                                        {activeAutomations.count > 0 && <span className="nav-live-indicator">Live</span>}
+                                    </div>
+                                    <div className="nav-avatar-wrapper">
+                                        {profile.profile_picture_url 
+                                            ? <img src={profile.profile_picture_url} alt={profile.username} className="nav-avatar" />
+                                            : <div className="nav-avatar-placeholder"><User size={18} /></div>
+                                        }
+                                        {activeAutomations.count > 0 && <span className="nav-status-dot-glow" />}
+                                    </div>
+                                </button>
+                            </div>
                         )}
                     </div>
                 </header>
+
+                {/* Profile Dropdown Overlay */}
+                {showProfileDropdown && profile && (
+                    <>
+                        <div className="dropdown-overlay" onClick={() => setShowProfileDropdown(false)} />
+                        <div className="profile-dropdown-popover anim-scale-in">
+                            <div className="pd-header">
+                                <div className="pd-user-info">
+                                    <span className="pd-username">@{profile.username}</span>
+                                    <span className="pd-account-type">Professional Account</span>
+                                </div>
+                                <CheckCircle size={16} className="pd-verified" />
+                            </div>
+
+                            <div className="pd-stats-grid">
+                                <div className="pd-stat-item">
+                                    <div className="pd-stat-label"><User size={12} /> Followers</div>
+                                    <div className="pd-stat-value">{profile.followers_count?.toLocaleString() || '0'}</div>
+                                </div>
+                                <div className="pd-stat-item">
+                                    <div className="pd-stat-label"><Eye size={12} /> Est. Reach</div>
+                                    <div className="pd-stat-value">{Math.round((profile.followers_count || 0) * 0.15).toLocaleString()}</div>
+                                </div>
+                                <div className="pd-stat-item">
+                                    <div className="pd-stat-label"><TrendingUp size={12} /> Engagement</div>
+                                    <div className="pd-stat-value">3.2%</div>
+                                </div>
+                            </div>
+
+                            <div className="pd-divider" />
+
+                            <div className="pd-section">
+                                <p className="pd-section-label">Automation Status</p>
+                                <div className={`pd-status-card ${activeAutomations.count > 0 ? 'active' : ''}`}>
+                                    <Activity size={16} />
+                                    <div className="pd-status-info">
+                                        <span className="pd-status-title">
+                                            {activeAutomations.count > 0 ? 'System Active' : 'System Standby'}
+                                        </span>
+                                        <span className="pd-status-desc">
+                                            {activeAutomations.count > 0 
+                                                ? `${activeAutomations.list.join(' · ')}` 
+                                                : 'No active automation tasks'}
+                                        </span>
+                                    </div>
+                                    {activeAutomations.count > 0 && <div className="pd-pulse" />}
+                                </div>
+                            </div>
+
+                            <div className="pd-footer">
+                                <button className="pd-footer-btn" onClick={() => { navigate('/settings'); setShowProfileDropdown(false); }}>
+                                    <Settings size={14} /> Settings
+                                </button>
+                                <button className="pd-footer-btn danger" onClick={() => { handleDisconnect(); setShowProfileDropdown(false); }}>
+                                    <LogOut size={14} /> Disconnect
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                )}
 
                 {/* ═══════════════ DEALS CRM BOARD ═══════════════ */}
                 {activeTab === 'deals' && (
@@ -668,7 +746,7 @@ function ChatHub() {
                                                                 <button
                                                                     onClick={() => {
                                                                         const txt = document.getElementById(taId)?.value || draft;
-                                                                        sendMessage(`Action: Approve the deal for brand [${brand}]. Here is the exact draft override to send: "${txt}"`);
+                                                                        sendMessage(`[SYSTEM: deal_action] Action: approve | DealId: ${deal._id} | Brand: ${brand} | Override: "${txt}"`);
                                                                         addToasts([{ type: 'info', title: 'Dispatching...', message: `Sending deal to ${brand} via Instagram DM` }]);
                                                                         setTimeout(() => loadDealsData(), 3000);
                                                                     }}
@@ -681,7 +759,7 @@ function ChatHub() {
                                                                     onClick={() => {
                                                                         const instr = prompt(`How should the AI rewrite this draft for ${brand}?\n\nExamples:\n• "Ask for $2000"\n• "Offer a Reel instead of Story"\n• "Add a media kit link"`);
                                                                         if (instr) {
-                                                                            sendMessage(`Regenerate the draft for ${brand}: ${instr}`);
+                                                                            sendMessage(`[SYSTEM: deal_rewrite] DealId: ${deal._id} | Brand: ${brand} | Instructions: "${instr}"`);
                                                                             addToasts([{ type: 'info', title: 'Regenerating...', message: `AI is rewriting the draft for ${brand}` }]);
                                                                             setTimeout(() => loadDealsData(), 4000);
                                                                         }
@@ -694,7 +772,7 @@ function ChatHub() {
                                                                 <button
                                                                     onClick={() => {
                                                                         if (window.confirm(`Reject the deal from ${brand}? This will remove it from your pipeline.`)) {
-                                                                            sendMessage(`Reject the deal from ${brand}`);
+                                                                            sendMessage(`[SYSTEM: deal_action] Action: reject | DealId: ${deal._id} | Brand: ${brand}`);
                                                                             addToasts([{ type: 'warning', title: 'Rejected', message: `${brand} removed from pipeline` }]);
                                                                             setTimeout(() => loadDealsData(), 2000);
                                                                         }
@@ -865,6 +943,16 @@ function ChatHub() {
 
                     <div ref={messagesEndRef} />
                 </div>
+                )}
+
+                {/* Floating New Chat Button (Conditional) */}
+                {messages.length > 2 && activeTab === 'current' && (
+                    <div className="floating-new-chat-container">
+                        <button className="floating-new-chat-btn" onClick={handleNewChat}>
+                            <Plus size={13} strokeWidth={2.5} />
+                            <span>New Chat</span>
+                        </button>
+                    </div>
                 )}
 
                 {/* Input bar */}
