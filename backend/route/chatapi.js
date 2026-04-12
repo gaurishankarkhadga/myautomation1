@@ -127,6 +127,14 @@ router.get('/active-count/:userId', async (req, res) => {
             activeCount++;
             activeList.push('✉️ DMs');
         }
+        if (dmSettings?.inboxTriageEnabled) {
+            activeCount++;
+            activeList.push('🤝 Brand Negotiator');
+        }
+        if (dmSettings?.autonomousMode) {
+            activeCount++;
+            activeList.push('🤖 Autonomous AI');
+        }
         if (c2dSettings?.enabled) {
             activeCount++;
             activeList.push('📲 C2D');

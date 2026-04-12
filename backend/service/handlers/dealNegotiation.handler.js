@@ -134,6 +134,7 @@ module.exports = {
                                 await deal.save();
                                 
                                 await DmAutoReplyLog.create({
+                                    userId: userId,
                                     senderId: deal.senderId,
                                     messageText: '[DEAL APPROVED]',
                                     replyText: messageToSend,
