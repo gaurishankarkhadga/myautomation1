@@ -228,15 +228,21 @@ cron.schedule('*/5 * * * *', async () => {
 });
 
 // ==================== START SERVER ====================
+const http = require('http');
+const { initSocket } = require('./service/socketService');
+
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
+const server = http.createServer(app);
+
+// Initialize WebSockets
+initSocket(server);
+
+server.listen(PORT, () => {
   console.log('\n[Server] Instagram Graph API Server');
   console.log(`[Server] Running on: http://localhost:${PORT}`);
   console.log(`[Server] Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`[Server] Frontend URL: ${process.env.FRONTEND_URL}`);
-  console.log(`[Server] OAuth Callback: ${process.env.INSTAGRAM_REDIRECT_URI}`);
-  console.log(`[Server] Webhook URL: ${process.env.BACKEND_URL || ('http://localhost:' + PORT)}/api/instagram/webhook`);
-  console.log(`[Server] Webhook Verify Token: ${process.env.WEBHOOK_VERIFY_TOKEN ? '*** (set)' : 'NOT SET'}\n`);
+  console.log(`[Server] Webhooks enabled. Sockets enabled.`);
 });
 
-module.exports = app;
+module.exports = server;

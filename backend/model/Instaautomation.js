@@ -222,8 +222,24 @@ const gamifyFunnelSettingSchema = new mongoose.Schema({
     message: { type: String, default: '' }
 });
 
+// ==================== BRAIN ANALYTICS (The Data Moat) ====================
+const brainAnalyticsSchema = new mongoose.Schema({
+    userId: { type: String, required: true, index: true },
+    conversationId: { type: String, index: true },
+    brandName: { type: String },
+    actionType: { type: String, enum: ['negotiation_draft', 'auto_reply', 'outbound_pitch'], required: true },
+    promptVersion: { type: String, default: 'v1.0' },
+    generatedText: { type: String, required: true },
+    suggestedRate: { type: String },
+    dealWinStatus: { type: String, enum: ['pending', 'won', 'lost', 'rejected'], default: 'pending' },
+    conversionRate: { type: Number, default: 0 }, // Future expansion
+    executedAt: { type: Date, default: Date.now },
+    finalizedAt: { type: Date }
+});
+
 const CommentToDmSetting = mongoose.model('CommentToDmSetting', commentToDmSettingSchema);
 const GamifyFunnelSetting = mongoose.model('GamifyFunnelSetting', gamifyFunnelSettingSchema);
+const BrainAnalytics = mongoose.model('BrainAnalytics', brainAnalyticsSchema);
 
 // ==================== EXPORT MODELS ====================
 const Token = mongoose.model('Token', tokenSchema);
@@ -247,5 +263,6 @@ module.exports = {
     WebhookEvent,
     ApiUsage,
     CommentToDmSetting,
-    GamifyFunnelSetting
+    GamifyFunnelSetting,
+    BrainAnalytics
 };

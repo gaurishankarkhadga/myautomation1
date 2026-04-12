@@ -87,6 +87,36 @@ function ChatHub() {
 
     useEffect(() => { scrollToBottom(); }, [messages, isTyping]);
 
+    // ── Live Socket Connection (Real-Time Brain Monitoring) ─────────
+    const socketRef = useRef(null);
+    useEffect(() => {
+        if (!userId) return;
+        import('socket.io-client').then(({ io }) => {
+            if (!socketRef.current) {
+                socketRef.current = io(API_BASE_URL);
+                socketRef.current.on('connect', () => socketRef.current.emit('register', userId));
+                
+                // Live listener for autonomous AI updates
+                socketRef.current.on('deal_updated', (payload) => {
+                    addToasts([{
+                        type: payload.status === 'rejected' ? 'warning' : 'success', 
+                        title: 'Live Deal Update', 
+                        message: `The AI backend just updated a deal state to ${payload.status.toUpperCase()}.`
+                    }]);
+                    // Hot reload the CRM board silently
+                    loadDealsData();
+                });
+            }
+        });
+        
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+                socketRef.current = null;
+            }
+        };
+    }, [userId]);
+
     // ── Morning Briefing (auto-trigger on first load of the day) ────
     const triggerMorningBriefing = async () => {
         try {

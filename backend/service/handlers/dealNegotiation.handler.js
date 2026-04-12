@@ -1,6 +1,7 @@
 const axios = require('axios');
-const { Conversation, Token, DmAutoReplyLog, DmAutoReplySetting } = require('../../model/Instaautomation');
+const { Conversation, Token, DmAutoReplyLog, DmAutoReplySetting, BrainAnalytics } = require('../../model/Instaautomation');
 const inboxTriageService = require('../inboxTriageService');
+const { emitToUser } = require('../socketService');
 
 // Instagram Graph API setup
 const GRAPH_BASE = `${process.env.INSTAGRAM_GRAPH_API_BASE_URL || 'https://graph.instagram.com'}/v${process.env.INSTAGRAM_GRAPH_API_VERSION || '24.0'}`;
@@ -134,6 +135,17 @@ module.exports = {
                                     repliedAt: new Date()
                                 });
 
+                                await BrainAnalytics.create({
+                                    userId: userId,
+                                    conversationId: deal.conversationId,
+                                    brandName: brandName,
+                                    actionType: 'negotiation_draft',
+                                    generatedText: messageToSend,
+                                    suggestedRate: deal.negotiationData.suggestedRate,
+                                    dealWinStatus: 'won'
+                                });
+                                emitToUser(userId, 'deal_updated', { dealId: deal._id, status: 'won', action: 'approve' });
+
                                 resultsLog.push(`✅ **${brandName}**: Deal approved and confirmation sent! Status updated to WON.`);
                             } else {
                                 resultsLog.push(`❌ **${brandName}**: Approval message failed to send (${dispatchRes.message})`);
@@ -142,6 +154,16 @@ module.exports = {
                             deal.negotiationData.status = 'rejected';
                             deal.negotiationData.history.push({ action: 'rejected', text: 'System rejection logged.', timestamp: new Date() });
                             await deal.save();
+
+                            await BrainAnalytics.create({
+                                userId: userId,
+                                conversationId: deal.conversationId,
+                                brandName: brandName,
+                                actionType: 'negotiation_draft',
+                                generatedText: deal.negotiationData.draftReply || 'rejected',
+                                dealWinStatus: 'rejected'
+                            });
+                            emitToUser(userId, 'deal_updated', { dealId: deal._id, status: 'rejected', action: 'reject' });
                             resultsLog.push(`⛔ **${brandName}**: Dropped from pipeline.`);
                         } else if (act.action === 'conditional_approve') {
                              // E.g. Approve deals >$500. Advanced logic hooks here.
@@ -202,6 +224,8 @@ module.exports = {
                     deal.negotiationData.draftReply = newDraftData.draftReply;
                     if (newDraftData.suggestedRate) deal.negotiationData.suggestedRate = newDraftData.suggestedRate;
                     await deal.save();
+
+                    emitToUser(userId, 'deal_updated', { dealId: deal._id, status: deal.negotiationData.status, action: 'regenerate' });
 
                     // Generate a silent, UI-only toast to refresh the frontend data
                     return {
