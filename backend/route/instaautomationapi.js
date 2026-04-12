@@ -1464,6 +1464,50 @@ router.post('/webhook', async (req, res) => {
                             } // end else (tokenData exists)
                         }
 
+                        // ==================== FEATURE: SMART FAN ENGAGEMENT (when NOT a brand deal) ====================
+                        if (priorityTag !== 'Collaboration' && priorityTag !== 'Untriaged' && priorityTag !== 'Spam') {
+                            // This is a fan/audience member — reply as the creator
+                            const dmSettingsForFan = await DmAutoReplySetting.findOne({ userId: igUserIdMapped }).lean();
+                            if (dmSettingsForFan && dmSettingsForFan.inboxTriageEnabled) {
+                                console.log(`[Webhook] 🎯 Smart Router: Fan detected (${priorityTag}). Generating creator reply...`);
+                                
+                                const fanPersona = await CreatorPersona.findOne({ userId: igUserIdMapped }).lean();
+                                const fanTokenData = await Token.findOne({ userId: igUserIdMapped }).lean();
+                                
+                                if (fanTokenData && fanTokenData.accessToken) {
+                                    // Get recent conversation history for context
+                                    const fanConv = await Conversation.findOne({ conversationId }).lean();
+                                    const fanHistory = (fanConv?.negotiationData?.history || []).map(h => ({
+                                        role: h.action === 'sent' ? 'assistant' : 'user',
+                                        text: h.text
+                                    }));
+
+                                    inboxTriageService.generateFanReply(
+                                        messageData.text,
+                                        priorityTag,
+                                        fanPersona,
+                                        fanHistory
+                                    ).then(async (fanReplyText) => {
+                                        if (!fanReplyText) return;
+                                        
+                                        console.log(`[Webhook] 🎯 Fan Reply: "${fanReplyText}"`);
+                                        await sendDirectMessage(igUserId, senderId, fanReplyText, fanTokenData.accessToken);
+                                        
+                                        await DmAutoReplyLog.create({
+                                            userId: igUserIdMapped,
+                                            senderId: senderId,
+                                            messageText: messageData.text,
+                                            replyText: fanReplyText,
+                                            status: 'sent',
+                                            action: 'fan_engagement',
+                                            scheduledAt: new Date(),
+                                            repliedAt: new Date()
+                                        });
+                                    }).catch(err => console.error('[Webhook] Fan Reply Error:', err.message));
+                                }
+                            }
+                        }
+
                         // If you also want to update ChatHistory directly here, you could find the ChatHistory doc and push a message with the tag
 
                         console.log('[Webhook] Message stored in DB');
