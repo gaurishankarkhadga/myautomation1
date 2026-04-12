@@ -12,13 +12,21 @@ const GRAPH_BASE = `${process.env.INSTAGRAM_GRAPH_API_BASE_URL || 'https://graph
  */
 async function dispatchMessage(recipientIGSID, igBusinessAccountId, textMessage) {
     try {
-        const tokenDoc = await Token.findOne({ $or: [{ igBusinessAccountId: igBusinessAccountId }, { userId: igBusinessAccountId }] });
+        const tokenDoc = await Token.findOne({ $or: [
+            { igBusinessAccountId: igBusinessAccountId }, 
+            { userId: igBusinessAccountId },
+            { igBusinessAccountId: recipientIGSID },
+            { userId: recipientIGSID }
+        ]});
         if (!tokenDoc || !tokenDoc.accessToken) {
             return { success: false, message: 'Instagram token not found.' };
         }
 
+        // Use the correct page-scoped ID for sending
+        const sendAsId = tokenDoc.igBusinessAccountId || igBusinessAccountId;
+
         const response = await axios.post(
-            `${GRAPH_BASE}/${igBusinessAccountId}/messages`,
+            `${GRAPH_BASE}/${sendAsId}/messages`,
             {
                 recipient: { id: recipientIGSID },
                 message: { text: textMessage }
@@ -108,7 +116,7 @@ module.exports = {
                         if (act.action === 'approve') {
                             const messageToSend = act.draftOverride || deal.negotiationData.draftReply;
                             
-                            const dispatchRes = await dispatchMessage(deal.senderId, deal.recipientId, messageToSend);
+                            const dispatchRes = await dispatchMessage(deal.senderId, deal.userId || deal.recipientId, messageToSend);
                             
                             if (dispatchRes.success) {
                                 // If it was already in drafted status (meaning negotiated), move to won/contract_prep
