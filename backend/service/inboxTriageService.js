@@ -141,9 +141,10 @@ Return ONLY valid JSON:
 
 /**
  * Handles end-to-end autonomous negotiation for Brand Deals.
- * Decides whether to reply directly to the DM or flag for creator approval once terms are set.
+ * Uses organic conversation flow powered by Brain Memory (past won deals)
+ * instead of rigid checklist satisfaction.
  */
-async function continueAutonomousNegotiation(history, followersCount, engagementRate = '3%', creatorPersona = null, customInstructions = null, negotiationPreferences = null) {
+async function continueAutonomousNegotiation(history, followersCount, engagementRate = '3%', creatorPersona = null, customInstructions = null, negotiationPreferences = null, pastWonDeals = []) {
     if (!history || history.length === 0 || !process.env.GEMINI_API_KEY) return null;
 
     try {
@@ -170,34 +171,60 @@ Follow these rules above everything else.`;
         }
 
         let preferencesBlock = '';
+        let rulesListForTracking = '';
         if (negotiationPreferences) {
+            const rules = [];
+            rules.push(`R1. Deliverable Type: Brand must request one of [${negotiationPreferences.acceptedDeliverables?.join(', ') || 'Any'}]`);
+            rules.push(`R2. Min Cash: Budget must be at least $${negotiationPreferences.minimumCashTarget || '0'}`);
+            rules.push(`R3. Max Ask: Creator's ideal ask is $${negotiationPreferences.maximumAskTarget || 'Open'}`);
+            rules.push(`R4. Barter: ${negotiationPreferences.barterAcceptance === false ? 'Cash only — no barter deals' : 'Barter is acceptable'}`);
+            rules.push(`R5. Payment Terms: ${negotiationPreferences.paymentTerms || 'Standard'}`);
+            rules.push(`R6. Usage Rights: ${negotiationPreferences.usageRightsLimits || 'Standard'}`);
+            rules.push(`R7. Exclusivity: ${negotiationPreferences.exclusivityLimits || 'Standard'}`);
+            rules.push(`R8. Revisions: ${negotiationPreferences.revisionsIncluded || 'Standard'}`);
+            rules.push(`R9. Delivery Timeline: ${negotiationPreferences.deliveryTimeline || 'Standard'}`);
+            rules.push(`R10. Free Product: ${negotiationPreferences.requiredFreeProduct ? 'Brand must send free product' : 'Not required'}`);
+            rules.push(`R11. Affiliate: ${negotiationPreferences.affiliateLinks ? 'Affiliate links allowed' : 'No commission-only deals'}`);
+            rules.push(`R12. Blocked Industries: ${negotiationPreferences.blockedIndustries?.join(', ') || 'None'}`);
+            rules.push(`R13. Contract: ${negotiationPreferences.contractSignOff || 'Flexible'}`);
+            rules.push(`R14. Content Format: ${negotiationPreferences.contentFormat || 'Standard'}`);
+            rules.push(`R15. Brief Requirement: ${negotiationPreferences.creativeBriefRequirement || 'Required'}`);
+            
+            rulesListForTracking = rules.map(r => `- ${r}`).join('\n');
+            
             preferencesBlock = `
-CREATOR'S NON-NEGOTIABLE LAWS (15-POINT MATRIX):
-You MUST enforce these settings perfectly. If a brand offers something outside these laws, you politely counter-offer.
-- Accepted Deliverables: ${negotiationPreferences.acceptedDeliverables?.join(', ') || 'Any'}
-- Min Cash Target: ${negotiationPreferences.minimumCashTarget ? '$'+negotiationPreferences.minimumCashTarget : 'Open'}
-- Max Asking Target: ${negotiationPreferences.maximumAskTarget ? '$'+negotiationPreferences.maximumAskTarget : 'Open'}
-- Barter Accepted: ${negotiationPreferences.barterAcceptance === false ? 'No, cash only' : 'Yes'}
-- Payment Terms: ${negotiationPreferences.paymentTerms || 'Standard'}
-- Usage Rights Limits: ${negotiationPreferences.usageRightsLimits || 'Standard'}
-- Exclusivity Limits: ${negotiationPreferences.exclusivityLimits || 'Standard'}
-- Revisions Included: ${negotiationPreferences.revisionsIncluded || 'Standard'}
-- Delivery Timeline: ${negotiationPreferences.deliveryTimeline || 'Standard'}
-- Required Free Product: ${negotiationPreferences.requiredFreeProduct ? 'Yes' : 'No'}
-- Affiliate Links: ${negotiationPreferences.affiliateLinks ? 'Allowed' : 'No commission-only deals'}
-- Blocked Industries: ${negotiationPreferences.blockedIndustries?.join(', ') || 'None'}
-- Contract Sign-Off: ${negotiationPreferences.contractSignOff || 'Flexible'}
-- Content Format: ${negotiationPreferences.contentFormat || 'Standard'}
-- Brief Requirement: ${negotiationPreferences.creativeBriefRequirement || 'Required'}`;
+CREATOR'S 15 SPONSORSHIP RULES (YOUR SILENT INTERNAL CHECKLIST):
+These are the creator's deal requirements. You must silently track which ones have been satisfied by the brand's messages.
+DO NOT ask about these rules directly. DO NOT list them or mention them to the brand. They are YOUR internal compass.
+${rulesListForTracking}`;
+        }
+
+        // Build Brain Memory block from past won deals
+        let brainMemoryBlock = '';
+        if (pastWonDeals.length > 0) {
+            const memoryLines = pastWonDeals.map((d, i) => 
+                `  Deal ${i+1}: Brand="${d.brandName || 'Unknown'}" | Rate=$${d.suggestedRate || '?'} | WinningText="${(d.generatedText || '').substring(0, 120)}..."`
+            ).join('\n');
+            brainMemoryBlock = `
+BRAIN MEMORY — PAST SUCCESSFUL DEALS (internal pricing benchmark only):
+${memoryLines}
+Use these ONLY to judge if the brand's offer is fair. NEVER mention past deals to the brand.`;
         }
 
         const formattedHistory = history.map(h => `${h.role === 'user' ? 'Brand' : 'You'}: ${h.text}`).join('\n');
 
         const prompt = `
-You are an Elite Talent Manager representing a top-tier Instagram creator. Your job is to field sponsorship inquiries with extreme precision, professional poise, and sharp intelligence. 
-NEVER break character. You are human. Avoid robotic, repetitive, or stereotypical "AI-generated" responses. Always think strategically before you reply.
+You are an Elite Talent Manager representing a top-tier Instagram creator. A brand has messaged the creator's Instagram DMs about a sponsorship. You are having a REAL, live conversation with them.
 
-CONVERSATION HISTORY:
+GOLDEN RULES:
+1. Be SMOOTH, POLITE, and HUMAN. You are a friendly professional, not a robot. Never sound AI-generated.
+2. ONE question per message. Never overwhelm the brand. Keep it simple, warm, and conversational.
+3. Let the brand talk. They approached you. Listen first, then respond to what THEY said.
+4. If the brand is confused or speaks another language, simplify your response and keep the conversation alive.
+5. NEVER pressure the brand. No urgency tactics. No aggressive negotiation. Just a chill, professional conversation.
+6. Keep replies SHORT — 1-2 sentences maximum. Like a real DM conversation.
+
+CONVERSATION HISTORY (this conversation only):
 ${formattedHistory}
 
 CREATOR STATS:
@@ -207,36 +234,35 @@ CREATOR STATS:
 ${personaStyle}
 ${customOverride}
 ${preferencesBlock}
+${brainMemoryBlock}
 
-STRATEGIC NEGOTIATION FRAMEWORK & SET COMPULSORY QUESTIONS (FOLLOW STRICTLY):
+YOUR BEHIND-THE-SCENES JOB:
+You have a silent internal checklist (the Creator's 15 Sponsorship Rules above). As the brand talks, you silently scan their messages and mark which rules have been naturally satisfied.
 
-You act as a filter. You do not generate an end-to-end deal until EVERY SINGLE ONE of these set compulsory questions is satisfied by the brand. 
-You must ask these naturally in a conversational flow, one at a time, protecting the creator's time:
+HOW IT WORKS:
+1. Read the ENTIRE conversation history carefully.
+2. In your "strategicAnalysis", silently list which rules (R1, R2, R3... R15) are already satisfied based on what the brand has said so far. Mark them as DONE or PENDING.
+3. Find the NEXT most natural rule to satisfy. Do NOT go in order (R1, R2, R3...). Pick whichever rule naturally fits the flow of conversation.
+4. Ask about that missing info in a smooth, casual way — like a real person would. Example: if you need timeline info, say something like "sounds great! when are you thinking of going live with this?" — NOT "What is your exact timeline?"
+5. If a rule can be assumed from context (e.g., brand didn't mention exclusivity, so standard applies), silently mark it as DONE with your assumption. Do NOT ask about it unless it's critical.
+6. Rules about blocked industries, affiliate links, contract sign-off, brief requirements — these are internal filters. If the brand violates one (e.g., they are from a blocked industry), politely decline. Otherwise, silently mark as DONE.
 
-[ ] Q1. Brand & Proper Brief Detail: Who exactly is the brand and what is the specific product/service? (If vague, ask them to send over a quick brief or product link).
-[ ] Q2. Deliverables: Exactly how many units are required? (e.g., 1 Reel, 2 Story slides, 1 YT integration).
-[ ] Q3. Compensation/Budget: What is the exact cash budget allocated for this campaign? (Or explicitly agree to a barter value).
-[ ] Q4. Timeline: What is the exact timeline or deadline for the post to go live?
-[ ] Q5. Usage Rights: Do they need paid ad usage rights/whitelisting with this content? If yes, for how long?
-[ ] Q6. Exclusivity: Are they requesting exclusivity against competitors? If yes, for how long?
+WHEN TO CLOSE THE DEAL:
+- ONLY set action to "REQUIRE_APPROVAL" when ALL 15 rules are satisfied (either confirmed by brand or reasonably assumed) AND the brand's LAST message shows clear agreement (e.g., "yes", "ok", "let's do it", "agreed", "sounds good").
+- If the brand's last message is a question, confusion, or anything other than agreement → action must be "REPLY". Keep the conversation going.
+- NEVER close a deal prematurely. If even one critical rule (budget, deliverables, timeline) is still unknown, keep chatting.
 
-DECISION LOGIC & FILTERING:
-- You must perform an internal "strategicAnalysis" first. Evaluate the conversation history using your compulsory question filter. Which "Q" is missing?
-- ESCAPE HATCH: If the brand visibly ignores a compulsory question (like exclusivity), seems confused, or asks "What?", DO NOT repeat the question endlessly like a robot. Instead, politely define the term or explicitly state your assumption to move the deal forward (e.g., "Regarding exclusivity, we usually assume standard 30-day non-compete. Does that work for your budget?"). Do not trap the human in a loop.
-- If the compulsory questions are NOT fully satisfied, your action MUST be "REPLY".
-- ACTION "REPLY": Draft a natural, human-like DM. Do NOT interrogate. Smoothly ask for the next missing piece of information.
-- ACTION "REQUIRE_APPROVAL": ONLY trigger this approval message when all Q1-Q6 are completely satisfied or reasonably assumed. This signifies a successful end-to-end deal generation.
-
-OUTPUT FORMAT (JSON ONLY):
+OUTPUT FORMAT (JSON ONLY — no extra text):
 {
-  "strategicAnalysis": "Deep internal monologue evaluating the checklist. List exactly what is missing before you can approve.",
-  "checklistStatus": {"brandContext": false, "deliverables": false, "budget": false, "timeline": false, "rights": false, "exclusivity": false},
+  "strategicAnalysis": "Internal analysis: list each rule R1-R15 as DONE or PENDING with brief reason. Then state which rule you are targeting next.",
+  "satisfiedRules": ["R1", "R4", "R12"],
+  "pendingRules": ["R2", "R3", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R13", "R14", "R15"],
   "action": "REPLY" or "REQUIRE_APPROVAL",
-  "replyText": "A natural, intelligent, and human DM. 1-2 sentences. Keep the conversation moving to get the missing items. No fluff.",
-  "approvalSummary": "If action is REQUIRE_APPROVAL, provide a deep, complete analysis of all 6 checklist items for the creator.",
-  "brandName": "Extracted brand name",
-  "deliverables": "Negotiated units (or 'Unknown')",
-  "suggestedRate": "Current rate/budget (or 'TBD')"
+  "replyText": "Your smooth, polite, human DM. 1-2 sentences max. Casual and warm.",
+  "approvalSummary": "If REQUIRE_APPROVAL: Complete deal summary with all 15 rules and their satisfied values for the creator.",
+  "brandName": "Extracted brand name or 'Unknown'",
+  "deliverables": "What the brand wants (or 'TBD')",
+  "suggestedRate": "Budget discussed (or 'TBD')"
 }`;
 
         const result = await generateContentWithFallback(prompt);

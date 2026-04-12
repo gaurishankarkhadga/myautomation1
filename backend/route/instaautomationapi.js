@@ -13,7 +13,8 @@ const {
     Message,
     Conversation,
     WebhookEvent,
-    CommentToDmSetting
+    CommentToDmSetting,
+    BrainAnalytics
 } = require('../model/Instaautomation');
 const CreatorPersona = require('../model/CreatorPersona');
 const aiService = require('../service/aiService');
@@ -1398,14 +1399,27 @@ router.post('/webhook', async (req, res) => {
                                 .join('\n');
                             const negPrefs = dmSettings?.negotiationPreferences || null;
 
-                            // 6. Run Autonomous Brain with real stats and preferences
+                            // 6. Query Brain Memory — fetch last 5 won deals for this creator
+                            let pastWonDeals = [];
+                            try {
+                                pastWonDeals = await BrainAnalytics.find({ userId: igUserIdMapped, dealWinStatus: 'won' })
+                                    .sort({ createdAt: -1 })
+                                    .limit(5)
+                                    .lean();
+                                console.log(`[Webhook] 🧠 Brain Memory loaded: ${pastWonDeals.length} past won deals found.`);
+                            } catch (brainErr) {
+                                console.log('[Webhook] Brain Memory query failed (non-fatal):', brainErr.message);
+                            }
+
+                            // 7. Run Autonomous Brain with real stats, preferences, AND memory
                             inboxTriageService.continueAutonomousNegotiation(
                                 chatHistory, 
                                 realFollowers, 
                                 realEngagement, 
                                 creatorPersona, 
                                 customInstructionsText,
-                                negPrefs
+                                negPrefs,
+                                pastWonDeals
                             ).then(async (aiDecision) => {
                                 if (!aiDecision) return;
 
