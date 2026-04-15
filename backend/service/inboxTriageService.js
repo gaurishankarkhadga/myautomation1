@@ -1,4 +1,5 @@
 const { generateContentWithFallback } = require('./geminiClient');
+const { parseCleanReply } = require('./aiService');
 
 /**
  * Categorize an incoming DM into predefined priority tags
@@ -112,24 +113,15 @@ YOUR TASK: Do NOT just blindly suggest a rate or ask "what do you suggest". If t
 2. Calculate an internal baseline rate ONLY if they are asking for rates for specific deliverables. ($10 per 1K followers baseline, Reels=1.5x, Stories=0.5x). If you don't know the deliverables yet, the rate should simply be "TBD - Awaiting Scope". NEVER go below the creator's minimum cash target if set.
 3. Draft a SHORT, sharp, natural reply (1-2 sentences) in the creator's voice to extract the missing information. Do NOT quote prices yet. Ask for the scope or the specific product first. Be professional but firm.
 
-Return ONLY valid JSON:
-{
-  "strategicAnalysis": "Your internal logic on what is missing and what your exact goal is for this first reply.",
-  "brandName": "Extracted brand name (or 'Unknown')", 
-  "suggestedRate": "Calculated rate (or 'TBD')", 
-  "draftReply": "The sharp 1-2 sentence reply asking for specifics", 
-  "collaborationType": "Extracted type (or 'Unknown')"
-}`;
+}
+ 
+You MUST put your final response inside <REPLY> tags as a JSON object.
+Example: <REPLY>{"strategicAnalysis": "...", "brandName": "...", "suggestedRate": "...", "draftReply": "...", "collaborationType": "..."}</REPLY>
+Output ONLY the JSON inside tags. You may think about your response first if needed.`;
 
         const result = await generateContentWithFallback(prompt);
-        let responseText = result.response.text().trim();
-        
-        // Ensure JSON extraction
-        if (responseText.startsWith("\`\`\`json")) {
-            responseText = responseText.replace(/^\`\`\`json/, "").replace(/\`\`\`$/, "").trim();
-        } else if (responseText.startsWith("\`\`\`")) {
-            responseText = responseText.replace(/^\`\`\`/, "").replace(/\`\`\`$/, "").trim();
-        }
+        let rawResponse = result.response.text();
+        let responseText = parseCleanReply(rawResponse);
 
         const data = JSON.parse(responseText);
         return data;
@@ -270,17 +262,16 @@ OUTPUT FORMAT (JSON ONLY — no extra text):
   "brandName": "Extracted brand name or 'Unknown'",
   "deliverables": "What the brand wants (or 'TBD')",
   "suggestedRate": "Budget discussed (or 'TBD')"
-}`;
+}
+ 
+You MUST put your final output inside <REPLY> tags as a JSON object.
+Example: <REPLY>{"strategicAnalysis": "...", "action": "REPLY", "replyText": "..."}</REPLY>
+Output ONLY the JSON inside tags. You may think about your response first if needed.`;
+
 
         const result = await generateContentWithFallback(prompt);
-        let responseText = result.response.text().trim();
-        
-        // Sanitize JSON
-        if (responseText.includes('```json')) {
-            responseText = responseText.split('```json')[1].split('```')[0].trim();
-        } else if (responseText.includes('```')) {
-            responseText = responseText.split('```')[1].split('```')[0].trim();
-        }
+        let rawResponse = result.response.text();
+        let responseText = parseCleanReply(rawResponse);
 
         return JSON.parse(responseText);
     } catch (error) {
@@ -369,10 +360,14 @@ RULES:
 8. Match the creator's exact vibe and typing style.
 9. NEVER reveal you are AI. You ARE the creator.
 
-Reply with ONLY the DM text. No JSON, no quotes, just the message.`;
+            You MUST put your final response inside <REPLY> tags.
+            Example: <REPLY>ikr 😂</REPLY>
+            Output ONLY the reply inside tags. You may think about your response first if needed.
+            `;
 
         const result = await generateContentWithFallback(prompt);
-        return result.response.text().trim().replace(/^["']|["']$/g, '');
+        const rawResponse = result.response.text();
+        return parseCleanReply(rawResponse);
     } catch (error) {
         console.error('[Fan Reply] Error generating fan reply:', error.message);
         return null;

@@ -20,6 +20,33 @@ function cleanJsonString(input) {
     return cleaned.trim();
 }
 
+/**
+ * Robustly parses the AI output to extract ONLY the final reply.
+ * Priority: <REPLY> tags > Last non-empty line fallback.
+ */
+function parseCleanReply(text) {
+    if (!text) return "";
+    
+    // 1. Try to extract content between <REPLY> tags (case-insensitive)
+    const replyMatch = text.match(/<REPLY>([\s\S]*?)<\/REPLY>/i);
+    if (replyMatch && replyMatch[1].trim()) {
+        const extracted = replyMatch[1].trim();
+        // Strip surrounding quotes if AI still added them inside tags
+        return extracted.replace(/^["']|["']$/g, '').trim();
+    }
+    
+    // 2. Fallback: If no tags, take the last non-empty line
+    // (This is where the AI usually puts its final answer after thinking)
+    const lines = text.trim().split('\n').filter(l => l.trim().length > 0);
+    if (lines.length > 0) {
+        const lastLine = lines[lines.length - 1].trim();
+        // Clean up common AI quotes/noise
+        return lastLine.replace(/^["']|["']$/g, '').trim();
+    }
+    
+    return text.trim().replace(/^["']|["']$/g, '');
+}
+
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -303,7 +330,9 @@ async function generateSmartReply(userId, incomingText, contextType, senderName,
             - If hateful/abusive → reply "❤️" only
             - If simple reaction ("wow", "nice") → equally short reply
 
-            Output ONLY the reply. Nothing else.
+            You MUST put your final response inside <REPLY> tags.
+            Example: <REPLY>wow 🤩</REPLY>
+            Output ONLY the reply inside tags. You may think about your response first if needed.
             `;
 
         } else {
@@ -353,17 +382,17 @@ async function generateSmartReply(userId, incomingText, contextType, senderName,
             - "f*** you" → "❤️"
             - "you suck" → "😂"
 
-            Output ONLY the reply. Nothing else.
+            You MUST put your final response inside <REPLY> tags.
+            Example: <REPLY>ikr 😂</REPLY>
+            Output ONLY the reply inside tags. You may think about your response first if needed.
             `;
         }
 
         // Call Gemini
-        console.log('[AI-Service] Calling Gemini 2.5 Flash for reply generation...');
+        console.log('[AI-Service] Calling Gemini for reply generation...');
         const result = await generateContentWithFallback(prompt);
-        const reply = result.response.text().trim();
-
-        // Strip surrounding quotes if Gemini wraps the reply
-        const cleanReply = reply.replace(/^["']|["']$/g, '');
+        const rawResponse = result.response.text();
+        const cleanReply = parseCleanReply(rawResponse);
 
         if (!cleanReply || cleanReply.length === 0) {
             console.warn('[AI-Service] Gemini returned empty reply, using emoji fallback');
@@ -764,7 +793,9 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
 
             SAFETY: If hateful → just "❤️". Never swear. ALWAYS follow Creator's Custom Rules above if any exist.
 
-            Output ONLY your reply. Nothing else.
+            You MUST put your final response inside <REPLY> tags.
+            Example: <REPLY>sent! check your DM 🔥</REPLY>
+            Output ONLY the reply inside tags. You may think about your response first if needed.
             `;
         } else if (matchedAssets.length > 0) {
             prompt = `
@@ -794,7 +825,9 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
             SAFETY: If hateful/abusive → reply with just "❤️" and NO links.
             ALWAYS follow Creator's Custom Rules above if any exist.
 
-            Output ONLY your reply. Nothing else.
+            You MUST put your final response inside <REPLY> tags.
+            Example: <REPLY>here you go! ${assetsToShare[0]?.url || 'sotix.ai'}</REPLY>
+            Output ONLY the reply inside tags. You may think about your response first if needed.
             `;
         } else {
             // No assets to share — just reply naturally
@@ -811,13 +844,16 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
             Reply in 1 sentence max. Like a text message. Match your personality and real reply examples above EXACTLY.
             SAFETY: If hateful → just "❤️". Never swear.
 
-            Output ONLY your reply. Nothing else.
+            You MUST put your final response inside <REPLY> tags.
+            Example: <REPLY>hey what's up!</REPLY>
+            Output ONLY the reply inside tags. You may think about your response first if needed.
             `;
         }
 
-        console.log('[AI-Service] Generating smart DM reply with asset context + real examples...');
+        console.log('[AI-Service] Generating smart DM reply with Gemini...');
         const result = await generateContentWithFallback(prompt);
-        const reply = result.response.text().trim().replace(/^["']|["']$/g, '');
+        const rawResponse = result.response.text();
+        const reply = parseCleanReply(rawResponse);
 
         if (!reply || reply.length === 0) {
             return { text: '🔥', recommendedAssets: [], replyType: 'text' };
@@ -857,5 +893,6 @@ module.exports = {
     analyzeComment,
     researchCreatorOnline,
     matchCreatorAssets,
-    generateSmartDMReply
+    generateSmartDMReply,
+    parseCleanReply
 };
