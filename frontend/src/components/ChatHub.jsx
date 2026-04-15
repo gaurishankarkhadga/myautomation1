@@ -11,6 +11,7 @@ import {
 import ToastNotification, { useToasts } from './ToastNotification';
 import BioLinkChatPreview from './chat/BioLinkChatPreview';
 import AutomationChatPreview from './chat/AutomationChatPreview';
+import ViralCarouselPreview from './chat/ViralCarouselPreview';
 import DealNegotiatorSettings from './DealNegotiatorSettings';
 import '../styles/ChatHub.css';
 
@@ -932,6 +933,13 @@ function ChatHub() {
                                              'get_active_automations', 'set_content_target',
                                              'find_brand_deals', 'list_brand_deals', 'enable_comment_to_dm', 'enable_gamify_funnel'].includes(a.intent) && a.data
                                         ).data}
+                                    />
+                                )}
+
+                                {/* Viral Carousel Preview Card */}
+                                {msg.actions?.some(a => a.intent === 'generate_viral_script' && a.data?.carousel?.length > 0) && (
+                                    <ViralCarouselPreview 
+                                        items={msg.actions.find(a => a.intent === 'generate_viral_script').data.carousel} 
                                     />
                                 )}
 

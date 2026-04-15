@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     Link2, Package, BookOpen, Tag, FileText,
     Plus, Trash2, ToggleLeft, ToggleRight, X, ArrowLeft,
-    ChevronDown, ChevronUp, Copy, ExternalLink, Loader
+    ChevronDown, ChevronUp, Copy, ExternalLink, Loader, Edit2
 } from 'lucide-react';
 import '../styles/Assets.css';
 
@@ -34,6 +34,7 @@ function Assets() {
     const [activeTab, setActiveTab] = useState('link');
     const [loading, setLoading] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
+    const [editingAssetId, setEditingAssetId] = useState(null);
     const [defaultTemplates, setDefaultTemplates] = useState([]);
     const [formData, setFormData] = useState({
         title: '', description: '', url: '', price: '',
@@ -52,7 +53,7 @@ function Assets() {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`${API_BASE_URL}/api/biolink/product-image`, {
+            const res = await fetch(`${API_BASE_URL}/api/biolinks/product-image`, {
                 method: 'POST',
                 headers: token ? { 'Authorization': `Bearer ${token}` } : {},
                 body: data
@@ -131,6 +132,56 @@ function Assets() {
         } catch (err) {
             console.error('[AssetsPanel] Add error:', err);
         }
+    };
+
+    // ── Update asset ──────────────────────────────────────────────
+    const handleUpdate = async () => {
+        if (!formData.title.trim() || !editingAssetId) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/assets/${editingAssetId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: formData.title.trim(),
+                    description: formData.description.trim(),
+                    url: formData.url.trim(),
+                    price: formData.price.trim(),
+                    affiliateCode: formData.affiliateCode.trim(),
+                    category: formData.category,
+                    imageUrl: formData.imageUrl,
+                    tags: formData.tags ? (typeof formData.tags === 'string' ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : formData.tags) : []
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setAssets(prev => prev.map(a => a._id === editingAssetId ? data.asset : a));
+                setFormData({ title: '', description: '', url: '', price: '', affiliateCode: '', category: '', tags: '', imageUrl: '' });
+                setShowAddForm(false);
+                setEditingAssetId(null);
+            }
+        } catch (err) {
+            console.error('[AssetsPanel] Update error:', err);
+        }
+    };
+
+    // ── Edit Click ────────────────────────────────────────────────
+    const handleEditClick = (asset) => {
+        setEditingAssetId(asset._id);
+        setFormData({
+            title: asset.title || '',
+            description: asset.description || '',
+            url: asset.url || '',
+            price: asset.price || '',
+            affiliateCode: asset.affiliateCode || '',
+            category: asset.category || '',
+            tags: asset.tags ? asset.tags.join(', ') : '',
+            imageUrl: asset.imageUrl || ''
+        });
+        setShowAddForm(true);
+        // Scroll to top where the form exists
+        setTimeout(() => {
+            document.querySelector('.assets-content').scrollTop = 0;
+        }, 100);
     };
 
     // ── Toggle asset ──────────────────────────────────────────────
@@ -220,7 +271,7 @@ function Assets() {
                             <button
                                 key={tab.id}
                                 className={`asset-tab ${activeTab === tab.id ? 'active' : ''}`}
-                                onClick={() => { setActiveTab(tab.id); setShowAddForm(false); }}
+                                onClick={() => { setActiveTab(tab.id); setShowAddForm(false); setEditingAssetId(null); setFormData({ title: '', description: '', url: '', price: '', affiliateCode: '', category: '', tags: '', imageUrl: '' }); }}
                             >
                                 <TabIcon size={14} />
                                 <span>{tab.label}</span>
@@ -239,7 +290,15 @@ function Assets() {
                             {/* Add button */}
                             <button
                                 className="assets-add-btn"
-                                onClick={() => setShowAddForm(!showAddForm)}
+                                onClick={() => {
+                                    if (showAddForm) {
+                                        setShowAddForm(false);
+                                        setEditingAssetId(null);
+                                        setFormData({ title: '', description: '', url: '', price: '', affiliateCode: '', category: '', tags: '', imageUrl: '' });
+                                    } else {
+                                        setShowAddForm(true);
+                                    }
+                                }}
                             >
                                 {showAddForm ? <ChevronUp size={14} /> : <Plus size={14} />}
                                 <span>{showAddForm ? 'Cancel' : `Add ${ASSET_TABS.find(t => t.id === activeTab)?.label?.slice(0, -1) || 'Item'}`}</span>
@@ -335,8 +394,8 @@ function Assets() {
                                         className="asset-input"
                                     />
 
-                                    <button className="asset-save-btn" onClick={handleAdd} disabled={!formData.title.trim()}>
-                                        <Plus size={14} /> Add
+                                    <button className="asset-save-btn" onClick={editingAssetId ? handleUpdate : handleAdd} disabled={!formData.title.trim()}>
+                                        <Plus size={14} /> {editingAssetId ? 'Update Changes' : 'Add'}
                                     </button>
                                 </div>
                             )}
@@ -377,6 +436,9 @@ function Assets() {
                                                     )
                                                 )}
                                                 <div className="asset-item-actions">
+                                                    <button onClick={() => handleEditClick(asset)} title="Edit">
+                                                        <Edit2 size={14} />
+                                                    </button>
                                                     <button onClick={() => handleToggle(asset._id)} title={asset.isActive ? 'Deactivate' : 'Activate'}>
                                                         {asset.isActive ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
                                                     </button>

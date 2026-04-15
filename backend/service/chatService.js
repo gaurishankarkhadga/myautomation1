@@ -99,6 +99,7 @@ ${intentList}
 - enable_comment_to_dm (send DM to commenters — params: {keyword?, commentReply?, dmMessage?, useAssets?, targetMedia?, hours?, maxComments?})
 - disable_comment_to_dm (stop comment-to-DM)
 - configure_comment_to_dm (update comment-to-DM settings)
+- generate_viral_script (handles requests to generate a viral reel/short script, hooks, or competitor analysis based on assets — params: {topic: "what the creator wants to sell or talk about"})
 - add_custom_instruction (for custom DM behavior rules — params: {instruction: "the full custom rule"})
 - list_custom_instructions (show all custom rules)
 - remove_custom_instruction (remove a rule by number — params: {index: 1})
