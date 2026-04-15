@@ -37,8 +37,38 @@ function Assets() {
     const [defaultTemplates, setDefaultTemplates] = useState([]);
     const [formData, setFormData] = useState({
         title: '', description: '', url: '', price: '',
-        affiliateCode: '', category: '', tags: ''
+        affiliateCode: '', category: '', tags: '', imageUrl: ''
     });
+    const [imageUploading, setImageUploading] = useState(false);
+
+    // ── Handle Image Upload ───────────────────────────────────────────
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setImageUploading(true);
+        const data = new FormData();
+        data.append('productImage', file);
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/api/biolink/product-image`, {
+                method: 'POST',
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                body: data
+            });
+            const result = await res.json();
+            if (result.success) {
+                setFormData(p => ({ ...p, imageUrl: result.imageUrl }));
+            } else {
+                console.error('[AssetsPanel] Upload failed:', result.error);
+            }
+        } catch (err) {
+            console.error('[AssetsPanel] Upload error:', err);
+        } finally {
+            setImageUploading(false);
+        }
+    };
 
     // ── Fetch assets ──────────────────────────────────────────────
     const fetchAssets = useCallback(async () => {
@@ -88,13 +118,14 @@ function Assets() {
                     price: formData.price.trim(),
                     affiliateCode: formData.affiliateCode.trim(),
                     category: formData.category,
+                    imageUrl: formData.imageUrl,
                     tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : []
                 })
             });
             const data = await res.json();
             if (data.success) {
                 setAssets(prev => [data.asset, ...prev]);
-                setFormData({ title: '', description: '', url: '', price: '', affiliateCode: '', category: '', tags: '' });
+                setFormData({ title: '', description: '', url: '', price: '', affiliateCode: '', category: '', tags: '', imageUrl: '' });
                 setShowAddForm(false);
             }
         } catch (err) {
@@ -243,6 +274,27 @@ function Assets() {
                                     )}
 
                                     {['product', 'course', 'affiliate_link'].includes(activeTab) && (
+                                        <div className="asset-image-upload">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                id="asset-image"
+                                                onChange={handleImageUpload}
+                                                style={{ display: 'none' }}
+                                            />
+                                            <label htmlFor="asset-image" className="asset-upload-label">
+                                                {imageUploading ? 'Uploading...' : formData.imageUrl ? 'Change Image' : 'Upload Cover Image'}
+                                            </label>
+                                            {formData.imageUrl && (
+                                                <div className="asset-image-preview">
+                                                    <img src={formData.imageUrl.startsWith('http') ? formData.imageUrl : `${API_BASE_URL}${formData.imageUrl}`} alt="Preview" />
+                                                    <button type="button" className="remove-image-btn" onClick={() => setFormData(p => ({ ...p, imageUrl: '' }))}><X size={12} /></button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {['product', 'course', 'affiliate_link'].includes(activeTab) && (
                                         <input
                                             type="text"
                                             placeholder={activeTab === 'affiliate_link' ? 'Commission / Price' : 'Price'}
@@ -296,29 +348,42 @@ function Assets() {
                                     Click + to add one.
                                 </div>
                             ) : (
-                                <div className="assets-list">
+                                <div className={`assets-list ${['product', 'course', 'affiliate_link'].includes(activeTab) ? 'grid-layout' : ''}`}>
                                     {filteredAssets.map(asset => (
-                                        <div key={asset._id} className={`asset-item ${!asset.isActive ? 'inactive' : ''}`}>
+                                        <div key={asset._id} className={`asset-item ${['product', 'course', 'affiliate_link'].includes(activeTab) ? 'asset-card' : ''} ${!asset.isActive ? 'inactive' : ''}`}>
+                                            {['product', 'course', 'affiliate_link'].includes(activeTab) && asset.imageUrl && (
+                                                <div className="asset-card-image">
+                                                    <img src={asset.imageUrl.startsWith('http') ? asset.imageUrl : `${API_BASE_URL}${asset.imageUrl}`} alt={asset.title} />
+                                                </div>
+                                            )}
                                             <div className="asset-item-info">
                                                 <span className="asset-item-title">{asset.title}</span>
                                                 {asset.description && (
                                                     <span className="asset-item-desc">{asset.description}</span>
                                                 )}
-                                                {asset.url && (
-                                                    <span className="asset-item-url">
-                                                        <ExternalLink size={10} />
-                                                        {asset.url.replace(/^https?:\/\//, '').substring(0, 30)}
-                                                    </span>
-                                                )}
                                                 {asset.price && <span className="asset-item-price">${asset.price}</span>}
                                             </div>
-                                            <div className="asset-item-actions">
-                                                <button onClick={() => handleToggle(asset._id)} title={asset.isActive ? 'Deactivate' : 'Activate'}>
-                                                    {asset.isActive ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
-                                                </button>
-                                                <button onClick={() => handleDelete(asset._id)} title="Delete">
-                                                    <Trash2 size={14} />
-                                                </button>
+                                            <div className="asset-item-actions-bar">
+                                                {asset.url && ['product', 'course', 'affiliate_link'].includes(activeTab) ? (
+                                                    <a href={asset.url} target="_blank" rel="noopener noreferrer" className="asset-checkout-btn">
+                                                        Checkout
+                                                    </a>
+                                                ) : (
+                                                    asset.url && (
+                                                        <span className="asset-item-url">
+                                                            <ExternalLink size={10} />
+                                                            {asset.url.replace(/^https?:\/\//, '').substring(0, 30)}
+                                                        </span>
+                                                    )
+                                                )}
+                                                <div className="asset-item-actions">
+                                                    <button onClick={() => handleToggle(asset._id)} title={asset.isActive ? 'Deactivate' : 'Activate'}>
+                                                        {asset.isActive ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                                                    </button>
+                                                    <button onClick={() => handleDelete(asset._id)} title="Delete">
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}

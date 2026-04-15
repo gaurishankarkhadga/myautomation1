@@ -559,7 +559,8 @@ async function scheduleDMAutoReply(messageData, igUserId) {
                 'there',
                 matchResult.matchedAssets,
                 matchResult.isGenericMessage,
-                customInstructions // Pass custom instructions to AI
+                customInstructions, // Pass custom instructions to AI
+                matchResult.isUnavailableRequest
             );
 
             replyMessage = dmReply.text;
@@ -1214,7 +1215,8 @@ router.post('/webhook', async (req, res) => {
                                                                         commentData.username, 
                                                                         assetsToShare, 
                                                                         matchResult.isGenericMessage, 
-                                                                        customInstructions
+                                                                        customInstructions,
+                                                                        matchResult.isUnavailableRequest
                                                                     );
                                                                     dmMessage = dmReply.text;
                                                                 } catch (aiErr) {

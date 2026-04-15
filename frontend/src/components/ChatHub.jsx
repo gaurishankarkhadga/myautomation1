@@ -414,111 +414,115 @@ function ChatHub() {
                     </button>
                 </div>
 
-                {/* Chat Modes */}
-                <div className="sidebar-section">
-                    <p className="sidebar-section-label">Chat Modes</p>
-                    <button className={`sidebar-action-btn ${activeTab === 'current' ? 'active-tab' : ''}`}
-                        onClick={() => { setActiveTab('current'); setSidebarOpen(false); }}>
-                        <MessageSquare size={14} />
-                        <span style={activeTab === 'current' ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Current Chat</span>
-                    </button>
-                    <button className={`sidebar-action-btn ${activeTab === 'deals' ? 'active-tab' : ''}`}
-                        onClick={() => { loadDealsData(); setActiveTab('deals'); setSidebarOpen(false); }}>
-                        <Handshake size={14} />
-                        <span style={activeTab === 'deals' ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Deals CRM</span>
-                    </button>
-                    <button className={`sidebar-action-btn ${activeTab === 'history' ? 'active-tab' : ''}`}
-                        onClick={() => { setActiveTab('history'); setSidebarOpen(false); }}>
-                        <RotateCcw size={14} />
-                        <span style={activeTab === 'history' ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Chat History</span>
-                    </button>
-                    {activeTab === 'history' && historyMessages.length > 0 && (
-                        <button className="sidebar-action-btn" onClick={handleClearHistory} style={{ color: 'var(--red)', marginTop: '4px' }}>
-                            <Trash2 size={14} />
-                            <span>Clear All History</span>
-                        </button>
-                    )}
-                </div>
-
-                {/* Quick actions */}
-                <div className="sidebar-section">
-                    <p className="sidebar-section-label">Quick Actions</p>
-                    {[
-                        { icon: Link2, label: 'BioLinks', action: 'navigate', path: '/profile' },
-                        { icon: BarChart2, label: 'View Status', msg: "What's my current setup?" },
-                        { icon: Package, label: 'My Assets', action: 'assets' },
-                        { icon: User, label: 'Profile', action: 'navigate', path: '/profile' },
-                        { icon: RotateCcw, label: 'Preferences', msg: 'Show my preferences' },
-                    ].map(({ icon: Icon, label, msg, action, path }) => (
-                        <button key={label} className="sidebar-action-btn"
-                            onClick={() => {
-                                if (action === 'navigate') { navigate(path); }
-                                else if (action === 'assets') { navigate('/assets'); }
-                                else { sendMessage(msg); }
-                                setSidebarOpen(false);
-                            }}
-                            id={`qa-${label.replace(/\s/g, '-').toLowerCase()}`}
-                        >
-                            <Icon size={14} />
-                            <span>{label}</span>
-                        </button>
-                    ))}
-                </div>
-
-                {/* Connections */}
-                <div className="sidebar-section">
-                    <p className="sidebar-section-label">Connections</p>
-
-                    {connections.instagram ? (
-                        <div className="conn-row connected" id="conn-instagram">
-                            <Instagram size={15} />
-                            <span>Instagram</span>
-                            <CheckCircle size={13} className="conn-check" />
-                        </div>
-                    ) : (
-                        <button className="conn-btn" onClick={() => handleConnectPlatform('instagram')}
-                            disabled={connectingPlatform === 'instagram'} id="connect-instagram">
-                            <Instagram size={15} />
-                            <span>{connectingPlatform === 'instagram' ? 'Connecting…' : 'Connect Instagram'}</span>
-                        </button>
-                    )}
-
-                    {connections.youtube ? (
-                        <div className="conn-row connected" id="conn-youtube">
-                            <Youtube size={15} />
-                            <span>YouTube</span>
-                            <CheckCircle size={13} className="conn-check" />
-                        </div>
-                    ) : (
-                        <button className="conn-btn" onClick={() => handleConnectPlatform('youtube')}
-                            disabled={connectingPlatform === 'youtube'} id="connect-youtube">
-                            <Youtube size={15} />
-                            <span>{connectingPlatform === 'youtube' ? 'Connecting…' : 'Connect YouTube'}</span>
-                        </button>
-                    )}
-                </div>
-
-                {/* AI Quota */}
-                {quota && (
+                {/* Middle Scrollable Section */}
+                <div className="sidebar-middle-scroll">
+                    {/* Chat Modes */}
                     <div className="sidebar-section">
-                        <p className="sidebar-section-label">AI Quota</p>
-                        <div className="quota-display" id="quota-display">
-                            <div className="quota-text">
-                                <span>Gemini API ✨</span>
-                                <span className={quota.remaining < 20 ? 'text-danger' : 'text-ok'}>
-                                    {quota.remaining} / {quota.limit}
-                                </span>
-                            </div>
-                            <div className="quota-bar-bg">
-                                <div
-                                    className={`quota-bar-fill ${quota.remaining < 20 ? 'danger' : ''}`}
-                                    style={{ width: `${Math.min(100, Math.max(0, (quota.used / quota.limit) * 100))}%` }}
-                                ></div>
-                            </div>
-                            {quota.remaining < 20 && <p className="quota-warning">Free tier daily limit low!</p>}
-                        </div>
+                        <p className="sidebar-section-label">Chat Modes</p>
+                        <button className={`sidebar-action-btn ${activeTab === 'current' ? 'active-tab' : ''}`}
+                            onClick={() => { setActiveTab('current'); setSidebarOpen(false); }}>
+                            <MessageSquare size={14} />
+                            <span style={activeTab === 'current' ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Current Chat</span>
+                        </button>
+                        <button className={`sidebar-action-btn ${activeTab === 'deals' ? 'active-tab' : ''}`}
+                            onClick={() => { loadDealsData(); setActiveTab('deals'); setSidebarOpen(false); }}>
+                            <Handshake size={14} />
+                            <span style={activeTab === 'deals' ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Deals CRM</span>
+                        </button>
+                        <button className={`sidebar-action-btn ${activeTab === 'history' ? 'active-tab' : ''}`}
+                            onClick={() => { setActiveTab('history'); setSidebarOpen(false); }}>
+                            <RotateCcw size={14} />
+                            <span style={activeTab === 'history' ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Chat History</span>
+                        </button>
+                        {activeTab === 'history' && historyMessages.length > 0 && (
+                            <button className="sidebar-action-btn" onClick={handleClearHistory} style={{ color: 'var(--red)', marginTop: '4px' }}>
+                                <Trash2 size={14} />
+                                <span>Clear All History</span>
+                            </button>
+                        )}
                     </div>
-                )}
+
+                    {/* Quick actions */}
+                    <div className="sidebar-section">
+                        <p className="sidebar-section-label">Quick Actions</p>
+                        {[
+                            { icon: Link2, label: 'BioLinks', action: 'navigate', path: '/profile' },
+                            { icon: BarChart2, label: 'View Status', msg: "What's my current setup?" },
+                            { icon: Package, label: 'My Assets', action: 'assets' },
+                            { icon: User, label: 'Profile', action: 'navigate', path: '/profile' },
+                            { icon: RotateCcw, label: 'Preferences', msg: 'Show my preferences' },
+                        ].map(({ icon: Icon, label, msg, action, path }) => (
+                            <button key={label} className="sidebar-action-btn"
+                                onClick={() => {
+                                    if (action === 'navigate') { navigate(path); }
+                                    else if (action === 'assets') { navigate('/assets'); }
+                                    else { sendMessage(msg); }
+                                    setSidebarOpen(false);
+                                }}
+                                id={`qa-${label.replace(/\s/g, '-').toLowerCase()}`}
+                            >
+                                <Icon size={14} />
+                                <span>{label}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Connections */}
+                    <div className="sidebar-section">
+                        <p className="sidebar-section-label">Connections</p>
+
+                        {connections.instagram ? (
+                            <div className="conn-row connected" id="conn-instagram">
+                                <Instagram size={15} />
+                                <span>Instagram</span>
+                                <CheckCircle size={13} className="conn-check" />
+                            </div>
+                        ) : (
+                            <button className="conn-btn" onClick={() => handleConnectPlatform('instagram')}
+                                disabled={connectingPlatform === 'instagram'} id="connect-instagram">
+                                <Instagram size={15} />
+                                <span>{connectingPlatform === 'instagram' ? 'Connecting…' : 'Connect Instagram'}</span>
+                            </button>
+                        )}
+
+                        {connections.youtube ? (
+                            <div className="conn-row connected" id="conn-youtube">
+                                <Youtube size={15} />
+                                <span>YouTube</span>
+                                <CheckCircle size={13} className="conn-check" />
+                            </div>
+                        ) : (
+                            <button className="conn-btn" onClick={() => handleConnectPlatform('youtube')}
+                                disabled={connectingPlatform === 'youtube'} id="connect-youtube">
+                                <Youtube size={15} />
+                                <span>{connectingPlatform === 'youtube' ? 'Connecting…' : 'Connect YouTube'}</span>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* AI Quota */}
+                    {quota && (
+                        <div className="sidebar-section">
+                            <p className="sidebar-section-label">AI Quota</p>
+                            <div className="quota-display" id="quota-display">
+                                <div className="quota-text">
+                                    <span>Gemini API ✨</span>
+                                    <span className={quota.remaining < 20 ? 'text-danger' : 'text-ok'}>
+                                        {quota.remaining} / {quota.limit}
+                                    </span>
+                                </div>
+                                <div className="quota-bar-bg">
+                                    <div
+                                        className={`quota-bar-fill ${quota.remaining < 20 ? 'danger' : ''}`}
+                                        style={{ width: `${Math.min(100, Math.max(0, (quota.used / quota.limit) * 100))}%` }}
+                                    ></div>
+                                </div>
+                                {quota.remaining < 20 && <p className="quota-warning">Free tier daily limit low!</p>}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
 
                 {/* Bottom */}
                 <div className="sidebar-footer">

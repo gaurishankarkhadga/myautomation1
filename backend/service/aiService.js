@@ -581,6 +581,7 @@ async function matchCreatorAssets(incomingText, creatorAssets) {
         const analysis = JSON.parse(cleaned);
 
         let matchedAssets = [];
+        let isUnavailableRequest = false;
 
         if (analysis.isGenericMessage) {
             // Use default assets
@@ -592,12 +593,19 @@ async function matchCreatorAssets(incomingText, creatorAssets) {
             matchedAssets = matchedIds
                 .map(id => creatorAssets.find(a => a._id.toString() === id))
                 .filter(Boolean);
-            console.log(`[AI-Service] Specific intent detected: "${analysis.matchReason}". Matched ${matchedAssets.length} assets.`);
+            
+            if (matchedAssets.length === 0) {
+                isUnavailableRequest = true;
+                console.log(`[AI-Service] Specific intent detected but no assets matched (unavailable request).`);
+            } else {
+                console.log(`[AI-Service] Specific intent detected: "${analysis.matchReason}". Matched ${matchedAssets.length} assets.`);
+            }
         }
 
         return {
             matchedAssets,
             isGenericMessage: Boolean(analysis.isGenericMessage),
+            isUnavailableRequest,
             matchReason: analysis.matchReason || ''
         };
 
@@ -605,7 +613,7 @@ async function matchCreatorAssets(incomingText, creatorAssets) {
         console.error('[AI-Service] Asset matching failed:', error.message);
         // Fallback: return default assets
         const defaults = creatorAssets.filter(a => a.isDefault);
-        return { matchedAssets: defaults, isGenericMessage: true, matchReason: 'fallback' };
+        return { matchedAssets: defaults, isGenericMessage: true, isUnavailableRequest: false, matchReason: 'fallback' };
     }
 }
 
@@ -623,7 +631,7 @@ async function matchCreatorAssets(incomingText, creatorAssets) {
  * @param {boolean} isGenericMessage - Whether the message is generic
  * @returns {Promise<{text: string, recommendedAssets: Array, replyType: string}>}
  */
-async function generateSmartDMReply(userId, incomingText, senderName, matchedAssets, isGenericMessage, customInstructions = []) {
+async function generateSmartDMReply(userId, incomingText, senderName, matchedAssets, isGenericMessage, customInstructions = [], isUnavailableRequest = false) {
     try {
         const persona = await CreatorPersona.findOne({ userId });
 
@@ -733,7 +741,32 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
 
         let prompt;
 
-        if (matchedAssets.length > 0) {
+        if (isUnavailableRequest) {
+            // The fan asked for a specific product, but the warehouse doesn't have it.
+            prompt = `
+            You ARE this Instagram creator replying to a DM. Not an assistant. The actual human.
+
+            ${personaContext}
+            ${realExamplesBlock}
+            ${styleExamplesBlock}
+            ${customContext}
+            ${antiAiRules}
+
+            === SITUATION ===
+            @${senderName} sent this DM: "${incomingText}"
+            This fan is asking for a specific product, course, or service but YOU DO NOT HAVE IT IN YOUR ASSETS.
+
+            HARD RULES:
+            1. Act like a helpful but casual creator.
+            2. Tell them you don't have that specific thing right now.
+            3. BE A GOOD SALESMAN: Pivot the conversation smoothly. Ask them what exactly they are trying to achieve or say you have other things that might help. Keep them engaged!
+            4. Keep it SHORT (max 1-2 sentences). Match your real reply tone exactly (seen above).
+
+            SAFETY: If hateful → just "❤️". Never swear. ALWAYS follow Creator's Custom Rules above if any exist.
+
+            Output ONLY your reply. Nothing else.
+            `;
+        } else if (matchedAssets.length > 0) {
             prompt = `
             You ARE this Instagram creator replying to a DM. Not an assistant. The actual human.
 

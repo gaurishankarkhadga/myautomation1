@@ -143,7 +143,7 @@ body {
     height: 100dvh;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
+    overflow: hidden; /* Fix top/bottom, scroll middle globally */
     overflow-x: hidden;
     background: rgba(13, 13, 13, 0.82);
     backdrop-filter: blur(28px) saturate(150%);
@@ -153,6 +153,18 @@ body {
     position: relative;
     scrollbar-width: none;
     -ms-overflow-style: none;
+}
+
+.sidebar-middle-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.sidebar-middle-scroll::-webkit-scrollbar {
+    display: none;
 }
 
 .chathub-sidebar::-webkit-scrollbar {
@@ -1920,21 +1932,21 @@ body {
     gap: 10px;
     width: 100%;
     padding: 12px;
-    background: var(--text-primary);
-    color: var(--bg);
-    border: none;
+    background: rgba(255, 255, 255, 0.05); /* Proper Black and White: Dark Surface globally */
+    color: var(--text-primary);
+    border: 1px solid var(--border-2);
     border-radius: var(--radius);
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: none;
 }
 
 .sidebar-new-chat-btn:hover {
-    background: #fff;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
 }
 
 .sidebar-new-chat-btn:active {
@@ -1942,7 +1954,7 @@ body {
 }
 
 .sidebar-new-chat-btn svg {
-    color: var(--bg);
+    color: var(--text-primary);
 }
 
 
