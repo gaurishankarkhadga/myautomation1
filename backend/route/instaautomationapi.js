@@ -309,6 +309,7 @@ async function scheduleAutoReply(commentData, igUserId) {
     if (!tokenData) {
         console.error('[AutoReply] No access token found for user:', igUserId);
         await AutoReplyLog.create({
+            userId: igUserId,
             commentId: commentData.commentId,
             commentText: commentData.text,
             commenterUsername: commentData.username,
@@ -346,6 +347,7 @@ async function scheduleAutoReply(commentData, igUserId) {
                 }
 
                 await AutoReplyLog.create({
+                    userId: igUserId,
                     commentId: commentData.commentId,
                     commentText: commentData.text,
                     commenterUsername: commentData.username,
@@ -395,6 +397,7 @@ async function scheduleAutoReply(commentData, igUserId) {
 
     // Add log entry as 'pending'
     const logEntry = await AutoReplyLog.create({
+        userId: igUserId,
         commentId: commentData.commentId,
         commentText: commentData.text,
         commenterUsername: commentData.username,
@@ -483,6 +486,7 @@ async function scheduleDMAutoReply(messageData, igUserId) {
     if (!tokenData) {
         console.error('[DM-AutoReply] No access token found for user:', igUserId);
         await DmAutoReplyLog.create({
+            userId: igUserId,
             senderId,
             messageText: messageData.text,
             replyText: '',
@@ -597,6 +601,7 @@ async function scheduleDMAutoReply(messageData, igUserId) {
             // No fallback set — DON'T send anything, just log
             console.log('[DM-AutoReply] No fallback message set by creator. Skipping reply. Creator can set one via chat.');
             await DmAutoReplyLog.create({
+                userId: igUserId,
                 senderId,
                 messageText: messageData.text,
                 replyText: '',
@@ -616,6 +621,7 @@ async function scheduleDMAutoReply(messageData, igUserId) {
 
     // Add log entry as 'pending'
     const logEntry = await DmAutoReplyLog.create({
+        userId: igUserId,
         senderId,
         messageText: messageData.text,
         replyText: replyMessage,
@@ -1141,6 +1147,7 @@ router.post('/webhook', async (req, res) => {
                                                     if (!removeResult.success) removeResult = await hideComment(commentData.commentId, tokenData.accessToken);
 
                                                     await AutoReplyLog.create({
+                                                        userId: igUserIdMapped,
                                                         commentId: commentData.commentId,
                                                         commentText: commentData.text,
                                                         commenterUsername: commentData.username,
@@ -1178,6 +1185,7 @@ router.post('/webhook', async (req, res) => {
 
                                                                 const result = await replyToComment(commentData.commentId, smartReply, tokenData.accessToken);
                                                                 await AutoReplyLog.create({
+                                                                    userId: igUserIdMapped,
                                                                     commentId: commentData.commentId,
                                                                     commentText: commentData.text,
                                                                     commenterUsername: commentData.username,
@@ -1232,6 +1240,7 @@ router.post('/webhook', async (req, res) => {
                                                                 if (dmMessage) {
                                                                     const result = await sendPrivateReply(igUserIdMapped, commentData.commentId, dmMessage, tokenData.accessToken);
                                                                     await DmAutoReplyLog.create({
+                                                                        userId: igUserIdMapped,
                                                                         senderId: commentData.senderId,
                                                                         messageText: `[C2D] ${commentData.text}`,
                                                                         replyText: dmMessage,
