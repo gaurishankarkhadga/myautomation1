@@ -85,7 +85,8 @@ Output NOTHING after the JSON array.
 
             // Run the LLM
             console.log(`[ViralityEngine] Executing multi-agent pipeline for ${userId} on topic: "${topic}"`);
-            const generatedContent = await generateContentWithFallback(systemPrompt);
+            const result = await generateContentWithFallback(systemPrompt);
+            const generatedContent = result.response.text();
 
             // Parse out the JSON data if it exists
             let carouselData = [];
