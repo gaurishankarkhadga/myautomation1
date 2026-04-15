@@ -32,19 +32,37 @@ const MODEL_PRIORITY = [
  * regardless of training style (Gemini 2.5, Gemma, lite previews, etc.)
  */
 function hardenPrompt(rawPrompt) {
+    const trimmed = rawPrompt.trim();
     // If already structured (has TASK: header), don't double-wrap
-    if (rawPrompt.trim().startsWith('TASK:') || rawPrompt.trim().startsWith('<SYSTEM>')) {
+    if (trimmed.startsWith('TASK:') || trimmed.startsWith('<SYSTEM>')) {
         return rawPrompt;
     }
 
-    // Add universal structural guard. Using <SYSTEM> tags helps ALL models focus.
+    // [ROOT FIX] Detect if this is a "Mimicry/Persona" task
+    // "You ARE" or "Instagram creator" or "persona" or "negotiation" focus as creator
+    const isMimicryTask = /You ARE|creator|persona|mimic|negotiat/i.test(trimmed);
+
+    if (isMimicryTask) {
+        return `<SYSTEM>
+Adopt the persona identity, tone, and knowledge style EXACTLY as described. 
+NEVER explain yourself or "think out loud." 
+NEVER use AI assistant language (e.g., "Certainly," "As a persona," "I've drafted," "Thinking:").
+Respond ONLY with the final required output.
+</SYSTEM>
+
+<TASK>
+${trimmed}
+</TASK>`;
+    }
+
+    // Add universal structural guard for general tasks. Using <SYSTEM> tags helps ALL models focus.
     return `<SYSTEM>
 You are an AI assistant. Read the task below carefully and respond EXACTLY as asked.
 Do NOT add explanations, greetings, or extra text. Follow the output format specified.
 </SYSTEM>
 
 <TASK>
-${rawPrompt.trim()}
+${trimmed}
 </TASK>`;
 }
 

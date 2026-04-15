@@ -27,10 +27,11 @@ function cleanJsonString(input) {
 function parseCleanReply(text) {
     if (!text) return "";
     
-    // 1. Try to extract content between <REPLY> tags (case-insensitive)
-    const replyMatch = text.match(/<REPLY>([\s\S]*?)<\/REPLY>/i);
-    if (replyMatch && replyMatch[1].trim()) {
-        const extracted = replyMatch[1].trim();
+    // 1. [ROOT FIX] Extract ALL <REPLY> tag contents and take the LAST one
+    // This solves issues where AI might output text first and then tags, or repeat itself.
+    const matches = [...text.matchAll(/<REPLY>([\s\S]*?)<\/REPLY>/gi)];
+    if (matches.length > 0) {
+        const extracted = matches[matches.length - 1][1].trim();
         // Strip surrounding quotes if AI still added them inside tags
         return extracted.replace(/^["']|["']$/g, '').trim();
     }
@@ -330,9 +331,10 @@ async function generateSmartReply(userId, incomingText, contextType, senderName,
             - If hateful/abusive → reply "❤️" only
             - If simple reaction ("wow", "nice") → equally short reply
 
+            CONVENIENT ISOLATION:
+            If you need to think about the response, do it OUTSIDE the tags first.
             You MUST put your final response inside <REPLY> tags.
             Example: <REPLY>wow 🤩</REPLY>
-            Output ONLY the reply inside tags. You may think about your response first if needed.
             `;
 
         } else {
@@ -825,9 +827,10 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
             SAFETY: If hateful/abusive → reply with just "❤️" and NO links.
             ALWAYS follow Creator's Custom Rules above if any exist.
 
+            CONVENIENT ISOLATION:
+            If you need to think about the response, do it OUTSIDE the tags first.
             You MUST put your final response inside <REPLY> tags.
             Example: <REPLY>here you go! ${assetsToShare[0]?.url || 'sotix.ai'}</REPLY>
-            Output ONLY the reply inside tags. You may think about your response first if needed.
             `;
         } else {
             // No assets to share — just reply naturally

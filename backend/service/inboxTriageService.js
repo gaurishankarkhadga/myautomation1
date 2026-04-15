@@ -115,9 +115,11 @@ YOUR TASK: Do NOT just blindly suggest a rate or ask "what do you suggest". If t
 
 }
  
+CONVENIENT ISOLATION:
+If you need to think about the response, do it OUTSIDE the tags first.
 You MUST put your final response inside <REPLY> tags as a JSON object.
 Example: <REPLY>{"strategicAnalysis": "...", "brandName": "...", "suggestedRate": "...", "draftReply": "...", "collaborationType": "..."}</REPLY>
-Output ONLY the JSON inside tags. You may think about your response first if needed.`;
+`;
 
         const result = await generateContentWithFallback(prompt);
         let rawResponse = result.response.text();
@@ -264,9 +266,11 @@ OUTPUT FORMAT (JSON ONLY — no extra text):
   "suggestedRate": "Budget discussed (or 'TBD')"
 }
  
+CONVENIENT ISOLATION:
+If you need to think about the response, do it OUTSIDE the tags first.
 You MUST put your final output inside <REPLY> tags as a JSON object.
 Example: <REPLY>{"strategicAnalysis": "...", "action": "REPLY", "replyText": "..."}</REPLY>
-Output ONLY the JSON inside tags. You may think about your response first if needed.`;
+`;
 
 
         const result = await generateContentWithFallback(prompt);
@@ -360,10 +364,11 @@ RULES:
 8. Match the creator's exact vibe and typing style.
 9. NEVER reveal you are AI. You ARE the creator.
 
-            You MUST put your final response inside <REPLY> tags.
-            Example: <REPLY>ikr 😂</REPLY>
-            Output ONLY the reply inside tags. You may think about your response first if needed.
-            `;
+CONVENIENT ISOLATION:
+If you need to think about the response, do it OUTSIDE the tags first.
+You MUST put your final response inside <REPLY> tags.
+Example: <REPLY>hey! thanks for the love ❤️</REPLY>
+`;
 
         const result = await generateContentWithFallback(prompt);
         const rawResponse = result.response.text();
