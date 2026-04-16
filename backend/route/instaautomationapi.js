@@ -42,7 +42,23 @@ const pendingReplies = new Map();
 const pendingDMReplies = new Map();
 const pendingC2DReplies = new Map(); // Track Comment-to-DM timeouts for cancellation
 
-// ==================== HELPER FUNCTIONS ====================
+/**
+ * Normalizes a URL/Path to a fully qualified absolute URL.
+ * Meta (Instagram) requires absolute URLs for templates.
+ */
+function toAbsoluteUrl(urlOrPath) {
+    if (!urlOrPath) return urlOrPath;
+    
+    // If it's already absolute (starts with http), return as is
+    if (urlOrPath.startsWith('http://') || urlOrPath.startsWith('https://')) {
+        return urlOrPath;
+    }
+
+    // Otherwise, prepend the backend URL
+    const baseUrl = process.env.BACKEND_URL || 'https://myautomation2.onrender.com';
+    const normalizedPath = urlOrPath.startsWith('/') ? urlOrPath : `/${urlOrPath}`;
+    return `${baseUrl}${normalizedPath}`;
+}
 
 function verifyWebhookSignature(req) {
     const signature = req.headers['x-hub-signature-256'];
@@ -202,47 +218,57 @@ async function sendGenericTemplate(igUserId, recipientIGSID, assets, accessToken
         console.log(`[DM-Cards] Sending Generic Template with ${assets.length} assets to:`, recipientIGSID);
 
         // Map assets to Instagram Generic Template elements
-        const elements = assets.map(asset => {
-            // Determine button title based on asset type
-            let buttonTitle = 'Visit Link';
-            if (asset.type === 'product' || asset.type === 'merch') buttonTitle = 'Checkout';
-            else if (asset.type === 'course' || asset.type === 'ebook') buttonTitle = 'Enroll Now';
-            else if (asset.type === 'affiliate_link') buttonTitle = 'Buy Now';
+    const elements = assets.map(asset => {
+        // Determine button title based on asset type
+        let buttonTitle = 'Visit Link';
+        if (asset.type === 'product' || asset.type === 'merch') buttonTitle = 'Checkout';
+        else if (asset.type === 'course' || asset.type === 'ebook') buttonTitle = 'Enroll Now';
+        else if (asset.type === 'affiliate_link') buttonTitle = 'Buy Now';
 
-            // Build element
-            const element = {
-                title: (asset.title || 'Product').substring(0, 80),
-                subtitle: (asset.price ? `[${asset.price}] ${asset.description}` : (asset.description || '')).substring(0, 80),
-                buttons: [
-                    {
-                        type: 'web_url',
-                        url: asset.url || 'https://sotix.ai',
-                        title: buttonTitle
-                    }
-                ]
-            };
+        // Normalize URLs (ensure they are absolute)
+        const absoluteImageUrl = toAbsoluteUrl(asset.imageUrl);
+        const absoluteActionUrl = toAbsoluteUrl(asset.url || 'https://sotix.ai');
 
-            if (asset.imageUrl) {
-                element.image_url = asset.imageUrl;
-            }
+        if (asset.imageUrl) {
+            console.log(`[DM-Cards] Normalizing Image URL: ${asset.imageUrl} -> ${absoluteImageUrl}`);
+        }
 
-            return element;
-        });
+        // Build element
+        const element = {
+            title: (asset.title || 'Product').substring(0, 80),
+            subtitle: (asset.price ? `[${asset.price}] ${asset.description}` : (asset.description || '')).substring(0, 80),
+            buttons: [
+                {
+                    type: 'web_url',
+                    url: absoluteActionUrl,
+                    title: buttonTitle
+                }
+            ]
+        };
 
-        const response = await axios.post(
-            `${INSTAGRAM_CONFIG.graphBaseUrl}/${igUserId}/messages`,
-            {
-                recipient: { id: recipientIGSID },
-                message: {
-                    attachment: {
-                        type: 'template',
-                        payload: {
-                            template_type: 'generic',
-                            elements: elements.slice(0, 10) // Instagram limit
-                        }
+        if (absoluteImageUrl) {
+            element.image_url = absoluteImageUrl;
+        }
+
+        return element;
+    });
+
+    const response = await axios.post(
+        `${INSTAGRAM_CONFIG.graphBaseUrl}/${igUserId}/messages`,
+        {
+            recipient: { id: recipientIGSID },
+            message: {
+                attachment: {
+                    type: 'template',
+                    payload: {
+                        template_type: 'generic',
+                        image_aspect_ratio: 'square', // Square layout as requested
+                        elements: elements.slice(0, 10) // Instagram limit
                     }
                 }
-            },
+            }
+        },
+
             {
                 params: { access_token: accessToken },
                 headers: { 'Content-Type': 'application/json' }
