@@ -818,20 +818,21 @@ async function generateSmartDMReply(userId, incomingText, senderName, matchedAss
 
             HARD RULES:
             1. MAX 1-2 short sentences. Like a text message, NOT an essay.
-            2. Include the URL directly in the text — NO "check my bio" or "link in bio"
-            3. Sound like a FRIEND sharing a link, not a salesperson
-            4. ${isGenericMessage ? 'Just casually mention one product after responding' : 'Share the specific product they asked for'}
-            5. If multiple products match, still keep it to 2 sentences max — list URLs naturally
-            6. MATCH YOUR REAL REPLY STYLE shown above — same length, same tone, same energy
+            2. FOCUS ON THE TEXT: A rich card with the image, description, and checkout button will be sent automatically after your message. 
+            3. DO NOT include URLs in your text unless it feels ultra-natural (e.g., "here you go: [URL]"). Usually, it's better to just say "Sending the link below!" or "Check this out 👇".
+            4. Sound like a FRIEND sharing something cool, not a salesperson.
+            5. MATCH YOUR REAL REPLY STYLE shown above — same length, same tone, same energy.
+            6. If they asked for something specific, acknowledge it and tell them you're sending it right now.
 
-            SAFETY: If hateful/abusive → reply with just "❤️" and NO links.
+            SAFETY: If hateful/abusive → reply with just "❤️" and NO assets will be sent.
             ALWAYS follow Creator's Custom Rules above if any exist.
 
             CONVENIENT ISOLATION:
             If you need to think about the response, do it OUTSIDE the tags first.
             You MUST put your final response inside <REPLY> tags.
-            Example: <REPLY>here you go! ${assetsToShare[0]?.url || 'sotix.ai'}</REPLY>
+            Example: <REPLY>sending that link over now! check it out below 👇</REPLY>
             `;
+
         } else {
             // No assets to share — just reply naturally
             prompt = `

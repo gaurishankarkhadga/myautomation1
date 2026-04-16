@@ -191,6 +191,75 @@ async function sendDirectMessage(igUserId, recipientIGSID, message, accessToken,
     }
 }
 
+/**
+ * Sends a rich Generic Template (Card/Carousel) to an Instagram user.
+ * Supports up to 10 assets.
+ */
+async function sendGenericTemplate(igUserId, recipientIGSID, assets, accessToken) {
+    try {
+        if (!assets || assets.length === 0) return { success: false, error: 'No assets provided' };
+
+        console.log(`[DM-Cards] Sending Generic Template with ${assets.length} assets to:`, recipientIGSID);
+
+        // Map assets to Instagram Generic Template elements
+        const elements = assets.map(asset => {
+            // Determine button title based on asset type
+            let buttonTitle = 'Visit Link';
+            if (asset.type === 'product' || asset.type === 'merch') buttonTitle = 'Checkout';
+            else if (asset.type === 'course' || asset.type === 'ebook') buttonTitle = 'Enroll Now';
+            else if (asset.type === 'affiliate_link') buttonTitle = 'Buy Now';
+
+            // Build element
+            const element = {
+                title: (asset.title || 'Product').substring(0, 80),
+                subtitle: (asset.price ? `[${asset.price}] ${asset.description}` : (asset.description || '')).substring(0, 80),
+                buttons: [
+                    {
+                        type: 'web_url',
+                        url: asset.url || 'https://sotix.ai',
+                        title: buttonTitle
+                    }
+                ]
+            };
+
+            if (asset.imageUrl) {
+                element.image_url = asset.imageUrl;
+            }
+
+            return element;
+        });
+
+        const response = await axios.post(
+            `${INSTAGRAM_CONFIG.graphBaseUrl}/${igUserId}/messages`,
+            {
+                recipient: { id: recipientIGSID },
+                message: {
+                    attachment: {
+                        type: 'template',
+                        payload: {
+                            template_type: 'generic',
+                            elements: elements.slice(0, 10) // Instagram limit
+                        }
+                    }
+                }
+            },
+            {
+                params: { access_token: accessToken },
+                headers: { 'Content-Type': 'application/json' }
+            }
+        );
+
+        console.log('[DM-Cards] Rich card sent successfully');
+        return { success: true, data: response.data };
+    } catch (error) {
+        const errorMsg = error.response?.data?.error?.message || error.message;
+        console.error('[DM-Cards] Failed to send rich card:', errorMsg);
+        console.error('[DM-Cards] Full error:', JSON.stringify(error.response?.data, null, 2));
+        return { success: false, error: errorMsg };
+    }
+}
+
+
 async function sendPrivateReply(igUserId, commentId, message, accessToken) {
     try {
         console.log('[Private-Reply] Sending Comment-to-DM for comment:', commentId);
@@ -656,17 +725,34 @@ async function scheduleDMAutoReply(messageData, igUserId) {
             return;
         }
 
-        // ==================== MULTI-ASSET: Send text reply first ====================
-        const result = await sendDirectMessage(igUserId, senderId, replyMessage, tokenData.accessToken, imagesToSend[0] || null);
+        // ==================== ASSET DELIVERY: Text Reply + Rich Cards/Carousel ====================
+        // Step 1: Send the natural AI text reply (without image)
+        const result = await sendDirectMessage(igUserId, senderId, replyMessage, tokenData.accessToken, null);
 
-        // ==================== MULTI-ASSET: Send additional images sequentially ====================
-        if (imagesToSend.length > 1) {
-            for (let i = 1; i < imagesToSend.length; i++) {
-                await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5s between messages
-                await sendDirectMessage(igUserId, senderId, '', tokenData.accessToken, imagesToSend[i]);
-                console.log(`[DM-AutoReply] Sent additional asset image ${i + 1}/${imagesToSend.length}`);
+        // Step 2: Send assets as rich cards in a carousel
+        if (matchResult && matchResult.matchedAssets && matchResult.matchedAssets.length > 0) {
+            console.log(`[DM-AutoReply] Sending ${matchResult.matchedAssets.length} assets as rich cards...`);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Short pause for realism
+            const cardResult = await sendGenericTemplate(igUserId, senderId, matchResult.matchedAssets, tokenData.accessToken);
+            
+            if (!cardResult.success) {
+                console.error('[DM-AutoReply] Card delivery failed, falling back to basic images (if any)');
+                // Fallback: If cards fail, send images sequentially (old behavior)
+                if (imagesToSend.length > 0) {
+                    for (const imgUrl of imagesToSend) {
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        await sendDirectMessage(igUserId, senderId, '', tokenData.accessToken, imgUrl);
+                    }
+                }
+            }
+        } else if (imagesToSend.length > 0) {
+            // No assets matched specifically, but images were identified (legacy/fallback)
+            for (const imgUrl of imagesToSend) {
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                await sendDirectMessage(igUserId, senderId, '', tokenData.accessToken, imgUrl);
             }
         }
+
 
         // Update log entry in DB
         await DmAutoReplyLog.findByIdAndUpdate(logEntry._id, {
