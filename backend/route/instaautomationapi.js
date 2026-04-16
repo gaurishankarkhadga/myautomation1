@@ -256,6 +256,7 @@ async function sendGenericTemplate(igUserId, recipientIGSID, assets, accessToken
             console.log(`[DM-Cards] Asset "${asset.title}" missing image. Using placeholder.`);
         }
 
+        
         // Build element
         const element = {
             title: (asset.title || 'Product').substring(0, 80),
