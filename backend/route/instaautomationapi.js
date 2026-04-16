@@ -615,10 +615,12 @@ async function scheduleDMAutoReply(messageData, igUserId) {
             ?.filter(i => i.active)
             ?.map(i => i.instruction) || [];
 
+        let matchResult = null;
+
         // Step 3: If assets exist, use AI + Assets mode
         if (creatorAssets.length > 0) {
             console.log('[DM-AutoReply] Using AI + Assets mode...');
-            const matchResult = await aiService.matchCreatorAssets(messageData.text, creatorAssets);
+            matchResult = await aiService.matchCreatorAssets(messageData.text, creatorAssets);
 
             // AUTONOMOUS GATE: If standard is OFF, only reply if the fan has SPECIFIC intent
             if (!isStandardEnabled && matchResult.isGenericMessage) {
