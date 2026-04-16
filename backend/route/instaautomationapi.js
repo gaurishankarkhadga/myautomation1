@@ -574,6 +574,7 @@ async function scheduleDMAutoReply(messageData, igUserId) {
     let replyType = 'text';
     let assetsShared = [];
     let imagesToSend = []; // Multi-asset: support multiple images
+    let matchResult = null; // Captured by setTimeout closure
 
     console.log(`[DM-AutoReply] ${isStandardEnabled ? 'STANDARD' : 'AUTONOMOUS'} AI MODE | Incoming: "${messageData.text}"`);
 
@@ -615,7 +616,6 @@ async function scheduleDMAutoReply(messageData, igUserId) {
             ?.filter(i => i.active)
             ?.map(i => i.instruction) || [];
 
-        let matchResult = null;
 
         // Step 3: If assets exist, use AI + Assets mode
         if (creatorAssets.length > 0) {
