@@ -258,8 +258,9 @@ async function sendGenericTemplate(igUserId, recipientIGSID, assets, accessToken
 
         // Build element
         const element = {
-            title: `${emoji} ${asset.title}`.substring(0, 80),
+            title: (asset.title || 'Product').substring(0, 80),
             subtitle: `${priceTag}${asset.description || ''}`.substring(0, 80),
+
             buttons: [
                 {
                     type: 'web_url',
