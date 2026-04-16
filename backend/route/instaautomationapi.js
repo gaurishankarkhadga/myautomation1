@@ -219,24 +219,47 @@ async function sendGenericTemplate(igUserId, recipientIGSID, assets, accessToken
 
         // Map assets to Instagram Generic Template elements
     const elements = assets.map(asset => {
-        // Determine button title based on asset type
+        // Determine button title and Emoji based on asset type
         let buttonTitle = 'Visit Link';
-        if (asset.type === 'product' || asset.type === 'merch') buttonTitle = 'Checkout';
-        else if (asset.type === 'course' || asset.type === 'ebook') buttonTitle = 'Enroll Now';
-        else if (asset.type === 'affiliate_link') buttonTitle = 'Buy Now';
+        let emoji = '🔗';
+        
+        const type = (asset.type || 'product').toLowerCase();
+        const typeMap = {
+            product: { btn: 'Checkout', emo: '📦' },
+            merch: { btn: 'Checkout', emo: '👕' },
+            course: { btn: 'Enroll Now', emo: '📚' },
+            ebook: { btn: 'Enroll Now', emo: '📖' },
+            affiliate_link: { btn: 'Buy Now', emo: '💰' },
+            service: { btn: 'Book Now', emo: '⚙️' },
+            link: { btn: 'Visit Link', emo: '🔗' }
+        };
 
-        // Normalize URLs (ensure they are absolute)
-        const absoluteImageUrl = toAbsoluteUrl(asset.imageUrl);
+        if (typeMap[type]) {
+            buttonTitle = typeMap[type].btn;
+            emoji = typeMap[type].emo;
+        }
+
+        // --- MODERN PRICING: Format as Rupees (₹) ---
+        let priceTag = '';
+        if (asset.price) {
+            // Extract numbers only to ensure clean prefix
+            const cleanPrice = asset.price.toString().replace(/[^\d.]/g, '');
+            priceTag = `₹${cleanPrice} • `;
+        }
+
+        // --- IMAGE HANDLING: Fallback to placeholder if missing ---
+        const placeholderImg = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=600&auto=format&fit=crop';
+        const absoluteImageUrl = toAbsoluteUrl(asset.imageUrl || placeholderImg);
         const absoluteActionUrl = toAbsoluteUrl(asset.url || 'https://sotix.ai');
 
-        if (asset.imageUrl) {
-            console.log(`[DM-Cards] Normalizing Image URL: ${asset.imageUrl} -> ${absoluteImageUrl}`);
+        if (!asset.imageUrl) {
+            console.log(`[DM-Cards] Asset "${asset.title}" missing image. Using placeholder.`);
         }
 
         // Build element
         const element = {
-            title: (asset.title || 'Product').substring(0, 80),
-            subtitle: (asset.price ? `[${asset.price}] ${asset.description}` : (asset.description || '')).substring(0, 80),
+            title: `${emoji} ${asset.title}`.substring(0, 80),
+            subtitle: `${priceTag}${asset.description || ''}`.substring(0, 80),
             buttons: [
                 {
                     type: 'web_url',
@@ -253,30 +276,34 @@ async function sendGenericTemplate(igUserId, recipientIGSID, assets, accessToken
         return element;
     });
 
-    const response = await axios.post(
-        `${INSTAGRAM_CONFIG.graphBaseUrl}/${igUserId}/messages`,
-        {
-            recipient: { id: recipientIGSID },
-            message: {
-                attachment: {
-                    type: 'template',
-                    payload: {
-                        template_type: 'generic',
-                        image_aspect_ratio: 'square', // Square layout as requested
-                        elements: elements.slice(0, 10) // Instagram limit
-                    }
+    const payload = {
+        recipient: { id: recipientIGSID },
+        message: {
+            attachment: {
+                type: 'template',
+                payload: {
+                    template_type: 'generic',
+                    image_aspect_ratio: 'square', // Modern square layout
+                    elements: elements.slice(0, 10)
                 }
             }
-        },
+        }
+    };
 
-            {
-                params: { access_token: accessToken },
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
+    console.log('[DM-Cards] Sending optimized payload:', JSON.stringify(payload, null, 2));
 
-        console.log('[DM-Cards] Rich card sent successfully');
-        return { success: true, data: response.data };
+    const response = await axios.post(
+        `${INSTAGRAM_CONFIG.graphBaseUrl}/${igUserId}/messages`,
+        payload,
+        {
+            params: { access_token: accessToken },
+            headers: { 'Content-Type': 'application/json' }
+        }
+    );
+
+    console.log('[DM-Cards] Rich card sent successfully');
+    return { success: true, data: response.data };
+
     } catch (error) {
         const errorMsg = error.response?.data?.error?.message || error.message;
         console.error('[DM-Cards] Failed to send rich card:', errorMsg);
@@ -760,7 +787,7 @@ async function scheduleDMAutoReply(messageData, igUserId) {
         // Step 2: Send assets as rich cards in a carousel
         if (matchResult && matchResult.matchedAssets && matchResult.matchedAssets.length > 0) {
             console.log(`[DM-AutoReply] Sending ${matchResult.matchedAssets.length} assets as rich cards...`);
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Short pause for realism
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Increased pause for better conversational flow
             const cardResult = await sendGenericTemplate(igUserId, senderId, matchResult.matchedAssets, tokenData.accessToken);
             
             if (!cardResult.success) {
