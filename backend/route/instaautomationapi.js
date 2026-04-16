@@ -219,25 +219,24 @@ async function sendGenericTemplate(igUserId, recipientIGSID, assets, accessToken
 
         // Map assets to Instagram Generic Template elements
     const elements = assets.map(asset => {
-        // Determine button title and Emoji based on asset type
+        // Determine button title based on asset type
         let buttonTitle = 'Visit Link';
-        let emoji = '🔗';
         
         const type = (asset.type || 'product').toLowerCase();
         const typeMap = {
-            product: { btn: 'Checkout', emo: '📦' },
-            merch: { btn: 'Checkout', emo: '👕' },
-            course: { btn: 'Enroll Now', emo: '📚' },
-            ebook: { btn: 'Enroll Now', emo: '📖' },
-            affiliate_link: { btn: 'Buy Now', emo: '💰' },
-            service: { btn: 'Book Now', emo: '⚙️' },
-            link: { btn: 'Visit Link', emo: '🔗' }
+            product: 'Checkout',
+            merch: 'Checkout',
+            course: 'Enroll Now',
+            ebook: 'Enroll Now',
+            affiliate_link: 'Buy Now',
+            service: 'Book Now',
+            link: 'Visit Link'
         };
 
         if (typeMap[type]) {
-            buttonTitle = typeMap[type].btn;
-            emoji = typeMap[type].emo;
+            buttonTitle = typeMap[type];
         }
+
 
         // --- MODERN PRICING: Format as Rupees (₹) ---
         let priceTag = '';
