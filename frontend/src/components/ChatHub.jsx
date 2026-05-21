@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import WaveBackground from './WaveBackground';
 import {
-    Zap, Send, Menu, X, Settings, LogOut, BarChart2,
+    Zap, Send, SendHorizontal, Menu, X, Settings, LogOut, BarChart2,
     Package, User, MessageSquare, Mail, Handshake,
     Instagram, Youtube, CheckCircle, Circle, Loader,
     Bot, Activity, ChevronRight, RotateCcw, Link2, Trash2,
@@ -96,12 +97,12 @@ function ChatHub() {
             if (!socketRef.current) {
                 socketRef.current = io(API_BASE_URL);
                 socketRef.current.on('connect', () => socketRef.current.emit('register', userId));
-                
+
                 // Live listener for autonomous AI updates
                 socketRef.current.on('deal_updated', (payload) => {
                     addToasts([{
-                        type: payload.status === 'rejected' ? 'warning' : 'success', 
-                        title: 'Live Deal Update', 
+                        type: payload.status === 'rejected' ? 'warning' : 'success',
+                        title: 'Live Deal Update',
                         message: `The AI backend just updated a deal state to ${payload.status.toUpperCase()}.`
                     }]);
                     // Hot reload the CRM board silently
@@ -109,7 +110,7 @@ function ChatHub() {
                 });
             }
         });
-        
+
         return () => {
             if (socketRef.current) {
                 socketRef.current.disconnect();
@@ -309,7 +310,7 @@ function ChatHub() {
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     };
-    
+
     const handleNewChat = () => {
         setMessages([]);
         setActiveTab('current');
@@ -349,16 +350,49 @@ function ChatHub() {
 
     const formatContent = (content) => {
         if (!content) return '';
-        return content
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; text-decoration: underline;">$1</a>')
-            .replace(/\n/g, '<br/>');
+        let html = content;
+        
+        // Bold and Italic
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        
+        // URLs
+        html = html.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; text-decoration: underline;">$1</a>');
+        
+        // Headers
+        html = html.replace(/^### (.*$)/gim, '<h3 style="margin-top: 16px; margin-bottom: 8px; color: var(--text-primary); font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 4px;">$1</h3>');
+        html = html.replace(/^## (.*$)/gim, '<h2 style="margin-top: 18px; margin-bottom: 10px; color: var(--text-primary); font-size: 1.25rem;">$1</h2>');
+        html = html.replace(/^# (.*$)/gim, '<h1 style="margin-top: 20px; margin-bottom: 12px; color: var(--text-primary); font-size: 1.5rem;">$1</h1>');
+
+        // Lists (unordered)
+        html = html.replace(/^\s*[-]\s(.*$)/gim, '<div style="margin-left: 16px; display: flex; gap: 8px; margin-bottom: 6px;"><span style="color: var(--primary-color)">•</span><span>$1</span></div>');
+        
+        // Lists (ordered)
+        html = html.replace(/^\s*(\d+)\.\s(.*$)/gim, '<div style="margin-left: 16px; display: flex; gap: 8px; margin-bottom: 6px;"><span style="color: var(--primary-color); font-weight: bold;">$1.</span><span>$2</span></div>');
+
+        // Quotes
+        html = html.replace(/^>\s(.*$)/gim, '<blockquote style="border-left: 3px solid var(--primary-color); padding-left: 12px; margin: 12px 0; color: var(--text-secondary); font-style: italic;">$1</blockquote>');
+        
+        // Newlines cleanup
+        html = html.replace(/\n/g, '<br/>');
+        html = html.replace(/(<\/h[1-3]>|<br\/>)(<br\/>)+/g, '$1');
+        html = html.replace(/<\/div><br\/>/g, '</div>');
+        html = html.replace(/<\/blockquote><br\/>/g, '</blockquote>');
+
+        return html;
     };
 
     // ── Render ───────────────────────────────────────────────────────
     return (
         <div className="chathub" id="chathub">
             <ToastNotification toasts={toasts} onRemove={removeToast} />
+
+            {/* Cyber-Terminal Background Layer */}
+            <div className="chathub-bg-viewport">
+                <WaveBackground />
+                <div className="midnight-mesh" />
+                <div className="chathub-grid-bg" />
+            </div>
 
             {/* Mobile header bar */}
             <header className="mobile-header">
@@ -367,20 +401,20 @@ function ChatHub() {
                         <Menu size={20} />
                     </button>
                 </div>
-                
+
                 <div className="mob-header-slot center">
                     <span className="mob-brand">Sotix AI</span>
                 </div>
-                
+
                 <div className="mob-header-slot right">
                     {profile && (
-                        <button 
-                            className="nav-profile-btn" 
+                        <button
+                            className="nav-profile-btn"
                             onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                             id="mob-profile-trigger"
                         >
                             <div className="nav-avatar-wrapper">
-                                {profile.profile_picture_url 
+                                {profile.profile_picture_url
                                     ? <img src={profile.profile_picture_url} alt={profile.username} className="nav-avatar" />
                                     : <div className="nav-avatar-placeholder"><User size={16} /></div>
                                 }
@@ -555,8 +589,8 @@ function ChatHub() {
                     <div className="chat-header-right">
                         {profile && (
                             <div className="nav-profile-wrapper">
-                                <button 
-                                    className="nav-profile-btn" 
+                                <button
+                                    className="nav-profile-btn"
                                     onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                                     id="desk-profile-trigger"
                                 >
@@ -565,7 +599,7 @@ function ChatHub() {
                                         {activeAutomations.count > 0 && <span className="nav-live-indicator">Live</span>}
                                     </div>
                                     <div className="nav-avatar-wrapper">
-                                        {profile.profile_picture_url 
+                                        {profile.profile_picture_url
                                             ? <img src={profile.profile_picture_url} alt={profile.username} className="nav-avatar" />
                                             : <div className="nav-avatar-placeholder"><User size={18} /></div>
                                         }
@@ -616,8 +650,8 @@ function ChatHub() {
                                             {activeAutomations.count > 0 ? 'System Active' : 'System Standby'}
                                         </span>
                                         <span className="pd-status-desc">
-                                            {activeAutomations.count > 0 
-                                                ? `${activeAutomations.list.join(' · ')}` 
+                                            {activeAutomations.count > 0
+                                                ? `${activeAutomations.list.join(' · ')}`
                                                 : 'No active automation tasks'}
                                         </span>
                                     </div>
@@ -651,7 +685,7 @@ function ChatHub() {
                                     All collaboration conversations · AI-powered negotiation
                                 </p>
                             </div>
-                             <div style={{ display: 'flex', gap: '10px' }}>
+                            <div style={{ display: 'flex', gap: '10px' }}>
                                 <button
                                     onClick={() => setShowNegotiatorRules(true)}
                                     style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(139, 92, 246, 0.3)', background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600 }}
@@ -844,147 +878,147 @@ function ChatHub() {
 
                 {/* ═══════════════ CHAT MESSAGES (normal chat view) ═══════════════ */}
                 {activeTab !== 'deals' && (
-                <div className="chat-messages" id="chat-messages">
-                    {/* Welcome screen */}
-                    {!loadingHistory && messages.length === 0 && activeTab === 'current' && (
-                        <div className="chat-welcome" id="chat-welcome">
-                            <div className="welcome-icon-wrap"><Zap size={28} strokeWidth={2} /></div>
-                            <h2 className="welcome-title">Welcome to Sotix AI</h2>
-                            <p className="welcome-sub">Tell me what you need — I'll handle everything behind the scenes.</p>
-                            <div className="suggested-grid" id="suggested-prompts">
-                                {SUGGESTED_PROMPTS.map(({ icon: Icon, text, label }, i) => (
-                                    <button key={i} className="suggest-btn" onClick={() => sendMessage(text)}
-                                        id={`sp-${i}`}>
-                                        <Icon size={16} strokeWidth={1.8} />
-                                        <span>{label}</span>
-                                    </button>
-                                ))}
+                    <div className="chat-messages" id="chat-messages">
+                        {/* Welcome screen */}
+                        {!loadingHistory && messages.length === 0 && activeTab === 'current' && (
+                            <div className="chat-welcome" id="chat-welcome">
+                                <div className="welcome-icon-wrap"><Zap size={28} strokeWidth={2} /></div>
+                                <h2 className="welcome-title">Welcome to Sotix AI</h2>
+                                <p className="welcome-sub">Tell me what you need — I'll handle everything behind the scenes.</p>
+                                <div className="suggested-grid" id="suggested-prompts">
+                                    {SUGGESTED_PROMPTS.map(({ icon: Icon, text, label }, i) => (
+                                        <button key={i} className="suggest-btn" onClick={() => sendMessage(text)}
+                                            id={`sp-${i}`}>
+                                            <Icon size={16} strokeWidth={1.8} />
+                                            <span>{label}</span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* Loading history */}
-                    {loadingHistory && activeTab === 'history' && (
-                        <div className="chat-loading">
-                            <Loader size={20} className="spin" />
-                            <p>Loading history…</p>
-                        </div>
-                    )}
+                        {/* Loading history */}
+                        {loadingHistory && activeTab === 'history' && (
+                            <div className="chat-loading">
+                                <Loader size={20} className="spin" />
+                                <p>Loading history…</p>
+                            </div>
+                        )}
 
-                    {!loadingHistory && activeTab === 'history' && historyMessages.length === 0 && (
-                        <div className="chat-loading" style={{ opacity: 0.6 }}>
-                            <p>No chat history available.</p>
-                        </div>
-                    )}
+                        {!loadingHistory && activeTab === 'history' && historyMessages.length === 0 && (
+                            <div className="chat-loading" style={{ opacity: 0.6 }}>
+                                <p>No chat history available.</p>
+                            </div>
+                        )}
 
-                    {/* Message bubbles */}
-                    {(activeTab === 'current' ? messages : historyMessages).map((msg, i) => (
-                        <div key={i} className={`msg-row ${msg.role}`} id={`msg-${i}`}>
-                            {msg.role === 'assistant' && (
-                                <div className="msg-avatar"><Bot size={14} strokeWidth={2} /></div>
-                            )}
-                            <div className="msg-bubble">
-                                <div className="msg-text"
-                                    dangerouslySetInnerHTML={{ __html: formatContent(msg.content) }} />
-
-                                {msg.actions?.length > 0 && (
-                                    <div className="msg-badges">
-                                        {msg.actions.map((a, j) => (
-                                            <span key={j} className={`action-badge ${a.success ? 'ok' : 'err'}`}>
-                                                {a.success
-                                                    ? <CheckCircle size={11} />
-                                                    : <Circle size={11} />
-                                                }
-                                                {a.intent?.replace(/_/g, ' ')}
-                                            </span>
-                                        ))}
-                                    </div>
+                        {/* Message bubbles */}
+                        {(activeTab === 'current' ? messages : historyMessages).map((msg, i) => (
+                            <div key={i} className={`msg-row ${msg.role}`} id={`msg-${i}`}>
+                                {msg.role === 'assistant' && (
+                                    <div className="msg-avatar"><Bot size={14} strokeWidth={2} /></div>
                                 )}
+                                <div className="msg-bubble">
+                                    <div className="msg-text"
+                                        dangerouslySetInnerHTML={{ __html: formatContent(msg.content) }} />
 
-                                {msg.actions?.some(a => a.intent === 'get_status' && a.data?.inboxTriage) && (
-                                    <div className="triage-badges-container">
-                                        {Object.entries(msg.actions.find(a => a.intent === 'get_status').data.inboxTriage).map(([tag, count], k) => (
-                                            <span key={k} className={`triage-badge ${tag.toLowerCase().replace(/\s/g, '-')}`}>
-                                                {tag}: {count}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {/* BioLink Preview Card */}
-                                {msg.actions?.some(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId) && (
-                                    <BioLinkChatPreview
-                                        biolinkId={msg.actions.find(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId).data.biolinkId}
-                                        url={msg.actions.find(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId).data.url}
-                                    />
-                                )}
-
-                                {/* Automation Preview Card */}
-                                {msg.actions?.some(a =>
-                                    ['enable_comment_autoreply', 'enable_dm_autoreply', 'enable_all_automation',
-                                     'disable_comment_autoreply', 'disable_dm_autoreply', 'disable_all_automation',
-                                     'get_active_automations', 'set_content_target', 
-                                     'find_brand_deals', 'list_brand_deals', 'enable_comment_to_dm', 'enable_gamify_funnel'].includes(a.intent) && a.data
-                                ) && (
-                                    <AutomationChatPreview
-                                        actionData={msg.actions.find(a =>
-                                            ['enable_comment_autoreply', 'enable_dm_autoreply', 'enable_all_automation',
-                                             'disable_comment_autoreply', 'disable_dm_autoreply', 'disable_all_automation',
-                                             'get_active_automations', 'set_content_target',
-                                             'find_brand_deals', 'list_brand_deals', 'enable_comment_to_dm', 'enable_gamify_funnel'].includes(a.intent) && a.data
-                                        ).data}
-                                    />
-                                )}
-
-                                {/* Viral Carousel Preview Card */}
-                                {msg.actions?.some(a => a.intent === 'generate_viral_script' && a.data?.carousel?.length > 0) && (
-                                    <ViralCarouselPreview 
-                                        items={msg.actions.find(a => a.intent === 'generate_viral_script').data.carousel} 
-                                    />
-                                )}
-
-                                {/* ====== DEAL NOTIFICATION (points to CRM tab) ====== */}
-                                {msg.actions?.some(a => a.intent === 'get_morning_briefing' && a.data?.hasPendingDeals) && (
-                                    <button
-                                        className="deal-alert-card"
-                                        onClick={() => { loadDealsData(); setActiveTab('deals'); }}
-                                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '10px', background: 'rgba(59,130,246,0.08)', width: '100%', textAlign: 'left' }}
-                                    >
-                                        <Handshake size={18} style={{ color: 'var(--primary-color)', flexShrink: 0 }} />
-                                        <div style={{ flex: 1 }}>
-                                            <strong style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>
-                                                {msg.actions.find(a => a.intent === 'get_morning_briefing').data.pendingCount || 0} Brand Deal{(msg.actions.find(a => a.intent === 'get_morning_briefing').data.pendingCount || 0) !== 1 ? 's' : ''} Waiting
-                                            </strong>
-                                            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', margin: '2px 0 0 0' }}>Tap to open the Deals CRM →</p>
+                                    {msg.actions?.length > 0 && (
+                                        <div className="msg-badges">
+                                            {msg.actions.map((a, j) => (
+                                                <span key={j} className={`action-badge ${a.success ? 'ok' : 'err'}`}>
+                                                    {a.success
+                                                        ? <CheckCircle size={11} />
+                                                        : <Circle size={11} />
+                                                    }
+                                                    {a.intent?.replace(/_/g, ' ')}
+                                                </span>
+                                            ))}
                                         </div>
-                                        <ChevronRight size={16} style={{ color: 'var(--text-tertiary)' }} />
-                                    </button>
-                                )}
+                                    )}
 
-                                <span className="msg-time">
-                                    {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                                </span>
-                                {msg._id && (
-                                    <button className="msg-delete-btn" onClick={() => handleDeleteMessage(msg._id)} title="Delete message">
-                                        <Trash2 size={14} />
-                                    </button>
-                                )}
+                                    {msg.actions?.some(a => a.intent === 'get_status' && a.data?.inboxTriage) && (
+                                        <div className="triage-badges-container">
+                                            {Object.entries(msg.actions.find(a => a.intent === 'get_status').data.inboxTriage).map(([tag, count], k) => (
+                                                <span key={k} className={`triage-badge ${tag.toLowerCase().replace(/\s/g, '-')}`}>
+                                                    {tag}: {count}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* BioLink Preview Card */}
+                                    {msg.actions?.some(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId) && (
+                                        <BioLinkChatPreview
+                                            biolinkId={msg.actions.find(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId).data.biolinkId}
+                                            url={msg.actions.find(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId).data.url}
+                                        />
+                                    )}
+
+                                    {/* Automation Preview Card */}
+                                    {msg.actions?.some(a =>
+                                        ['enable_comment_autoreply', 'enable_dm_autoreply', 'enable_all_automation',
+                                            'disable_comment_autoreply', 'disable_dm_autoreply', 'disable_all_automation',
+                                            'get_active_automations', 'set_content_target',
+                                            'find_brand_deals', 'list_brand_deals', 'enable_comment_to_dm', 'enable_gamify_funnel'].includes(a.intent) && a.data
+                                    ) && (
+                                            <AutomationChatPreview
+                                                actionData={msg.actions.find(a =>
+                                                    ['enable_comment_autoreply', 'enable_dm_autoreply', 'enable_all_automation',
+                                                        'disable_comment_autoreply', 'disable_dm_autoreply', 'disable_all_automation',
+                                                        'get_active_automations', 'set_content_target',
+                                                        'find_brand_deals', 'list_brand_deals', 'enable_comment_to_dm', 'enable_gamify_funnel'].includes(a.intent) && a.data
+                                                ).data}
+                                            />
+                                        )}
+
+                                    {/* Viral Carousel Preview Card */}
+                                    {msg.actions?.some(a => a.intent === 'generate_viral_script' && a.data?.carousel?.length > 0) && (
+                                        <ViralCarouselPreview
+                                            items={msg.actions.find(a => a.intent === 'generate_viral_script').data.carousel}
+                                        />
+                                    )}
+
+                                    {/* ====== DEAL NOTIFICATION (points to CRM tab) ====== */}
+                                    {msg.actions?.some(a => a.intent === 'get_morning_briefing' && a.data?.hasPendingDeals) && (
+                                        <button
+                                            className="deal-alert-card"
+                                            onClick={() => { loadDealsData(); setActiveTab('deals'); }}
+                                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '10px', background: 'rgba(59,130,246,0.08)', width: '100%', textAlign: 'left' }}
+                                        >
+                                            <Handshake size={18} style={{ color: 'var(--primary-color)', flexShrink: 0 }} />
+                                            <div style={{ flex: 1 }}>
+                                                <strong style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                                                    {msg.actions.find(a => a.intent === 'get_morning_briefing').data.pendingCount || 0} Brand Deal{(msg.actions.find(a => a.intent === 'get_morning_briefing').data.pendingCount || 0) !== 1 ? 's' : ''} Waiting
+                                                </strong>
+                                                <p style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', margin: '2px 0 0 0' }}>Tap to open the Deals CRM →</p>
+                                            </div>
+                                            <ChevronRight size={16} style={{ color: 'var(--text-tertiary)' }} />
+                                        </button>
+                                    )}
+
+                                    <span className="msg-time">
+                                        {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                    </span>
+                                    {msg._id && (
+                                        <button className="msg-delete-btn" onClick={() => handleDeleteMessage(msg._id)} title="Delete message">
+                                            <Trash2 size={14} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
 
-                    {/* Typing indicator */}
-                    {isTyping && (
-                        <div className="msg-row assistant" id="typing-indicator">
-                            <div className="msg-avatar"><Bot size={14} strokeWidth={2} /></div>
-                            <div className="msg-bubble typing-bubble">
-                                <span /><span /><span />
+                        {/* Typing indicator */}
+                        {isTyping && (
+                            <div className="msg-row assistant" id="typing-indicator">
+                                <div className="msg-avatar"><Bot size={14} strokeWidth={2} /></div>
+                                <div className="msg-bubble typing-bubble">
+                                    <span /><span /><span />
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    <div ref={messagesEndRef} />
-                </div>
+                        <div ref={messagesEndRef} />
+                    </div>
                 )}
 
                 {/* Floating New Chat Button (Conditional) */}
@@ -1018,7 +1052,7 @@ function ChatHub() {
                             id="chat-send-btn"
                             aria-label="Send message"
                         >
-                            {isTyping ? <Loader size={16} className="spin" /> : <Send size={16} strokeWidth={2} />}
+                            {isTyping ? <Loader size={30} className="spin" /> : <SendHorizontal size={30} strokeWidth={2.5} />}
                         </button>
                     </div>
                     <p className="input-hint">Enter to send · Shift+Enter for new line</p>
