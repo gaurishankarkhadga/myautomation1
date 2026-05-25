@@ -1,6 +1,8 @@
 const { generateContentWithFallback } = require('../geminiClient');
 const CreatorPersona = require('../../model/CreatorPersona');
 const CreatorAsset = require('../../model/CreatorAsset');
+const { Token } = require('../../model/Instaautomation');
+const axios = require('axios');
 
 // ==================== VIRALITY ENGINE HANDLER ====================
 // Handles: Multi-agent generation of heavily researched viral scripts & hooks
@@ -71,8 +73,11 @@ Use extremely punchy sentences (under 10 words). Write exactly what they must sa
 *(Act as the CTA Closer)*
 Write a final 5-second Call-To-Action explicitly designed to sell the creator's best matching asset listed above (or generic engagement if no assets exist). The CTA MUST ask the viewer to COMMENT a specific keyword so our Comment-To-DM bot can instantly send them the link to the asset.
 
+### ===SEARCH_QUERY===
+Provide a single, highly optimized, ONE-WORD hashtag (without the #) that will find the absolute best, most viral reels from competitors for this exact topic. Output ONLY the single word here.
+
 ### ===CAROUSEL_DATA===
-Finally, you MUST output exactly 5 JSON objects in a strictly valid JSON array representing highly realistic reference videos for the creator.
+Finally, you MUST output exactly 5 JSON objects in a strictly valid JSON array representing highly realistic reference videos for the creator. This acts as a robust fallback.
 - Ensure the first 3 have "type": "viral" (top competitor videos).
 - Ensure the last 2 have "type": "related" (related trending ideas for the creator).
 - Use this JSON format:
@@ -88,32 +93,112 @@ Output NOTHING after the JSON array.
             const result = await generateContentWithFallback(systemPrompt);
             const generatedContent = result.response.text();
 
-            // Parse out the JSON data robustly
             let carouselData = [];
             let displayMessage = generatedContent;
+            let hashtag = niche.replace(/\s+/g, '').toLowerCase(); // default fallback
             
-            try {
-                // 1. Find the JSON array matching our exact schema (viral|related)
-                const arrayMatch = generatedContent.match(/\[\s*\{\s*"type"\s*:\s*"(?:viral|related)"[\s\S]*?\]/);
-                if (arrayMatch) {
-                    carouselData = JSON.parse(arrayMatch[0]);
-                    
-                    if (generatedContent.includes('===CAROUSEL_DATA===')) {
-                        displayMessage = generatedContent.split('===CAROUSEL_DATA===')[0].trim();
-                    } else {
-                        let cleaned = generatedContent.replace(arrayMatch[0], '');
-                        cleaned = cleaned.replace(/```(?:json)?\s*$/, '').trim();
-                        displayMessage = cleaned;
+            // Extract Message up to SEARCH_QUERY
+            if (generatedContent.includes('===SEARCH_QUERY===')) {
+                const parts = generatedContent.split('===SEARCH_QUERY===');
+                displayMessage = parts[0].trim();
+                
+                // Extract Hashtag
+                const hashtagPart = parts[1].split('===CAROUSEL_DATA===')[0];
+                hashtag = hashtagPart.trim().replace(/['"#>]/g, '').split('\n')[0].trim().split(' ')[0];
+            }
+
+            // Function to parse the AI fallback JSON
+            const applyFallbackData = () => {
+                console.log("[ViralityEngine] Applying AI fallback carousel data due to Meta API restrictions.");
+                try {
+                    const arrayMatch = generatedContent.match(/\[\s*\{\s*"type"\s*:\s*"(?:viral|related)"[\s\S]*?\]/);
+                    if (arrayMatch) {
+                        carouselData = JSON.parse(arrayMatch[0]);
+                    } else if (generatedContent.includes('===CAROUSEL_DATA===')) {
+                        const jsonMatch = generatedContent.split('===CAROUSEL_DATA===')[1].match(/\[[\s\S]*\]/);
+                        if (jsonMatch) carouselData = JSON.parse(jsonMatch[0]);
                     }
-                } else if (generatedContent.includes('===CAROUSEL_DATA===')) {
-                    // 2. Fallback if the array doesn't perfectly match the regex
-                    const parts = generatedContent.split('===CAROUSEL_DATA===');
-                    displayMessage = parts[0].trim();
-                    const jsonMatch = parts[1].match(/\[[\s\S]*\]/);
-                    if (jsonMatch) carouselData = JSON.parse(jsonMatch[0]);
+                } catch (err) {
+                    console.error('[ViralityEngine] AI JSON fallback parse failed', err.message);
                 }
-            } catch (err) {
-                console.error('[ViralityEngine] JSON parse failed', err.message);
+            };
+
+            // 4. Advanced Dynamic Competitor Video Fetching (Official Instagram Graph API)
+            try {
+                console.log(`[ViralityEngine] Fetching real IG competitor videos via Official Graph API for hashtag: "${hashtag}"`);
+                
+                const tokenData = await Token.findOne({ userId });
+                
+                if (tokenData && tokenData.igBusinessAccountId && tokenData.accessToken) {
+                    const igUserId = tokenData.igBusinessAccountId;
+                    const accessToken = tokenData.accessToken;
+                    const GRAPH_VERSION = 'v20.0';
+                    
+                    // Step 1: Get Hashtag ID
+                    const searchRes = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/ig_hashtag_search`, {
+                        params: {
+                            user_id: igUserId,
+                            q: hashtag,
+                            access_token: accessToken
+                        }
+                    });
+
+                    if (searchRes.data && searchRes.data.data && searchRes.data.data.length > 0) {
+                        const hashtagId = searchRes.data.data[0].id;
+                        
+                        // Step 2: Get Top Media for Hashtag
+                        const mediaRes = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${hashtagId}/top_media`, {
+                            params: {
+                                user_id: igUserId,
+                                fields: 'id,media_type,media_url,permalink,caption,like_count',
+                                limit: 25,
+                                access_token: accessToken
+                            }
+                        });
+
+                        if (mediaRes.data && mediaRes.data.data) {
+                            // Filter for videos (Reels)
+                            const videos = mediaRes.data.data.filter(m => m.media_type === 'VIDEO').slice(0, 5);
+                            
+                            carouselData = videos.map((item, index) => {
+                                const fullCaption = item.caption || 'Viral Instagram Reel';
+                                const shortTitle = fullCaption.split('\n')[0].substring(0, 50) + (fullCaption.length > 50 ? '...' : '');
+                                
+                                let likesCountStr = "Trending";
+                                if (item.like_count) {
+                                    const likes = parseInt(item.like_count);
+                                    if (likes >= 1000000) likesCountStr = (likes / 1000000).toFixed(1) + 'M';
+                                    else if (likes >= 1000) likesCountStr = (likes / 1000).toFixed(1) + 'K';
+                                    else likesCountStr = likes.toString();
+                                }
+                                
+                                return {
+                                    type: index < 3 ? "viral" : "related",
+                                    id: item.id,
+                                    title: shortTitle,
+                                    creator: '@instagram_creator', 
+                                    views: likesCountStr + ' Likes', 
+                                    thumbnail: '', // Graph API doesn't return external thumbnails reliably, UI uses gradient
+                                    url: item.permalink
+                                };
+                            });
+                        }
+                        
+                        // If for some reason we got 0 videos, use fallback
+                        if (carouselData.length === 0) applyFallbackData();
+
+                    } else {
+                        console.log(`[ViralityEngine] No hashtag ID found for "${hashtag}". Executing fallback.`);
+                        applyFallbackData();
+                    }
+                } else {
+                    console.warn("[ViralityEngine] Missing token or igBusinessAccountId for IG Graph API search. Executing fallback.");
+                    applyFallbackData();
+                }
+            } catch (apiError) {
+                console.error('[ViralityEngine] Official Graph API Fetch Error:', apiError.response?.data?.error?.message || apiError.message);
+                // The crucial safety net for token permission restrictions
+                applyFallbackData();
             }
 
             return {
