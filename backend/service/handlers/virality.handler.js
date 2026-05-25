@@ -1,8 +1,6 @@
 const { generateContentWithFallback } = require('../geminiClient');
 const CreatorPersona = require('../../model/CreatorPersona');
 const CreatorAsset = require('../../model/CreatorAsset');
-const { Token } = require('../../model/Instaautomation');
-const axios = require('axios');
 
 // ==================== VIRALITY ENGINE HANDLER ====================
 // Handles: Multi-agent generation of heavily researched viral scripts & hooks
@@ -73,8 +71,16 @@ Use extremely punchy sentences (under 10 words). Write exactly what they must sa
 *(Act as the CTA Closer)*
 Write a final 5-second Call-To-Action explicitly designed to sell the creator's best matching asset listed above (or generic engagement if no assets exist). The CTA MUST ask the viewer to COMMENT a specific keyword so our Comment-To-DM bot can instantly send them the link to the asset.
 
-### ===SEARCH_QUERY===
-Provide a single, highly optimized, ONE-WORD hashtag (without the #) that will find the absolute best, most viral reels from competitors for this exact topic. Output ONLY the single word here.
+### ===CAROUSEL_DATA===
+Finally, you MUST output exactly 5 JSON objects in a strictly valid JSON array representing highly realistic reference videos for the creator.
+- Ensure the first 3 have "type": "viral" (top competitor videos).
+- Ensure the last 2 have "type": "related" (related trending ideas for the creator).
+- Use this JSON format:
+[
+  { "type": "viral", "id": "v1", "title": "5 Hooks to try...", "creator": "@topcompetitor", "views": "2.4M", "thumbnail": "" },
+  { "type": "related", "id": "r1", "title": "My take on...", "creator": "@yourname", "views": "Trending", "thumbnail": "" }
+]
+Output NOTHING after the JSON array.
 `;
 
             // Run the LLM
@@ -82,88 +88,32 @@ Provide a single, highly optimized, ONE-WORD hashtag (without the #) that will f
             const result = await generateContentWithFallback(systemPrompt);
             const generatedContent = result.response.text();
 
+            // Parse out the JSON data robustly
             let carouselData = [];
             let displayMessage = generatedContent;
-            let hashtag = niche.replace(/\s+/g, '').toLowerCase(); // default fallback
             
-            // Extract Search Query (Hashtag)
-            if (generatedContent.includes('===SEARCH_QUERY===')) {
-                const parts = generatedContent.split('===SEARCH_QUERY===');
-                displayMessage = parts[0].trim();
-                hashtag = parts[1].trim().replace(/['"#>]/g, '').split('\n')[0].trim().split(' ')[0];
-            }
-
-            // 4. Advanced Dynamic Competitor Video Fetching (Instagram Graph API)
             try {
-                console.log(`[ViralityEngine] Fetching real IG competitor videos for hashtag: "${hashtag}"`);
-                
-                // Fetch User Token
-                const tokenData = await Token.findOne({ userId });
-                
-                if (tokenData && tokenData.igBusinessAccountId && tokenData.accessToken) {
-                    const igUserId = tokenData.igBusinessAccountId;
-                    const accessToken = tokenData.accessToken;
-                    const GRAPH_VERSION = 'v20.0'; // Reliable version for hashtag search
+                // 1. Find the JSON array matching our exact schema (viral|related)
+                const arrayMatch = generatedContent.match(/\[\s*\{\s*"type"\s*:\s*"(?:viral|related)"[\s\S]*?\]/);
+                if (arrayMatch) {
+                    carouselData = JSON.parse(arrayMatch[0]);
                     
-                    // Step 1: Get Hashtag ID
-                    const searchRes = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/ig_hashtag_search`, {
-                        params: {
-                            user_id: igUserId,
-                            q: hashtag,
-                            access_token: accessToken
-                        }
-                    });
-
-                    if (searchRes.data && searchRes.data.data && searchRes.data.data.length > 0) {
-                        const hashtagId = searchRes.data.data[0].id;
-                        
-                        // Step 2: Get Top Media for Hashtag
-                        const mediaRes = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${hashtagId}/top_media`, {
-                            params: {
-                                user_id: igUserId,
-                                fields: 'id,media_type,media_url,permalink,caption,like_count',
-                                limit: 25,
-                                access_token: accessToken
-                            }
-                        });
-
-                        if (mediaRes.data && mediaRes.data.data) {
-                            // Filter for videos (Reels)
-                            const videos = mediaRes.data.data.filter(m => m.media_type === 'VIDEO').slice(0, 5);
-                            
-                            carouselData = videos.map((item, index) => {
-                                // Extract a short title from the caption
-                                const fullCaption = item.caption || 'Viral Instagram Reel';
-                                const shortTitle = fullCaption.split('\n')[0].substring(0, 50) + (fullCaption.length > 50 ? '...' : '');
-                                
-                                // Format likes
-                                let likesCountStr = "Trending";
-                                if (item.like_count) {
-                                    const likes = parseInt(item.like_count);
-                                    if (likes >= 1000000) likesCountStr = (likes / 1000000).toFixed(1) + 'M';
-                                    else if (likes >= 1000) likesCountStr = (likes / 1000).toFixed(1) + 'K';
-                                    else likesCountStr = likes.toString();
-                                }
-                                
-                                return {
-                                    type: index < 3 ? "viral" : "related",
-                                    id: item.id,
-                                    title: shortTitle,
-                                    creator: '@instagram_creator', // Graph API omits owner username on hashtag search
-                                    views: likesCountStr + ' Likes', // Displaying likes since views aren't returned
-                                    thumbnail: '', // We can't get external thumbnails reliably, frontend will fallback to gradient
-                                    url: item.permalink
-                                };
-                            });
-                        }
+                    if (generatedContent.includes('===CAROUSEL_DATA===')) {
+                        displayMessage = generatedContent.split('===CAROUSEL_DATA===')[0].trim();
                     } else {
-                        console.log(`[ViralityEngine] No hashtag ID found for "${hashtag}"`);
+                        let cleaned = generatedContent.replace(arrayMatch[0], '');
+                        cleaned = cleaned.replace(/```(?:json)?\s*$/, '').trim();
+                        displayMessage = cleaned;
                     }
-                } else {
-                    console.warn("[ViralityEngine] Missing token or igBusinessAccountId for IG Graph API search.");
+                } else if (generatedContent.includes('===CAROUSEL_DATA===')) {
+                    // 2. Fallback if the array doesn't perfectly match the regex
+                    const parts = generatedContent.split('===CAROUSEL_DATA===');
+                    displayMessage = parts[0].trim();
+                    const jsonMatch = parts[1].match(/\[[\s\S]*\]/);
+                    if (jsonMatch) carouselData = JSON.parse(jsonMatch[0]);
                 }
-            } catch (igError) {
-                console.error('[ViralityEngine] Instagram API Fetch Error:', igError.response?.data?.error?.message || igError.message);
+            } catch (err) {
+                console.error('[ViralityEngine] JSON parse failed', err.message);
             }
 
             return {
