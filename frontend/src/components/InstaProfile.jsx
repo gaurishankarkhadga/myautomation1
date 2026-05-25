@@ -13,7 +13,7 @@ const InstaProfile = ({ profile, onDisconnect }) => {
                     className="profile-pic"
                 />
                 <div className="profile-info">
-                    <h2>@{profile.username}</h2>
+                    <h2>{profile.username}</h2>
                     <p className="account-type">{profile.account_type}</p>
                     {profile.biography && <p className="bio">{profile.biography}</p>}
                 </div>

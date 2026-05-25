@@ -88,39 +88,32 @@ Output NOTHING after the JSON array.
             const result = await generateContentWithFallback(systemPrompt);
             const generatedContent = result.response.text();
 
-            // Parse out the JSON data if it exists
+            // Parse out the JSON data robustly
             let carouselData = [];
             let displayMessage = generatedContent;
             
-            // Primary check: Look for the strict separator
-            if (generatedContent.includes('===CAROUSEL_DATA===')) {
-                const parts = generatedContent.split('===CAROUSEL_DATA===');
-                displayMessage = parts[0].trim();
-                try {
-                    const jsonMatch = parts[1].match(/\[[\s\S]*\]/);
-                    if (jsonMatch) {
-                        carouselData = JSON.parse(jsonMatch[0]);
-                    }
-                } catch (err) {
-                    console.error('[ViralityEngine] Failed to parse strict carousel JSON', err.message);
-                }
-            } else {
-                // Fallback check: Look for a JSON code block or array at the very end of the content
-                try {
-                    const jsonBlockMatch = generatedContent.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
-                    if (jsonBlockMatch) {
-                        carouselData = JSON.parse(jsonBlockMatch[1]);
-                        displayMessage = generatedContent.replace(jsonBlockMatch[0], '').trim();
+            try {
+                // 1. Find the JSON array matching our exact schema (viral|related)
+                const arrayMatch = generatedContent.match(/\[\s*\{\s*"type"\s*:\s*"(?:viral|related)"[\s\S]*?\]/);
+                if (arrayMatch) {
+                    carouselData = JSON.parse(arrayMatch[0]);
+                    
+                    if (generatedContent.includes('===CAROUSEL_DATA===')) {
+                        displayMessage = generatedContent.split('===CAROUSEL_DATA===')[0].trim();
                     } else {
-                        const rawArrayMatch = generatedContent.match(/\[[\s\S]*?\](?=\s*$)/);
-                        if (rawArrayMatch) {
-                            carouselData = JSON.parse(rawArrayMatch[0]);
-                            displayMessage = generatedContent.replace(rawArrayMatch[0], '').trim();
-                        }
+                        let cleaned = generatedContent.replace(arrayMatch[0], '');
+                        cleaned = cleaned.replace(/```(?:json)?\s*$/, '').trim();
+                        displayMessage = cleaned;
                     }
-                } catch (err) {
-                    console.error('[ViralityEngine] Failed to parse fallback carousel JSON', err.message);
+                } else if (generatedContent.includes('===CAROUSEL_DATA===')) {
+                    // 2. Fallback if the array doesn't perfectly match the regex
+                    const parts = generatedContent.split('===CAROUSEL_DATA===');
+                    displayMessage = parts[0].trim();
+                    const jsonMatch = parts[1].match(/\[[\s\S]*\]/);
+                    if (jsonMatch) carouselData = JSON.parse(jsonMatch[0]);
                 }
+            } catch (err) {
+                console.error('[ViralityEngine] JSON parse failed', err.message);
             }
 
             return {
