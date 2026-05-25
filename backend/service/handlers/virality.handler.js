@@ -1,6 +1,7 @@
 const { generateContentWithFallback } = require('../geminiClient');
 const CreatorPersona = require('../../model/CreatorPersona');
 const CreatorAsset = require('../../model/CreatorAsset');
+const { google } = require('googleapis');
 
 // ==================== VIRALITY ENGINE HANDLER ====================
 // Handles: Multi-agent generation of heavily researched viral scripts & hooks
@@ -71,16 +72,8 @@ Use extremely punchy sentences (under 10 words). Write exactly what they must sa
 *(Act as the CTA Closer)*
 Write a final 5-second Call-To-Action explicitly designed to sell the creator's best matching asset listed above (or generic engagement if no assets exist). The CTA MUST ask the viewer to COMMENT a specific keyword so our Comment-To-DM bot can instantly send them the link to the asset.
 
-### ===CAROUSEL_DATA===
-Finally, you MUST output exactly 5 JSON objects in a strictly valid JSON array representing reference videos for the creator.
-- Ensure the first 3 have "type": "viral" (top competitor videos).
-- Ensure the last 2 have "type": "related" (related trending ideas for the creator).
-- Use this JSON format:
-[
-  { "type": "viral", "id": "v1", "title": "5 Hooks to try...", "creator": "@topcompetitor", "views": "2.4M", "thumbnail": "gradient" },
-  { "type": "related", "id": "r1", "title": "My take on...", "creator": "@yourname", "views": "Trending", "thumbnail": "gradient" }
-]
-Output NOTHING after the JSON array.
+### ===SEARCH_QUERY===
+Provide a single, highly optimized YouTube search query (max 5 words) that will find the absolute best, most viral shorts/reels from top competitors for this exact topic. Output ONLY the query string here.
 `;
 
             // Run the LLM
@@ -88,32 +81,72 @@ Output NOTHING after the JSON array.
             const result = await generateContentWithFallback(systemPrompt);
             const generatedContent = result.response.text();
 
-            // Parse out the JSON data robustly
             let carouselData = [];
             let displayMessage = generatedContent;
+            let searchQuery = `${topic} ${niche} shorts`; // default fallback
             
+            // Extract Search Query
+            if (generatedContent.includes('===SEARCH_QUERY===')) {
+                const parts = generatedContent.split('===SEARCH_QUERY===');
+                displayMessage = parts[0].trim();
+                searchQuery = parts[1].trim().replace(/['"]/g, '').split('\n')[0].trim();
+            }
+
+            // 4. Advanced Dynamic Competitor Video Fetching (YouTube API)
             try {
-                // 1. Find the JSON array matching our exact schema (viral|related)
-                const arrayMatch = generatedContent.match(/\[\s*\{\s*"type"\s*:\s*"(?:viral|related)"[\s\S]*?\]/);
-                if (arrayMatch) {
-                    carouselData = JSON.parse(arrayMatch[0]);
-                    
-                    if (generatedContent.includes('===CAROUSEL_DATA===')) {
-                        displayMessage = generatedContent.split('===CAROUSEL_DATA===')[0].trim();
-                    } else {
-                        let cleaned = generatedContent.replace(arrayMatch[0], '');
-                        cleaned = cleaned.replace(/```(?:json)?\s*$/, '').trim();
-                        displayMessage = cleaned;
+                if (process.env.Youtube_Api_Key) {
+                    console.log(`[ViralityEngine] Fetching real competitor videos for query: "${searchQuery}"`);
+                    const youtube = google.youtube({
+                        version: 'v3',
+                        auth: process.env.Youtube_Api_Key
+                    });
+
+                    // Fetch top viral shorts
+                    const searchRes = await youtube.search.list({
+                        part: 'snippet',
+                        q: searchQuery,
+                        maxResults: 5,
+                        type: 'video',
+                        order: 'viewCount', // Get the highest viewed videos
+                        videoDuration: 'short' // Target YouTube Shorts / Reels equivalents
+                    });
+
+                    if (searchRes.data.items && searchRes.data.items.length > 0) {
+                        const videoIds = searchRes.data.items.map(item => item.id.videoId);
+                        
+                        // Fetch actual view counts
+                        const statsRes = await youtube.videos.list({
+                            part: 'statistics',
+                            id: videoIds.join(',')
+                        });
+
+                        carouselData = searchRes.data.items.map((item, index) => {
+                            const stats = statsRes.data.items.find(s => s.id === item.id.videoId);
+                            let viewCountStr = "Trending";
+                            
+                            if (stats && stats.statistics.viewCount) {
+                                const views = parseInt(stats.statistics.viewCount);
+                                if (views >= 1000000) viewCountStr = (views / 1000000).toFixed(1) + 'M';
+                                else if (views >= 1000) viewCountStr = (views / 1000).toFixed(1) + 'K';
+                                else viewCountStr = views.toString();
+                            }
+                            
+                            return {
+                                type: index < 3 ? "viral" : "related",
+                                id: item.id.videoId,
+                                title: item.snippet.title.replace(/&#39;/g, "'").replace(/&quot;/g, '"'),
+                                creator: '@' + item.snippet.channelTitle.replace(/\s+/g, ''),
+                                views: viewCountStr,
+                                thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default?.url,
+                                url: `https://www.youtube.com/watch?v=${item.id.videoId}`
+                            };
+                        });
                     }
-                } else if (generatedContent.includes('===CAROUSEL_DATA===')) {
-                    // 2. Fallback if the array doesn't perfectly match the regex
-                    const parts = generatedContent.split('===CAROUSEL_DATA===');
-                    displayMessage = parts[0].trim();
-                    const jsonMatch = parts[1].match(/\[[\s\S]*\]/);
-                    if (jsonMatch) carouselData = JSON.parse(jsonMatch[0]);
+                } else {
+                    console.warn("[ViralityEngine] No Youtube_Api_Key found in .env, skipping real video fetch.");
                 }
-            } catch (err) {
-                console.error('[ViralityEngine] JSON parse failed', err.message);
+            } catch (ytError) {
+                console.error('[ViralityEngine] YouTube API Fetch Error:', ytError.message);
             }
 
             return {

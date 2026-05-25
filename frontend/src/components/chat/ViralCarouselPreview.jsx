@@ -59,13 +59,22 @@ function ViralCarouselPreview({ items }) {
                                 transition: 'transform 0.2s, box-shadow 0.2s'
                             }}
                             className="viral-card-hover"
-                            onClick={() => alert('Simulated API: In a live environment, this would open the video reel.')}
+                            onClick={() => {
+                                if (item.url) {
+                                    window.open(item.url, '_blank');
+                                } else {
+                                    // Fallback to searching YouTube for the creator and title
+                                    const cleanCreator = item.creator ? item.creator.replace('@', '') : '';
+                                    const query = encodeURIComponent(`${cleanCreator} ${item.title || ''}`);
+                                    window.open(`https://www.youtube.com/results?search_query=${query}`, '_blank');
+                                }
+                            }}
                         >
                             {/* Mock Thumbnail Area */}
                             <div style={{ 
                                 height: '220px', 
                                 width: '100%', 
-                                background: getGradient(index),
+                                background: item.thumbnail ? `url(${item.thumbnail}) center/cover no-repeat` : getGradient(index),
                                 position: 'relative',
                                 display: 'flex',
                                 flexDirection: 'column',
