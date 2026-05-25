@@ -63,10 +63,10 @@ function ViralCarouselPreview({ items }) {
                                 if (item.url) {
                                     window.open(item.url, '_blank');
                                 } else {
-                                    // Fallback to searching YouTube for the creator and title
+                                    // Fallback to searching Instagram for the creator and title
                                     const cleanCreator = item.creator ? item.creator.replace('@', '') : '';
                                     const query = encodeURIComponent(`${cleanCreator} ${item.title || ''}`);
-                                    window.open(`https://www.youtube.com/results?search_query=${query}`, '_blank');
+                                    window.open(`https://www.instagram.com/explore/search/keyword/?q=${query}`, '_blank');
                                 }
                             }}
                         >

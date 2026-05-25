@@ -1,7 +1,8 @@
 const { generateContentWithFallback } = require('../geminiClient');
 const CreatorPersona = require('../../model/CreatorPersona');
 const CreatorAsset = require('../../model/CreatorAsset');
-const { google } = require('googleapis');
+const { Token } = require('../../model/Instaautomation');
+const axios = require('axios');
 
 // ==================== VIRALITY ENGINE HANDLER ====================
 // Handles: Multi-agent generation of heavily researched viral scripts & hooks
@@ -73,7 +74,7 @@ Use extremely punchy sentences (under 10 words). Write exactly what they must sa
 Write a final 5-second Call-To-Action explicitly designed to sell the creator's best matching asset listed above (or generic engagement if no assets exist). The CTA MUST ask the viewer to COMMENT a specific keyword so our Comment-To-DM bot can instantly send them the link to the asset.
 
 ### ===SEARCH_QUERY===
-Provide a single, highly optimized YouTube search query (max 5 words) that will find the absolute best, most viral shorts/reels from top competitors for this exact topic. Output ONLY the query string here.
+Provide a single, highly optimized, ONE-WORD hashtag (without the #) that will find the absolute best, most viral reels from competitors for this exact topic. Output ONLY the single word here.
 `;
 
             // Run the LLM
@@ -83,70 +84,86 @@ Provide a single, highly optimized YouTube search query (max 5 words) that will 
 
             let carouselData = [];
             let displayMessage = generatedContent;
-            let searchQuery = `${topic} ${niche} shorts`; // default fallback
+            let hashtag = niche.replace(/\s+/g, '').toLowerCase(); // default fallback
             
-            // Extract Search Query
+            // Extract Search Query (Hashtag)
             if (generatedContent.includes('===SEARCH_QUERY===')) {
                 const parts = generatedContent.split('===SEARCH_QUERY===');
                 displayMessage = parts[0].trim();
-                searchQuery = parts[1].trim().replace(/['"]/g, '').split('\n')[0].trim();
+                hashtag = parts[1].trim().replace(/['"#>]/g, '').split('\n')[0].trim().split(' ')[0];
             }
 
-            // 4. Advanced Dynamic Competitor Video Fetching (YouTube API)
+            // 4. Advanced Dynamic Competitor Video Fetching (Instagram Graph API)
             try {
-                if (process.env.Youtube_Api_Key) {
-                    console.log(`[ViralityEngine] Fetching real competitor videos for query: "${searchQuery}"`);
-                    const youtube = google.youtube({
-                        version: 'v3',
-                        auth: process.env.Youtube_Api_Key
+                console.log(`[ViralityEngine] Fetching real IG competitor videos for hashtag: "${hashtag}"`);
+                
+                // Fetch User Token
+                const tokenData = await Token.findOne({ userId });
+                
+                if (tokenData && tokenData.igBusinessAccountId && tokenData.accessToken) {
+                    const igUserId = tokenData.igBusinessAccountId;
+                    const accessToken = tokenData.accessToken;
+                    const GRAPH_VERSION = 'v20.0'; // Reliable version for hashtag search
+                    
+                    // Step 1: Get Hashtag ID
+                    const searchRes = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/ig_hashtag_search`, {
+                        params: {
+                            user_id: igUserId,
+                            q: hashtag,
+                            access_token: accessToken
+                        }
                     });
 
-                    // Fetch top viral shorts
-                    const searchRes = await youtube.search.list({
-                        part: 'snippet',
-                        q: searchQuery,
-                        maxResults: 5,
-                        type: 'video',
-                        order: 'viewCount', // Get the highest viewed videos
-                        videoDuration: 'short' // Target YouTube Shorts / Reels equivalents
-                    });
-
-                    if (searchRes.data.items && searchRes.data.items.length > 0) {
-                        const videoIds = searchRes.data.items.map(item => item.id.videoId);
+                    if (searchRes.data && searchRes.data.data && searchRes.data.data.length > 0) {
+                        const hashtagId = searchRes.data.data[0].id;
                         
-                        // Fetch actual view counts
-                        const statsRes = await youtube.videos.list({
-                            part: 'statistics',
-                            id: videoIds.join(',')
+                        // Step 2: Get Top Media for Hashtag
+                        const mediaRes = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${hashtagId}/top_media`, {
+                            params: {
+                                user_id: igUserId,
+                                fields: 'id,media_type,media_url,permalink,caption,like_count',
+                                limit: 25,
+                                access_token: accessToken
+                            }
                         });
 
-                        carouselData = searchRes.data.items.map((item, index) => {
-                            const stats = statsRes.data.items.find(s => s.id === item.id.videoId);
-                            let viewCountStr = "Trending";
+                        if (mediaRes.data && mediaRes.data.data) {
+                            // Filter for videos (Reels)
+                            const videos = mediaRes.data.data.filter(m => m.media_type === 'VIDEO').slice(0, 5);
                             
-                            if (stats && stats.statistics.viewCount) {
-                                const views = parseInt(stats.statistics.viewCount);
-                                if (views >= 1000000) viewCountStr = (views / 1000000).toFixed(1) + 'M';
-                                else if (views >= 1000) viewCountStr = (views / 1000).toFixed(1) + 'K';
-                                else viewCountStr = views.toString();
-                            }
-                            
-                            return {
-                                type: index < 3 ? "viral" : "related",
-                                id: item.id.videoId,
-                                title: item.snippet.title.replace(/&#39;/g, "'").replace(/&quot;/g, '"'),
-                                creator: '@' + item.snippet.channelTitle.replace(/\s+/g, ''),
-                                views: viewCountStr,
-                                thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default?.url,
-                                url: `https://www.youtube.com/watch?v=${item.id.videoId}`
-                            };
-                        });
+                            carouselData = videos.map((item, index) => {
+                                // Extract a short title from the caption
+                                const fullCaption = item.caption || 'Viral Instagram Reel';
+                                const shortTitle = fullCaption.split('\n')[0].substring(0, 50) + (fullCaption.length > 50 ? '...' : '');
+                                
+                                // Format likes
+                                let likesCountStr = "Trending";
+                                if (item.like_count) {
+                                    const likes = parseInt(item.like_count);
+                                    if (likes >= 1000000) likesCountStr = (likes / 1000000).toFixed(1) + 'M';
+                                    else if (likes >= 1000) likesCountStr = (likes / 1000).toFixed(1) + 'K';
+                                    else likesCountStr = likes.toString();
+                                }
+                                
+                                return {
+                                    type: index < 3 ? "viral" : "related",
+                                    id: item.id,
+                                    title: shortTitle,
+                                    creator: '@instagram_creator', // Graph API omits owner username on hashtag search
+                                    views: likesCountStr + ' Likes', // Displaying likes since views aren't returned
+                                    thumbnail: '', // We can't get external thumbnails reliably, frontend will fallback to gradient
+                                    url: item.permalink
+                                };
+                            });
+                        }
+                    } else {
+                        console.log(`[ViralityEngine] No hashtag ID found for "${hashtag}"`);
                     }
                 } else {
-                    console.warn("[ViralityEngine] No Youtube_Api_Key found in .env, skipping real video fetch.");
+                    console.warn("[ViralityEngine] Missing token or igBusinessAccountId for IG Graph API search.");
                 }
-            } catch (ytError) {
-                console.error('[ViralityEngine] YouTube API Fetch Error:', ytError.message);
+            } catch (igError) {
+                console.error('[ViralityEngine] Instagram API Fetch Error:', igError.response?.data?.error?.message || igError.message);
             }
 
             return {
