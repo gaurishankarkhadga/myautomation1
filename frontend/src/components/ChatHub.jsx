@@ -352,34 +352,42 @@ function ChatHub() {
         if (!content) return '';
         let html = content;
         
+        // Inline Code / Timestamps / Visual Cues
+        html = html.replace(/`(\[\d:\d{2}\s*-\s*\d:\d{2}\][^`]*)`/g, '<span class="msg-timestamp">$1</span>');
+        html = html.replace(/\[(Visual:[^\]]+)\]/gi, '<span class="msg-visual">[$1]</span>');
+        html = html.replace(/`(.*?)`/g, '<code class="msg-code">$1</code>');
+        
         // Bold and Italic
-        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="msg-bold">$1</strong>');
+        html = html.replace(/\*(.*?)\*/g, '<em class="msg-italic">$1</em>');
         
         // URLs
-        html = html.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; text-decoration: underline;">$1</a>');
+        html = html.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" class="msg-link" target="_blank" rel="noopener noreferrer">$1</a>');
         
         // Headers
-        html = html.replace(/^### (.*$)/gim, '<h3 style="margin-top: 16px; margin-bottom: 8px; color: var(--text-primary); font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 4px;">$1</h3>');
-        html = html.replace(/^## (.*$)/gim, '<h2 style="margin-top: 18px; margin-bottom: 10px; color: var(--text-primary); font-size: 1.25rem;">$1</h2>');
-        html = html.replace(/^# (.*$)/gim, '<h1 style="margin-top: 20px; margin-bottom: 12px; color: var(--text-primary); font-size: 1.5rem;">$1</h1>');
+        html = html.replace(/^### (.*$)/gim, '<h3 class="msg-h3">$1</h3>');
+        html = html.replace(/^## (.*$)/gim, '<h2 class="msg-h2">$1</h2>');
+        html = html.replace(/^# (.*$)/gim, '<h1 class="msg-h1">$1</h1>');
 
-        // Lists (unordered)
-        html = html.replace(/^\s*[-]\s(.*$)/gim, '<div style="margin-left: 16px; display: flex; gap: 8px; margin-bottom: 6px;"><span style="color: var(--primary-color)">•</span><span>$1</span></div>');
+        // Lists (unordered) - Now catches * bullet points too
+        html = html.replace(/^\s*[-*]\s(.*$)/gim, '<div class="msg-ul-li"><span class="msg-ul-bullet">•</span><span class="msg-li-text">$1</span></div>');
         
         // Lists (ordered)
-        html = html.replace(/^\s*(\d+)\.\s(.*$)/gim, '<div style="margin-left: 16px; display: flex; gap: 8px; margin-bottom: 6px;"><span style="color: var(--primary-color); font-weight: bold;">$1.</span><span>$2</span></div>');
+        html = html.replace(/^\s*(\d+)\.\s(.*$)/gim, '<div class="msg-ol-li"><span class="msg-ol-num">$1.</span><span class="msg-li-text">$2</span></div>');
 
-        // Quotes
-        html = html.replace(/^>\s(.*$)/gim, '<blockquote style="border-left: 3px solid var(--primary-color); padding-left: 12px; margin: 12px 0; color: var(--text-secondary); font-style: italic;">$1</blockquote>');
+        // Quotes (Callout Boxes)
+        html = html.replace(/^>\s(.*$)/gim, '<blockquote class="msg-blockquote">$1</blockquote>');
         
-        // Newlines cleanup
+        // Spacing: convert double newlines to spacers, single newlines to br
+        html = html.replace(/\n\n/g, '<div class="msg-spacer"></div>');
         html = html.replace(/\n/g, '<br/>');
-        html = html.replace(/(<\/h[1-3]>|<br\/>)(<br\/>)+/g, '$1');
+        
+        // Cleanup trailing <br/> after block elements
+        html = html.replace(/(<\/h[1-3]>|<div class="msg-spacer"><\/div>)(<br\/>)+/g, '$1');
         html = html.replace(/<\/div><br\/>/g, '</div>');
         html = html.replace(/<\/blockquote><br\/>/g, '</blockquote>');
 
-        return html;
+        return `<div class="msg-formatted-content">${html}</div>`;
     };
 
     // ── Render ───────────────────────────────────────────────────────

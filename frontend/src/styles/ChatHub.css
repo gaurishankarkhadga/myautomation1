@@ -2208,3 +2208,159 @@ body {
 
 /* background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.1), transparent);
 } */
+
+/* =========================================================================
+   MARKDOWN RENDERER STYLES (Cyber-Terminal Theme)
+   ========================================================================= */
+
+.msg-formatted-content {
+    line-height: 1.6;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.msg-formatted-content .msg-spacer {
+    height: 16px;
+}
+
+.msg-formatted-content .msg-bold {
+    color: var(--text-primary);
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.msg-formatted-content .msg-italic {
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+.msg-formatted-content .msg-link {
+    color: #60a5fa;
+    text-decoration: none;
+    font-weight: 500;
+    border-bottom: 1px dashed #60a5fa;
+    padding-bottom: 1px;
+    transition: all 0.2s;
+}
+
+.msg-formatted-content .msg-link:hover {
+    color: #93c5fd;
+    border-bottom-color: #93c5fd;
+}
+
+/* Headers */
+.msg-formatted-content .msg-h1 {
+    margin: 32px 0 16px 0;
+    font-size: 1.6rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #f59e0b, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+.msg-formatted-content .msg-h2 {
+    margin: 28px 0 14px 0;
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 6px;
+}
+
+.msg-formatted-content .msg-h3 {
+    margin: 24px 0 12px 0;
+    color: var(--text-primary);
+    font-size: 1.15rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    border-left: 3px solid #f59e0b;
+    padding-left: 10px;
+    letter-spacing: 0.3px;
+    line-height: 1.4;
+}
+
+/* Lists */
+.msg-formatted-content .msg-ul-li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+.msg-formatted-content .msg-ul-bullet {
+    color: #f59e0b;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.msg-formatted-content .msg-ol-li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+.msg-formatted-content .msg-ol-num {
+    color: #f59e0b;
+    font-weight: 800;
+    font-size: 0.95rem;
+    min-width: 18px;
+}
+
+.msg-formatted-content .msg-li-text {
+    color: var(--text-secondary);
+    flex: 1;
+}
+
+/* Blockquotes (Callout boxes) */
+.msg-formatted-content .msg-blockquote {
+    background: rgba(245, 158, 11, 0.08);
+    border-left: 4px solid #f59e0b;
+    padding: 14px 18px;
+    margin: 16px 0;
+    border-radius: 0 8px 8px 0;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    font-style: normal;
+}
+
+/* Inline Code & Badges */
+.msg-formatted-content .msg-code {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.85em;
+}
+
+.msg-formatted-content .msg-timestamp {
+    display: inline-block;
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-weight: 800;
+    font-size: 0.85em;
+    margin-right: 6px;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+}
+
+.msg-formatted-content .msg-visual {
+    color: #a78bfa;
+    font-weight: 600;
+    font-size: 0.9em;
+    font-style: italic;
+    background: rgba(167, 139, 250, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 6px;
+}

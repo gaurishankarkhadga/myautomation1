@@ -45,32 +45,42 @@ CREATOR PROFILE:
 CREATOR'S ASSETS (The Funnel Trap):
 ${assetContext}
 
+NICHE ADAPTATION PROTOCOL:
+You must instantly adapt your entire writing style to fit the exact niche: "${niche}". 
+- If Fitness: Use high-energy pacing, aggressive hooks, and physical demonstration B-roll cues.
+- If Finance/Business: Use authoritative, data-driven pacing with chart/text-on-screen cues.
+- If Vlog/Lifestyle: Use conversational storytelling, fast-cuts, and behind-the-scenes intimacy.
+- If Comedy/Entertainment: Focus on setup-punchline timing and relatable scenarios.
+
 TASK:
 The creator wants to make a short-form video (YouTube Short/TikTok) about: "${topic}".
 You must output a highly engineered Master Blueprint in pristine Markdown formatting.
 
 REQUIRED ARCHITECTURE OF YOUR RESPONSE (Strict Format):
 
-### 🔍 Competitor Analysis & Gap
-*(Act as the Competitor Analyst)*
-Summarize in 2-3 bullet points what generic creators in the "${niche}" space are doing wrong for this topic, and identify the exact "psychological gap" we will exploit to stand out.
+### 🔍 Deep Competitor Analysis & Gap
+*(Act as the Elite Competitor Analyst)*
+Provide a ruthless, data-driven analysis of what generic creators in the "${niche}" space are doing wrong for this topic. 
+Identify the exact "psychological gap" we will exploit. Provide a 95% certainty thesis on why this specific angle will achieve virality for this specific niche.
 
 ### 🎣 The Hook Matrix
 *(Act as the Hook Scientist)*
-Provide 3 highly distinct, pattern-interrupting hooks (0-3 seconds). 
+Provide 3 highly distinct, pattern-interrupting hooks tailored specifically to the "${niche}" audience. 
 1. **The Negative Hook:** (e.g., "Stop doing X...")
 2. **The Curiosity Gap:** (e.g., "The secret nobody tells you about...")
 3. **The Direct Flex:** (e.g., "How I achieved X without Y...")
 
-### 📜 The Master Script
-*(Act as the Retention Engineer)*
-Write the ultimate 15-30 second script body.
-Use the Problem -> Agitate -> Solution framework. 
-Use extremely punchy sentences (under 10 words). Write exactly what they must say.
+### ⏱️ The Viral Timeline (Master Script)
+*(Act as the $10,000/mo Short-Form Scriptwriter)*
+Write the ultimate 15-30 second script body. Do NOT write like a chatbot. Write exactly what the creator must say, broken down by exact timestamps. Include bracketed visual/B-roll cues tailored to the niche.
+- \`[0:00 - 0:03]\` THE HOOK: [Visual: ...] (Insert the best spoken hook here)
+- \`[0:03 - 0:08]\` THE AGITATION: [Visual: ...] (Twist the knife, make the problem hurt)
+- \`[0:08 - 0:15]\` THE PAYOFF: [Visual: ...] (Deliver the core value/solution rapidly)
+- \`[0:15 - 0:20]\` THE CLOSER: [Visual: ...] (The CTA to comment for the asset)
 
 ### 💰 The Automation Closer
 *(Act as the CTA Closer)*
-Write a final 5-second Call-To-Action explicitly designed to sell the creator's best matching asset listed above (or generic engagement if no assets exist). The CTA MUST ask the viewer to COMMENT a specific keyword so our Comment-To-DM bot can instantly send them the link to the asset.
+Explicitly state the Call-To-Action. The CTA MUST ask the viewer to COMMENT a specific keyword so our Comment-To-DM bot can instantly send them the link to the asset.
 
 ### ===SEARCH_QUERY===
 Provide a short, highly optimized search query (2-4 words) that will find the absolute best, most viral YouTube Shorts from competitors for this exact topic. Output ONLY the query here.
@@ -203,6 +213,7 @@ Output NOTHING after the JSON array.
             };
 
         } catch (error) {
+   
             console.error('[Handler:viralityEngine] Error:', error.message);
             return {
                 success: false,
