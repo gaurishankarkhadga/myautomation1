@@ -106,15 +106,22 @@ Output NOTHING after the JSON array.
             let displayMessage = generatedContent;
             let searchQuery = niche.replace(/\s+/g, ' ').toLowerCase(); // default fallback
             
-            // Extract Message up to SEARCH_QUERY
+            // 1. Extract Search Query if present
             if (generatedContent.includes('===SEARCH_QUERY===')) {
                 const parts = generatedContent.split('===SEARCH_QUERY===');
-                displayMessage = parts[0].trim();
-                
-                // Extract Search Query
+                displayMessage = parts[0].trim(); // Cut off everything after SEARCH_QUERY
                 const queryPart = parts[1].split('===CAROUSEL_DATA===')[0];
                 searchQuery = queryPart.trim().replace(/['">]/g, '').split('\n')[0].trim();
+            } else if (generatedContent.includes('===CAROUSEL_DATA===')) {
+                // If it missed SEARCH_QUERY but has CAROUSEL_DATA, cut off at CAROUSEL_DATA
+                displayMessage = generatedContent.split('===CAROUSEL_DATA===')[0].trim();
             }
+
+            // 2. Aggressive JSON stripping: If the AI leaked a raw JSON array into the display message, remove it.
+            // This regex finds a large JSON array block at the end of the text.
+            displayMessage = displayMessage.replace(/\[\s*\{\s*"type"\s*:\s*"(?:viral|related)"[\s\S]*?\]\s*$/, '').trim();
+            // Also strip out any stray "Output NOTHING after the JSON array" text
+            displayMessage = displayMessage.replace(/Output NOTHING after the JSON array\.?/i, '').trim();
 
             // Function to parse the AI fallback JSON
             const applyFallbackData = () => {
