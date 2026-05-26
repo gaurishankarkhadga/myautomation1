@@ -220,11 +220,19 @@ Output NOTHING after the JSON array.
             };
 
         } catch (error) {
-   
             console.error('[Handler:viralityEngine] Error:', error.message);
+            
+            let errorMessage = `I encountered an error while spinning up the Virality Engine: ${error.message}`;
+            
+            // Specifically detect if the Gemini API failed due to quota/credits ending
+            const errStr = error.message.toLowerCase();
+            if (errStr.includes('exhausted') || errStr.includes('429') || errStr.includes('quota') || errStr.includes('too many requests')) {
+                errorMessage = "⚠️ **Gemini Credits Ended**\n\nYour Gemini API credits have been exhausted or you have hit a strict rate limit across all keys. Please check your Google AI Studio quota or add a new API key to continue generating viral scripts.";
+            }
+
             return {
                 success: false,
-                message: `I encountered an error while spinning up the Virality Engine: ${error.message}`
+                message: errorMessage
             };
         }
     }
