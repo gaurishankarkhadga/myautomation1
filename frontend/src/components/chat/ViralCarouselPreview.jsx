@@ -1,9 +1,20 @@
-import { Play, Flame, TrendingUp, User, Eye } from 'lucide-react';
-import { useRef } from 'react';
+import { Play, Flame, TrendingUp, User, Eye, X } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
 import '../../styles/ChatHub.css'; // You can define specific CSS here or inline
 
 function ViralCarouselPreview({ items }) {
     const scrollRef = useRef(null);
+    const [activeVideo, setActiveVideo] = useState(null);
+
+    // Prevent body scroll when modal is open
+    useEffect(() => {
+        if (activeVideo) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [activeVideo]);
 
     if (!items || items.length === 0) return null;
 
@@ -17,6 +28,96 @@ function ViralCarouselPreview({ items }) {
             'linear-gradient(135deg, #3b82f6, #1d4ed8)'
         ];
         return gradients[index % gradients.length];
+    };
+
+    const handleCardClick = (item) => {
+        setActiveVideo(item);
+    };
+
+    const renderModal = () => {
+        if (!activeVideo) return null;
+
+        let embedContent;
+        if (activeVideo.url && activeVideo.url.includes('youtube.com/watch?v=')) {
+            // Convert standard youtube URL to embed URL
+            const videoId = activeVideo.url.split('v=')[1];
+            const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+            embedContent = (
+                <iframe 
+                    src={embedUrl} 
+                    width="100%" 
+                    height="100%" 
+                    frameBorder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{ borderRadius: '12px', background: '#000' }}
+                ></iframe>
+            );
+        } else {
+            // Fallback for AI generated simulation where no real URL exists
+            const cleanCreator = activeVideo.creator ? activeVideo.creator.replace('@', '') : '';
+            const query = encodeURIComponent(`${cleanCreator} ${activeVideo.title || ''}`);
+            const searchUrl = `https://www.youtube.com/results?search_query=${query}`;
+            
+            embedContent = (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', background: 'var(--bg-secondary)', borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
+                    <Flame size={48} color="#f59e0b" style={{ marginBottom: '16px' }} />
+                    <h3 style={{ color: 'var(--text-primary)', marginBottom: '8px' }}>Simulation Preview</h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px' }}>
+                        This is an AI-simulated competitor video. To view real competitor videos inside this player, ensure your Youtube_Api_Key is active.
+                    </p>
+                    <button 
+                        onClick={() => window.open(searchUrl, '_blank')}
+                        style={{ background: '#f59e0b', color: '#fff', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                    >
+                        Search YouTube Manually
+                    </button>
+                </div>
+            );
+        }
+
+        return (
+            <div style={{
+                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(0, 0, 0, 0.85)',
+                backdropFilter: 'blur(8px)',
+                zIndex: 9999,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '24px'
+            }} onClick={() => setActiveVideo(null)}>
+                
+                <div 
+                    style={{
+                        width: '100%',
+                        maxWidth: '400px', // Standard mobile vertical video width
+                        height: '80vh',
+                        maxHeight: '700px',
+                        position: 'relative',
+                        display: 'flex',
+                        flexDirection: 'column'
+                    }}
+                    onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+                >
+                    <button 
+                        onClick={() => setActiveVideo(null)}
+                        style={{
+                            position: 'absolute', top: '-40px', right: '0px',
+                            background: 'rgba(255,255,255,0.2)', border: 'none',
+                            borderRadius: '50%', padding: '8px', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'background 0.2s'
+                        }}
+                        className="modal-close-btn"
+                    >
+                        <X size={20} color="#fff" />
+                    </button>
+                    
+                    {embedContent}
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -59,16 +160,7 @@ function ViralCarouselPreview({ items }) {
                                 transition: 'transform 0.2s, box-shadow 0.2s'
                             }}
                             className="viral-card-hover"
-                            onClick={() => {
-                                if (item.url) {
-                                    window.open(item.url, '_blank');
-                                } else {
-                                    // Fallback to searching Instagram for the creator and title
-                                    const cleanCreator = item.creator ? item.creator.replace('@', '') : '';
-                                    const query = encodeURIComponent(`${cleanCreator} ${item.title || ''}`);
-                                    window.open(`https://www.instagram.com/explore/search/keyword/?q=${query}`, '_blank');
-                                }
-                            }}
+                            onClick={() => handleCardClick(item)}
                         >
                             {/* Mock Thumbnail Area */}
                             <div style={{ 
@@ -82,7 +174,7 @@ function ViralCarouselPreview({ items }) {
                                 padding: '10px'
                             }}>
                                 {/* Top Badges */}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px' }}>
                                     <div style={{ 
                                         background: 'rgba(0,0,0,0.5)', 
                                         backdropFilter: 'blur(4px)',
@@ -90,16 +182,17 @@ function ViralCarouselPreview({ items }) {
                                         padding: '4px 8px',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '4px'
+                                        gap: '4px',
+                                        minWidth: 0
                                     }}>
-                                        <Eye size={10} color="#fff" />
-                                        <span style={{ color: '#fff', fontSize: '0.7rem', fontWeight: 700 }}>{item.views}</span>
+                                        <Eye size={10} color="#fff" style={{ flexShrink: 0 }} />
+                                        <span style={{ color: '#fff', fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.views}</span>
                                     </div>
                                     
                                     {isViral ? (
-                                        <span style={{ background: '#f59e0b', color: '#fff', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800 }}>TOP 1%</span>
+                                        <span style={{ background: '#f59e0b', color: '#fff', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, whiteSpace: 'nowrap', flexShrink: 0 }}>TOP 1%</span>
                                     ) : (
-                                        <span style={{ background: '#8b5cf6', color: '#fff', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800 }}>RELATED</span>
+                                        <span style={{ background: '#8b5cf6', color: '#fff', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, whiteSpace: 'nowrap', flexShrink: 0 }}>RELATED</span>
                                     )}
                                 </div>
                                 
@@ -135,6 +228,9 @@ function ViralCarouselPreview({ items }) {
                     );
                 })}
             </div>
+            
+            {renderModal()}
+
             {/* Custom CSS injected just for hover effects & hide scrollbar globally */}
             <style jsx="true">{`
                 .viral-card-hover:hover {
@@ -143,6 +239,9 @@ function ViralCarouselPreview({ items }) {
                 }
                 .no-scrollbar::-webkit-scrollbar {
                     display: none;
+                }
+                .modal-close-btn:hover {
+                    background: rgba(255,255,255,0.4) !important;
                 }
             `}</style>
         </div>
