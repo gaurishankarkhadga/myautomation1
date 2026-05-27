@@ -352,7 +352,44 @@ function ChatHub() {
         if (!content) return '';
         let html = content;
         
-        // Inline Code / Timestamps / Visual Cues
+        // Pre-process timeline blocks to merge multi-line AI outputs into a single parsable line
+        // 1. Merge Header and Visual Cue: "THE HOOK:\n[Visual:" -> "THE HOOK: [Visual:"
+        html = html.replace(/:\s*\n+\s*\[Visual:/gi, ': [Visual:');
+        // 2. Merge Visual Cue and Spoken Audio: "]\n(Spoken:" -> "] (Spoken:"
+        html = html.replace(/\]\s*\n+\s*\((?:Spoken:\s*|Insert:\s*)?/gi, '] (');
+        
+        // Ultra-Robust Timeline Card Parsing
+        // Matches lines starting with a timestamp: [0:00 - 0:03]
+        const timelineRegex = /^\s*[-*]?\s*`?(\[\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}\])`?\s*(.*)$/gim;
+        html = html.replace(timelineRegex, (match, timestamp, restOfLine) => {
+            let phase = "SCRIPT BLOCK";
+            let visual = "";
+            let spoken = restOfLine.trim();
+
+            // 1. Extract Phase (everything before the first colon, if it's less than 40 chars)
+            const colonIndex = spoken.indexOf(':');
+            if (colonIndex > 0 && colonIndex < 40) {
+                phase = spoken.substring(0, colonIndex).replace(/\*/g, '').trim(); // Remove bold asterisks if AI added them
+                spoken = spoken.substring(colonIndex + 1).trim();
+            }
+
+            // 2. Extract Visual Cue ([Visual: ...])
+            const visualMatch = spoken.match(/\[Visual:\s*([^\]]+)\]/i);
+            if (visualMatch) {
+                visual = visualMatch[1].trim();
+                spoken = spoken.replace(visualMatch[0], '').trim();
+            }
+
+            // 3. Clean Spoken Audio (Remove surrounding parentheses, brackets, quotes, and Spoken prefixes)
+            spoken = spoken.replace(/^(?:Spoken:\s*|Insert:\s*)/i, '');
+            spoken = spoken.replace(/^\((.*)\)$/, '$1').replace(/^"(.*)"$/, '$1').trim();
+            spoken = spoken.replace(/^(?:Spoken:\s*|Insert:\s*)/i, ''); // Double check in case of nested parentheses
+            spoken = spoken.replace(/^\((.*)\)$/, '$1').replace(/^"(.*)"$/, '$1').trim();
+
+            return `<div class="script-card"><div class="script-card-header"><span class="script-timestamp">${timestamp}</span><span class="script-phase">${phase}</span></div><div class="script-card-body">${visual ? `<div class="script-visual"><div class="script-label">🎬 VISUAL CUE</div><div class="script-text">${visual}</div></div>` : ''}<div class="script-spoken"><div class="script-label">🎙️ SPOKEN AUDIO</div><div class="script-text">"${spoken}"</div></div></div>`;
+        });
+        
+        // Inline Code / Timestamps / Visual Cues (For any random stragglers)
         html = html.replace(/`(\[\d:\d{2}\s*-\s*\d:\d{2}\][^`]*)`/g, '<span class="msg-timestamp">$1</span>');
         html = html.replace(/\[(Visual:[^\]]+)\]/gi, '<span class="msg-visual">[$1]</span>');
         html = html.replace(/`(.*?)`/g, '<code class="msg-code">$1</code>');
@@ -369,8 +406,8 @@ function ChatHub() {
         html = html.replace(/^## (.*$)/gim, '<h2 class="msg-h2">$1</h2>');
         html = html.replace(/^# (.*$)/gim, '<h1 class="msg-h1">$1</h1>');
 
-        // Lists (unordered) - Now catches * bullet points too
-        html = html.replace(/^\s*[-*]\s(.*$)/gim, '<div class="msg-ul-li"><span class="msg-ul-bullet">•</span><span class="msg-li-text">$1</span></div>');
+        // Lists (unordered) - Skip lines that were already transformed into script-cards
+        html = html.replace(/^(?!<div class="script-card">)\s*[-*]\s(.*$)/gim, '<div class="msg-ul-li"><span class="msg-ul-bullet">•</span><span class="msg-li-text">$1</span></div>');
         
         // Lists (ordered)
         html = html.replace(/^\s*(\d+)\.\s(.*$)/gim, '<div class="msg-ol-li"><span class="msg-ol-num">$1.</span><span class="msg-li-text">$2</span></div>');

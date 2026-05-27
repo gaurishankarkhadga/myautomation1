@@ -1040,6 +1040,23 @@ router.get('/profile', async (req, res) => {
 });
 
 // ==================== PERSONA / AI ANALYSIS ROUTES ====================
+const godPromptService = require('../service/godPromptService');
+
+// Route: God Prompt - The 1-click AI Onboarding Engine
+router.post('/setup/god-prompt', async (req, res) => {
+    try {
+        const { userId, promptText } = req.body;
+        if (!userId || !promptText) {
+            return res.status(400).json({ success: false, error: 'userId and promptText are required' });
+        }
+
+        const result = await godPromptService.processGodPrompt(userId, promptText);
+        res.json(result);
+    } catch (error) {
+        console.error('[GodPrompt] Setup route error:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 
 // Route: Manually trigger persona analysis
 router.post('/analyze-style', async (req, res) => {
@@ -1145,7 +1162,9 @@ router.get('/webhook', (req, res) => {
     }
 });
 
-// Route: Receive Webhook Events (messages, reactions, etc.)
+const { triggerQueue, acquireConversationLock } = require('../service/queueWorkerService');
+
+// Route: Receive Webhook Events (messages, reactions, etc.) - FAST ROUTE
 router.post('/webhook', async (req, res) => {
     try {
         // Verify the webhook signature from Instagram
@@ -1155,17 +1174,34 @@ router.post('/webhook', async (req, res) => {
         }
 
         const body = req.body;
+        console.log('[Webhook] Fast Event received:', JSON.stringify(body).substring(0, 100));
 
-        console.log('[Webhook] Event received:', JSON.stringify(body, null, 2));
-
-        // Track webhook events in DB
+        // Save to DB queue
         await WebhookEvent.create({
             receivedAt: new Date(),
             object: body.object,
             entryCount: body.entry?.length || 0,
-            raw: JSON.stringify(body).substring(0, 500)
+            raw: JSON.stringify(body).substring(0, 500),
+            eventType: 'incoming_webhook',
+            processed: false,
+            payload: body
         });
 
+        // 🚀 INSTANT 200 OK - Prevents Instagram Webhook Death Loop & Retries
+        res.status(200).send('EVENT_RECEIVED');
+
+        // Trigger background processor safely
+        triggerQueue(processWebhookPayload);
+
+    } catch (error) {
+        console.error('[Webhook] Fast route error:', error.message);
+        if (!res.headersSent) res.status(200).send('EVENT_RECEIVED');
+    }
+});
+
+// The heavy AI and messaging logic, now safely running in the background
+async function processWebhookPayload(body) {
+    try {
         // Keep only last 50 webhook events
         const totalEvents = await WebhookEvent.countDocuments();
         if (totalEvents > 50) {
@@ -1456,6 +1492,16 @@ router.post('/webhook', async (req, res) => {
 
                         // Update conversation in DB
                         const conversationId = `${senderId}_${recipientId}`;
+                        
+                        // [FIX] Phase 2: Conversation Locking
+                        // Prevent double-texting if the fan sends rapid-fire messages.
+                        const lockAcquired = await acquireConversationLock(conversationId, 5);
+                        if (!lockAcquired) {
+                            console.log(`[Webhook] Conversation ${conversationId} is currently locked. Batching rapid message. Skipping immediate reply generation.`);
+                            // Message is already saved to DB above. The worker holding the lock will read it when generating the reply.
+                            continue;
+                        }
+
                         const existingConv = await Conversation.findOne({ conversationId });
                         const currentUnread = existingConv ? existingConv.unreadCount : 0;
                         const isActivelyNegotiating = existingConv && existingConv.negotiationData && ['negotiating', 'drafted', 'contract_prep'].includes(existingConv.negotiationData.status);
@@ -1626,6 +1672,7 @@ router.post('/webhook', async (req, res) => {
                                 
                                 const fanPersona = await CreatorPersona.findOne({ userId: igUserIdMapped }).lean();
                                 const fanTokenData = await Token.findOne({ userId: igUserIdMapped }).lean();
+                                const creatorAssets = await CreatorAsset.find({ userId: igUserIdMapped, status: 'active' }).lean(); // [FIX] Omni-Router Phase 3
                                 
                                 if (fanTokenData && fanTokenData.accessToken) {
                                     // Get recent conversation history for context
@@ -1639,7 +1686,8 @@ router.post('/webhook', async (req, res) => {
                                         messageData.text,
                                         priorityTag,
                                         fanPersona,
-                                        fanHistory
+                                        fanHistory,
+                                        creatorAssets // [FIX] Inject Assets to Close Sales
                                     ).then(async (fanReplyText) => {
                                         if (!fanReplyText) return;
                                         
@@ -1702,15 +1750,15 @@ router.post('/webhook', async (req, res) => {
                 }
             }
 
-            res.status(200).send('EVENT_RECEIVED');
+            return;
         } else {
-            res.sendStatus(404);
+            console.log('[Webhook] Ignored non-instagram event');
+            return;
         }
     } catch (error) {
-        console.error('[Webhook] Processing error:', error.message);
-        res.status(500).send('ERROR');
+        console.error('[Webhook] Background processing error:', error.message);
     }
-});
+}
 
 // ==================== MESSAGING ROUTES ====================
 

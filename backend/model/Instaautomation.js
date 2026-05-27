@@ -131,6 +131,7 @@ const conversationSchema = new mongoose.Schema({
     lastMessage: { type: Object },
     lastMessageTime: { type: Number },
     unreadCount: { type: Number, default: 0 },
+    lockedUntil: { type: Date, default: null }, // [FIX] Conversation Locking to prevent double-texting
     priorityTag: { type: String, enum: ['Collaboration', 'Support', 'Fan Mail', 'Spam', 'Other', 'Untriaged'], default: 'Untriaged' },
     negotiationData: {
         brandName: { type: String },

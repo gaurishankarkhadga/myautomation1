@@ -325,7 +325,7 @@ Output ONLY the formatted agreement text.`;
  * Generates a natural, human fan engagement reply when an audience member DMs.
  * This is the opposite of the negotiation engine — warm, helpful, creator-like.
  */
-async function generateFanReply(messageText, priorityTag, creatorPersona = null, conversationHistory = []) {
+async function generateFanReply(messageText, priorityTag, creatorPersona = null, conversationHistory = [], creatorAssets = []) {
     if (!messageText || !process.env.GEMINI_API_KEY) return null;
 
     try {
@@ -343,12 +343,24 @@ CREATOR PERSONA — YOU ARE THIS PERSON:
         const historyBlock = conversationHistory.length > 0
             ? `\nRECENT CHAT HISTORY:\n${conversationHistory.slice(-6).map(h => `${h.role === 'user' ? 'Fan' : 'You'}: ${h.text}`).join('\n')}`
             : '';
+            
+        let assetsBlock = '';
+        if (creatorAssets && creatorAssets.length > 0) {
+            const assetList = creatorAssets.map(a => `- Product: ${a.title} | Link: ${a.url} | Price: ${a.price || 'Free'} | Details: ${a.description || ''}`).join('\n');
+            assetsBlock = `
+[OMNI-ROUTER: SALES & ASSETS]
+You have the following products/assets available:
+${assetList}
+
+SALES RULE: If the fan's question or problem can be solved by one of these products, smoothly and casually pitch it. Answer their question first, then say something like "btw my [Product] covers exactly this: [Link]". DO NOT be pushy. Act like you are helping a friend. If they are just saying hi, DO NOT pitch anything.`;
+        }
 
         const prompt = `
 You are an Instagram creator replying to a fan/follower in your DMs. This is NOT a brand deal. This is a real person who follows you and messaged you.
 
 ${personaStyle}
 ${historyBlock}
+${assetsBlock}
 
 MESSAGE TYPE: ${priorityTag}
 FAN'S MESSAGE: "${messageText}"
@@ -358,7 +370,7 @@ RULES:
 2. Keep it SHORT — 1-2 sentences max. Like a real DM reply.
 3. Use simple everyday language. No fancy words.
 4. BANNED WORDS: "sounds good", "awesome", "great", "absolutely", "fantastic", "I appreciate", "looking forward". Use normal words instead.
-5. If they ask for help with a product/course/link — be helpful and direct.
+5. If they ask for help with a product/course/link — be helpful and direct. Use the [OMNI-ROUTER] assets if relevant.
 6. If it's fan mail / love — be grateful but casual. Not over-the-top.
 7. If it's spam or weird — reply with something short and neutral, or just "👍".
 8. Match the creator's exact vibe and typing style.

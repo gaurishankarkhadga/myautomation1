@@ -26,7 +26,21 @@
 
     /* Professional Refinements */
     --accent: #8b5cf6;
+    --accent-gradient: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+    --accent-glow: 0 0 24px rgba(139, 92, 246, 0.2);
     --grid-color: rgba(255, 255, 255, 0.03);
+}
+
+/* ── Micro-Animations ── */
+@keyframes slideUpFade {
+    0% {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 *,
@@ -844,6 +858,7 @@ body {
     gap: 10px;
     align-items: flex-end;
     width: 100%;
+    animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .msg-row.user {
@@ -899,6 +914,13 @@ body {
     color: var(--text-primary);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.msg-row.assistant .msg-bubble:hover {
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: var(--accent-glow);
+    background: var(--surface-2);
 }
 
 .msg-text {
@@ -2363,4 +2385,114 @@ body {
     padding: 2px 6px;
     border-radius: 4px;
     margin-right: 6px;
+}
+
+/* -----------------------------------------
+   RESPONSIVE STORYBOARD TIMELINE
+   ----------------------------------------- */
+.msg-formatted-content .script-card {
+    border-left: 2px solid var(--border);
+    margin: 20px 0;
+    padding-left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transition: all 0.3s ease;
+}
+
+.msg-formatted-content .script-card:hover {
+    border-image: var(--accent-gradient) 1;
+    border-left: 2px solid;
+    box-shadow: -10px 0 24px -10px rgba(139, 92, 246, 0.2);
+}
+
+/* Left Column: Scene Node */
+.msg-formatted-content .script-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0;
+    background: transparent;
+    border-bottom: none;
+}
+
+.msg-formatted-content .script-timestamp {
+    background: var(--surface-2);
+    color: var(--accent);
+    border: 1px solid var(--border-2);
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.msg-formatted-content .script-phase {
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Right Column: Track Tracks */
+.msg-formatted-content .script-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0;
+}
+
+.msg-formatted-content .script-visual,
+.msg-formatted-content .script-spoken {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.msg-formatted-content .script-visual:hover {
+    border-color: rgba(167, 139, 250, 0.3);
+    background: var(--surface-2);
+}
+
+.msg-formatted-content .script-spoken:hover {
+    border-color: rgba(245, 158, 11, 0.3);
+    background: var(--surface-2);
+}
+
+.msg-formatted-content .script-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+}
+
+.msg-formatted-content .script-visual .script-label {
+    color: #a78bfa;
+}
+
+.msg-formatted-content .script-spoken .script-label {
+    color: #f59e0b;
+}
+
+.msg-formatted-content .script-text {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.msg-formatted-content .script-spoken .script-text {
+    color: var(--text-primary);
+    font-weight: 600;
 }
