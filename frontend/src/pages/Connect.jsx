@@ -50,7 +50,11 @@ function Connect() {
         <div className="connect-page">
             <div className="connect-glass-panel">
                 <div className="connect-brand">
-                    <Zap size={36} strokeWidth={2} />
+                    <img 
+                        src="/assets/logo-icon-transparent.png" 
+                        alt="Sotix Logo" 
+                        style={{ width: '48px', height: '48px', objectFit: 'contain' }} 
+                    />
                     <h1>Sotix</h1>
                 </div>
                 <h2>Start Automating</h2>

@@ -448,6 +448,7 @@ function ChatHub() {
                 </div>
 
                 <div className="mob-header-slot center">
+                    <img src="/assets/logo-icon-transparent.png" alt="Sotix Logo" style={{ width: '20px', height: '20px', objectFit: 'contain', marginRight: '6px' }} />
                     <span className="mob-brand">Sotix AI</span>
                 </div>
 
@@ -478,7 +479,7 @@ function ChatHub() {
                 {/* Sidebar top */}
                 <div className="sidebar-top">
                     <div className="sidebar-brand">
-                        <Zap size={18} strokeWidth={2.5} />
+                        <img src="/assets/logo-icon-transparent.png" alt="Sotix Logo" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
                         <span>Sotix AI</span>
                     </div>
                     <button className="mob-icon-btn close-btn" onClick={() => setSidebarOpen(false)} id="mob-sidebar-close" aria-label="Close sidebar">
@@ -625,7 +626,7 @@ function ChatHub() {
                         <button className="desk-menu-btn" onClick={() => setSidebarOpen(v => !v)} aria-label="Toggle sidebar">
                             <Menu size={18} />
                         </button>
-                        <Bot size={20} strokeWidth={1.8} className="bot-icon" />
+                        <img src="/assets/logo-icon-transparent.png" alt="Sotix Logo" style={{ width: '36px', height: '36px', objectFit: 'contain', marginRight: '12px' }} />
                         <div>
                             <h1 className="chat-title">Sotix AI</h1>
                             <p className="chat-subtitle">Your social media command center</p>
