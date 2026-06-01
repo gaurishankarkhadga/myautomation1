@@ -8,6 +8,7 @@ const router = express.Router();
 
 // Load model from model dir
 const BioLink = require('../model/BioLink');
+const { organizeBiolinkWithAI } = require('../service/aiBiolinkService');
 
 // ─── Multer setup ───────────────────────────────────────────
 const uploadsDir = path.join(__dirname, '..', 'public', 'uploads', 'biolinks');
@@ -395,6 +396,56 @@ router.post('/view', async (req, res) => {
   } catch (error) {
     console.error('Error fetching public biolink:', error);
     res.status(500).json({ error: 'Failed to fetch biolink' });
+  }
+});
+
+// ─── AI ORGANIZE ROUTE ──────────────────────────────────────
+// POST /api/biolinks/ai-organize
+// Uses AI to analyze creator's assets + latest social media and reorganize
+// their existing BioLink (products, links) based on current trends.
+router.post('/ai-organize', authenticateToken, async (req, res) => {
+  try {
+    const { prompt, biolinkId } = req.body || {};
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required. Please connect your Instagram or YouTube account.' });
+    }
+
+    // Run AI organization
+    const result = await organizeBiolinkWithAI(userId, prompt || '');
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    // Apply the organized layout to the BioLink in the database
+    const query = biolinkId ? { _id: biolinkId } : { userId };
+    const biolink = await BioLink.findOne(query);
+
+    if (biolink) {
+      if (result.organizedProducts.length > 0) biolink.products = result.organizedProducts;
+      if (result.organizedLinks.length > 0) biolink.links = result.organizedLinks;
+      if (result.tagline) biolink.profile.tagline = result.tagline;
+      if (result.themeRecommendation) biolink.theme = result.themeRecommendation;
+      biolink.lastModified = new Date();
+      await biolink.save();
+    }
+
+    return res.json({
+      success: true,
+      message: result.summary || 'BioLink organized successfully by AI.',
+      trendInsight: result.trendInsight,
+      themeRecommendation: result.themeRecommendation,
+      tagline: result.tagline,
+      biolink: biolink || null,
+      organizedProducts: result.organizedProducts,
+      organizedLinks: result.organizedLinks,
+    });
+
+  } catch (error) {
+    console.error('[BioLink-AI] Error:', error);
+    res.status(500).json({ error: 'AI organization failed', details: error.message });
   }
 });
 

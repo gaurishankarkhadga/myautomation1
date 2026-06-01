@@ -370,15 +370,16 @@ const BioLinkElement = ({ element, isPreview = false, settings = {} }) => {
     }
 
     const textStyles = {
-      color: settings.textColor || '#1e1b4b',
-      textAlign: 'center',
-      fontSize: '16px',
-      lineHeight: '1.6'
+      color: settings.textColor || 'rgba(255,255,255,0.75)',
+      textAlign: alignment || 'center',
+      fontSize: '14px',
+      lineHeight: '1.6',
+      padding: '4px 0',
     };
 
     return (
       <div className="biolink-element-text" style={textStyles}>
-        <p>{content}</p>
+        <p style={{ margin: 0 }}>{content}</p>
       </div>
     );
   };

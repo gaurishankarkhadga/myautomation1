@@ -448,7 +448,6 @@ function ChatHub() {
                 </div>
 
                 <div className="mob-header-slot center">
-                    <img src="/assets/logo-icon-transparent.png" alt="Sotix Logo" style={{ width: '20px', height: '20px', objectFit: 'contain', marginRight: '6px' }} />
                     <span className="mob-brand">Sotix AI</span>
                 </div>
 
