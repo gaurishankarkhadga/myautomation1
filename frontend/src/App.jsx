@@ -56,14 +56,18 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<ConnectOrChat />} />
-        <Route path="/chat" element={<ChatHub />} />
-        <Route path="/biolink" element={<BioLink />} />
-        <Route path="/biolink/:subPageId" element={<BioLink />} />
-        <Route path="/p/:username" element={<PublicBioLink />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/assets" element={<Assets />} />
-        <Route path="/settings" element={<AdvancedSettings />} />
+        
+        {/* Dashboard Shell layout using ChatHub */}
+        <Route element={<ChatHub />}>
+          <Route path="/chat" element={<></>} />
+          <Route path="/biolink" element={<BioLink />} />
+          <Route path="/biolink/:subPageId" element={<BioLink />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/assets" element={<Assets />} />
+          <Route path="/settings" element={<AdvancedSettings />} />
+        </Route>
 
+        <Route path="/p/:username" element={<PublicBioLink />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
         <Route path="/data-deletion" element={<DataDeletion />} />

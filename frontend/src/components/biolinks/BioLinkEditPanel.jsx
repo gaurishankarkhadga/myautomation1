@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { debounce } from 'lodash';
 import {
   Plus, Eye, Share2, User, FileText, Link, MousePointer,
   GripHorizontal, X, Palette, Upload, Camera, Video, Minus,
-  Smartphone, ChevronLeft, ChevronRight
+  Smartphone, ChevronLeft, ChevronRight, ArrowLeft
 } from 'lucide-react';
 import BioLinkElement from './BioLinkElement';
 import './BioLinkEditPanel.css';
@@ -24,6 +24,7 @@ const hasPlatformAuth = () => {
 };
 
 const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, onUpdate }) => {
+  const navigate = useNavigate();
   const safeColor = (color) => {
     if (!color || typeof color !== 'string') return '#000000';
     if (color.startsWith('#')) return color.substring(0, 7);
@@ -2046,6 +2047,9 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     <div className="biolink-edit-panel mobile-first">
       {/* Top bar - clean: save status + preview + save + publish */}
       <div className="edit-toolbar-mobile">
+        <button className="ep-back-btn" onClick={() => navigate(-1)} aria-label="Go Back">
+          <ArrowLeft size={24} strokeWidth={2.5} />
+        </button>
         <div className="auto-save-status">
           <div className={`status-dot ${autoSaveStatus}`}></div>
           {autoSaveStatus === 'saving' && 'Saving...'}

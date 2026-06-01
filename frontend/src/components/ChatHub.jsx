@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import WaveBackground from './WaveBackground';
 import {
     Zap, Send, SendHorizontal, Menu, X, Settings, LogOut, BarChart2,
@@ -29,6 +29,7 @@ const SUGGESTED_PROMPTS = [
 
 function ChatHub() {
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [token, setToken] = useState('');
     const [userId, setUserId] = useState('');
@@ -499,22 +500,22 @@ function ChatHub() {
                     {/* Chat Modes */}
                     <div className="sidebar-section">
                         <p className="sidebar-section-label">Chat Modes</p>
-                        <button className={`sidebar-action-btn ${activeTab === 'current' ? 'active-tab' : ''}`}
-                            onClick={() => { setActiveTab('current'); setSidebarOpen(false); }}>
+                        <button className={`sidebar-action-btn ${(location.pathname === '/chat' && activeTab === 'current') ? 'active-tab' : ''}`}
+                            onClick={() => { navigate('/chat'); setActiveTab('current'); setSidebarOpen(false); }}>
                             <MessageSquare size={14} />
-                            <span style={activeTab === 'current' ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Current Chat</span>
+                            <span style={(location.pathname === '/chat' && activeTab === 'current') ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Current Chat</span>
                         </button>
-                        <button className={`sidebar-action-btn ${activeTab === 'deals' ? 'active-tab' : ''}`}
-                            onClick={() => { loadDealsData(); setActiveTab('deals'); setSidebarOpen(false); }}>
+                        <button className={`sidebar-action-btn ${(location.pathname === '/chat' && activeTab === 'deals') ? 'active-tab' : ''}`}
+                            onClick={() => { navigate('/chat'); loadDealsData(); setActiveTab('deals'); setSidebarOpen(false); }}>
                             <Handshake size={14} />
-                            <span style={activeTab === 'deals' ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Deals CRM</span>
+                            <span style={(location.pathname === '/chat' && activeTab === 'deals') ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Deals CRM</span>
                         </button>
-                        <button className={`sidebar-action-btn ${activeTab === 'history' ? 'active-tab' : ''}`}
-                            onClick={() => { setActiveTab('history'); setSidebarOpen(false); }}>
+                        <button className={`sidebar-action-btn ${(location.pathname === '/chat' && activeTab === 'history') ? 'active-tab' : ''}`}
+                            onClick={() => { navigate('/chat'); setActiveTab('history'); setSidebarOpen(false); }}>
                             <RotateCcw size={14} />
-                            <span style={activeTab === 'history' ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Chat History</span>
+                            <span style={(location.pathname === '/chat' && activeTab === 'history') ? { color: 'var(--text-primary)', fontWeight: 600 } : {}}>Chat History</span>
                         </button>
-                        {activeTab === 'history' && historyMessages.length > 0 && (
+                        {(location.pathname === '/chat' && activeTab === 'history') && historyMessages.length > 0 && (
                             <button className="sidebar-action-btn" onClick={handleClearHistory} style={{ color: 'var(--red)', marginTop: '4px' }}>
                                 <Trash2 size={14} />
                                 <span>Clear All History</span>
@@ -716,8 +717,14 @@ function ChatHub() {
                     </>
                 )}
 
-                {/* ═══════════════ DEALS CRM BOARD ═══════════════ */}
-                {activeTab === 'deals' && (
+                {location.pathname !== '/chat' ? (
+                    <div className="chathub-sub-route-container">
+                        <Outlet />
+                    </div>
+                ) : (
+                    <>
+                        {/* ═══════════════ DEALS CRM BOARD ═══════════════ */}
+                        {activeTab === 'deals' && (
                     <div className="chat-messages" id="deals-crm-board" style={{ padding: '24px', overflowY: 'auto' }}>
                         {/* CRM Header */}
                         <div className="crm-header-row" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '16px' }}>
@@ -1102,6 +1109,8 @@ function ChatHub() {
                     </div>
                     <p className="input-hint">Enter to send · Shift+Enter for new line</p>
                 </div>
+                    </>
+                )}
             </main>
         </div>
     );
