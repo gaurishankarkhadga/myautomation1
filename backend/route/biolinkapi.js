@@ -428,6 +428,10 @@ router.post('/ai-organize', authenticateToken, async (req, res) => {
       if (result.organizedLinks.length > 0) biolink.links = result.organizedLinks;
       if (result.tagline) biolink.profile.tagline = result.tagline;
       if (result.themeRecommendation) biolink.theme = result.themeRecommendation;
+      // Apply full theme settings so colors/styles update visually (Issue 1 fix)
+      if (result.themeSettings) {
+        biolink.settings = { ...biolink.settings, ...result.themeSettings };
+      }
       biolink.lastModified = new Date();
       await biolink.save();
     }

@@ -1,148 +1,163 @@
+/**
+ * PublicBioLink.jsx
+ * Public-facing BioLink page — glassmorphism, framer-motion, lucide-react icons.
+ *
+ * Issues fixed in this version:
+ *  #3  Modern premium liquid-glass UI design
+ *  #5  Full-page vertical scrolling
+ *  #6  System-generated usernames (@creator_xxx) hidden from profile
+ */
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Instagram, Youtube, Twitter, Facebook, Linkedin, Twitch,
-  Music2, Globe, Github, MessageCircle, ExternalLink,
-  ShoppingBag, Link2, Sparkles, ChevronRight, User, PackageOpen,
-  Send, Pin, Play
+  Music2, Globe, Github, MessageCircle, Link2, ChevronRight,
+  User, PackageOpen, ShoppingBag, Sparkles, Send, Pin, Play
 } from 'lucide-react';
 import BioLinkElement from './BioLinkElement';
 import styles from './PublicBioLink.module.css';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Platform icon resolver
-// Supports both lucide-react icons AND inline SVG (for platforms lucide lacks)
-// ─────────────────────────────────────────────────────────────────────────────
-const TikTokIcon = ({ size = 16 }) => (
+// ─── Platform brand colours ───────────────────────────────
+const PLATFORM_COLORS = {
+  instagram:  '#e1306c',
+  youtube:    '#ff0000',
+  twitter:    '#1d9bf0',
+  facebook:   '#1877f2',
+  linkedin:   '#0a66c2',
+  twitch:     '#9146ff',
+  github:     '#c9d1d9',
+  discord:    '#5865f2',
+  spotify:    '#1db954',
+  tiktok:     '#69c9d0',
+  snapchat:   '#fffc00',
+  pinterest:  '#e60023',
+  telegram:   '#26a5e4',
+  website:    '#8b5cf6',
+  link:       '#8b5cf6',
+};
+
+// ─── Platform icons (lucide + inline SVG for unsupported) ──
+const TikTokSvg = ({ size = 17 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.17.63 2.33 1.52 3.11.77.66 1.81 1.02 2.84 1.04v4.14c-.91-.02-1.83-.28-2.67-.79-.34-.22-.65-.49-.94-.8v6.79c0 2.3-1.86 4.17-4.15 4.17s-4.15-1.87-4.15-4.17 1.86-4.17 4.15-4.17c.18 0 .35.01.53.02V11.5c-.18-.01-.35-.02-.53-.02-3.68 0-6.67 2.99-6.67 6.67s2.99 6.67 6.67 6.67 6.67-2.99 6.67-6.67V.02h-.18z"/>
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.15 8.15 0 0 0 4.77 1.52V6.76a4.85 4.85 0 0 1-1-.07z"/>
   </svg>
 );
-
-const SpotifyIcon = ({ size = 16 }) => (
+const SpotifySvg = ({ size = 17 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
   </svg>
 );
-
-const DiscordIcon = ({ size = 16 }) => (
+const DiscordSvg = ({ size = 17 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
     <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
   </svg>
 );
 
-// Map platform id → JSX icon component
 const PLATFORM_ICON_MAP = {
-  instagram:  <Instagram  size={17} />,
-  youtube:    <Youtube    size={17} />,
-  twitter:    <Twitter    size={17} />,
-  facebook:   <Facebook   size={17} />,
-  linkedin:   <Linkedin   size={17} />,
-  twitch:     <Twitch     size={17} />,
-  github:     <Github     size={17} />,
-  discord:    <DiscordIcon size={17} />,
-  spotify:    <SpotifyIcon size={17} />,
-  tiktok:     <TikTokIcon  size={17} />,
+  instagram:  <Instagram size={17} />,
+  youtube:    <Youtube   size={17} />,
+  twitter:    <Twitter   size={17} />,
+  facebook:   <Facebook  size={17} />,
+  linkedin:   <Linkedin  size={17} />,
+  twitch:     <Twitch    size={17} />,
+  github:     <Github    size={17} />,
+  discord:    <DiscordSvg size={17} />,
+  spotify:    <SpotifySvg size={17} />,
+  tiktok:     <TikTokSvg  size={17} />,
   snapchat:   <MessageCircle size={17} />,
-  pinterest:  <Pin         size={17} />,
-  telegram:   <Send        size={17} />,
-  website:    <Globe       size={17} />,
-  link:       <Link2       size={17} />,
+  pinterest:  <Pin        size={17} />,
+  telegram:   <Send       size={17} />,
+  website:    <Globe      size={17} />,
+  link:       <Link2      size={17} />,
 };
 
-// Detect platform from URL if platform field is missing/generic
-function detectPlatformFromUrl(url) {
-  if (!url) return null;
+// Detect platform from URL string
+function detectPlatform(url = '') {
   const u = url.toLowerCase();
-  if (u.includes('instagram.com')) return 'instagram';
-  if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
-  if (u.includes('twitter.com') || u.includes('x.com')) return 'twitter';
-  if (u.includes('facebook.com') || u.includes('fb.com')) return 'facebook';
-  if (u.includes('linkedin.com')) return 'linkedin';
-  if (u.includes('tiktok.com')) return 'tiktok';
-  if (u.includes('twitch.tv')) return 'twitch';
-  if (u.includes('github.com')) return 'github';
-  if (u.includes('discord.gg') || u.includes('discord.com')) return 'discord';
-  if (u.includes('spotify.com')) return 'spotify';
-  if (u.includes('snapchat.com')) return 'snapchat';
-  if (u.includes('pinterest.com')) return 'pinterest';
-  if (u.includes('t.me') || u.includes('telegram.me')) return 'telegram';
+  if (u.includes('instagram.com'))              return 'instagram';
+  if (u.includes('youtube.com')||u.includes('youtu.be')) return 'youtube';
+  if (u.includes('twitter.com')||u.includes('x.com'))    return 'twitter';
+  if (u.includes('facebook.com')||u.includes('fb.com'))  return 'facebook';
+  if (u.includes('linkedin.com'))               return 'linkedin';
+  if (u.includes('tiktok.com'))                 return 'tiktok';
+  if (u.includes('twitch.tv'))                  return 'twitch';
+  if (u.includes('github.com'))                 return 'github';
+  if (u.includes('discord.gg')||u.includes('discord.com')) return 'discord';
+  if (u.includes('spotify.com'))                return 'spotify';
+  if (u.includes('snapchat.com'))               return 'snapchat';
+  if (u.includes('pinterest.com'))              return 'pinterest';
+  if (u.includes('t.me')||u.includes('telegram.me')) return 'telegram';
   return null;
 }
 
-// Resolve the best icon for a link
-function getLinkIcon(link) {
-  // 1. If icon is 'platform', use the platform field
-  if (link.icon === 'platform' && link.platform) {
-    return PLATFORM_ICON_MAP[link.platform.toLowerCase()] || <Globe size={17} />;
+// Resolve icon and colour for a link
+function resolveLinkMeta(link) {
+  let platformId = null;
+
+  // 1. Explicit 'platform' icon flag
+  if (link.icon === 'platform' && link.platform) platformId = link.platform.toLowerCase();
+  // 2. Known platform set directly
+  else if (link.platform && link.platform !== 'website' && PLATFORM_ICON_MAP[link.platform.toLowerCase()]) {
+    platformId = link.platform.toLowerCase();
   }
-  // 2. If platform is set and known
-  if (link.platform && link.platform !== 'website' && PLATFORM_ICON_MAP[link.platform.toLowerCase()]) {
-    return PLATFORM_ICON_MAP[link.platform.toLowerCase()];
-  }
-  // 3. Try to detect from URL
-  const detected = detectPlatformFromUrl(link.url);
-  if (detected) return PLATFORM_ICON_MAP[detected];
-  // 4. Emoji icon fallback
-  if (link.icon && link.icon !== 'platform' && link.icon.length <= 3) {
-    return <span style={{ fontSize: 15, lineHeight: 1 }}>{link.icon}</span>;
-  }
-  // 5. Default
-  return <Globe size={17} />;
+  // 3. Auto-detect from URL
+  else platformId = detectPlatform(link.url);
+
+  const icon   = platformId ? (PLATFORM_ICON_MAP[platformId] || <Globe size={17} />) : <Globe size={17} />;
+  const color  = platformId ? (PLATFORM_COLORS[platformId] || '#8b5cf6') : '#8b5cf6';
+  const colorBg = `${color}22`; // 13% opacity
+
+  return { icon, color, colorBg, platformId };
 }
 
-// ─── Animation variants ───────────────────────────────────────────────────────
+// ISSUE 6: detect auto-generated system usernames that should be hidden
+function isSystemUsername(str = '') {
+  // Format: creator_<26-char alphanum> or insta_<...> or yt_<...>
+  return /^@?(creator_|insta_|yt_)[a-z0-9_]{6,}$/i.test(str.trim());
+}
+
+// ─── Framer Motion variants ────────────────────────────────
 const stagger = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
+  show: { transition: { staggerChildren: 0.065, delayChildren: 0.04 } },
 };
-const fadeSlide = {
-  hidden: { opacity: 0, y: 14 },
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
   show:   { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 340, damping: 28 } },
 };
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.93, y: 10 },
-  show:   { opacity: 1, scale: 1,    y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } },
+const cardPop = {
+  hidden: { opacity: 0, scale: 0.94, y: 12 },
+  show:   { opacity: 1, scale: 1,   y: 0,  transition: { type: 'spring', stiffness: 300, damping: 24 } },
 };
 
-// ─── Loading Screen ───────────────────────────────────────────────────────────
-function LoadingScreen({ username }) {
-  return (
-    <div className={styles['pbl-loading']}>
-      <div className={styles['pbl-spinner']} />
-      <p className={styles['pbl-loading-text']}>Loading @{username}</p>
-    </div>
-  );
-}
+// ─── Link Row ─────────────────────────────────────────────
+const LinkRow = React.memo(function LinkRow({ link, onTrackClick }) {
+  const { icon, color, colorBg } = resolveLinkMeta(link);
 
-// ─── Error Screen ─────────────────────────────────────────────────────────────
-function ErrorScreen({ username }) {
-  return (
-    <div className={styles['pbl-error']}>
-      <Globe size={40} style={{ color: 'rgba(255,255,255,0.15)', marginBottom: 8 }} />
-      <p className={styles['pbl-error-title']}>Not Found</p>
-      <p className={styles['pbl-error-msg']}>
-        @{username} hasn't published their BioLink yet.
-      </p>
-    </div>
-  );
-}
-
-// ─── Individual Link Row ──────────────────────────────────────────────────────
-function LinkRow({ link, onTrackClick }) {
   return (
     <motion.a
-      variants={scaleIn}
+      variants={cardPop}
       href={link.url}
       target="_blank"
       rel="noopener noreferrer"
       className={styles['pbl-link-card']}
+      style={{
+        '--pbl-platform-color':    color,
+        '--pbl-platform-color-bg': colorBg,
+      }}
       onClick={onTrackClick}
       whileTap={{ scale: 0.965 }}
     >
+      {/* Left colour accent bar */}
+      <div
+        className={styles['pbl-link-card-accent']}
+        style={{ background: color }}
+      />
+      {/* Icon circle */}
       <div className={styles['pbl-link-icon-wrap']}>
-        {getLinkIcon(link)}
+        {icon}
       </div>
       <span className={styles['pbl-link-title']}>
         {link.title || link.platform || link.url}
@@ -152,17 +167,17 @@ function LinkRow({ link, onTrackClick }) {
       </span>
     </motion.a>
   );
-}
+});
 
-// ─── Product Card ─────────────────────────────────────────────────────────────
-function ProductCard({ product, apiBase }) {
+// ─── Product Card ─────────────────────────────────────────
+const ProductCard = React.memo(function ProductCard({ product, apiBase }) {
   const imgSrc = product.image
     ? product.image.startsWith('http') ? product.image : `${apiBase}${product.image}`
     : null;
 
   return (
     <motion.a
-      variants={scaleIn}
+      variants={cardPop}
       href={product.url || '#'}
       target="_blank"
       rel="noopener noreferrer"
@@ -175,11 +190,11 @@ function ProductCard({ product, apiBase }) {
             src={imgSrc}
             alt={product.name}
             className={styles['pbl-product-img']}
-            onError={e => { e.target.style.display = 'none'; e.target.parentElement.classList.add(styles['pbl-product-img-wrap--empty']); }}
+            onError={e => { e.target.style.display = 'none'; }}
           />
         ) : (
           <div className={styles['pbl-product-img-placeholder']}>
-            <PackageOpen size={26} />
+            <PackageOpen size={28} />
           </div>
         )}
         <div className={styles['pbl-product-badge']}>
@@ -188,20 +203,41 @@ function ProductCard({ product, apiBase }) {
       </div>
       <div className={styles['pbl-product-info']}>
         <p className={styles['pbl-product-name']}>{product.name || 'Product'}</p>
-        {product.price && (
-          <p className={styles['pbl-product-price']}>{product.price}</p>
-        )}
+        {product.price && <p className={styles['pbl-product-price']}>{product.price}</p>}
       </div>
     </motion.a>
   );
+});
+
+// ─── Loading ──────────────────────────────────────────────
+function LoadingScreen({ username }) {
+  return (
+    <div className={styles['pbl-loading']}>
+      <div className={styles['pbl-spinner']} />
+      <p className={styles['pbl-loading-text']}>Loading @{username}</p>
+    </div>
+  );
 }
 
-// ─── Main Public BioLink Component ───────────────────────────────────────────
+// ─── Error ────────────────────────────────────────────────
+function ErrorScreen({ username }) {
+  return (
+    <div className={styles['pbl-error']}>
+      <Globe size={40} style={{ color: 'rgba(255,255,255,0.14)', marginBottom: 8 }} />
+      <p className={styles['pbl-error-title']}>Not Found</p>
+      <p className={styles['pbl-error-msg']}>
+        @{username} hasn't published their BioLink yet.
+      </p>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────
 const PublicBioLink = () => {
   const { username } = useParams();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [data, setData]             = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState(null);
   const [activeView, setActiveView] = useState('links');
 
   const apiBase = import.meta.env.VITE_API_BASE_URL || '';
@@ -212,10 +248,10 @@ const PublicBioLink = () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${apiBase}/api/biolinks/public/${encodeURIComponent(username)}`);
+        const res  = await fetch(`${apiBase}/api/biolinks/public/${encodeURIComponent(username)}`);
         if (!res.ok) throw new Error(`${res.status}`);
         const json = await res.json();
-        if (!json.biolink) throw new Error('No biolink data');
+        if (!json.biolink) throw new Error('No data');
         setData(json.biolink);
       } catch (e) {
         setError(e.message);
@@ -229,28 +265,32 @@ const PublicBioLink = () => {
   if (loading) return <LoadingScreen username={username} />;
   if (error || !data) return <ErrorScreen username={username} />;
 
-  // ── Derived data ──────────────────────────────────────────────────────────
-  const profile = data.profile || {};
+  // ── Derived values ──────────────────────────────────────
+  const profile  = data.profile || {};
   const settings = data.settings || {};
   const allLinks = (data.links || []).filter(l => l.isActive !== false);
-  const products = (data.products || []);
+  const products = data.products || [];
   const elements = (data.elements || []).filter(el => el.isActive !== false);
-  const hasShop = products.length > 0;
+  const hasShop  = products.length > 0;
 
-  // Separate social quick-links from regular links
-  const SOCIAL_IDS = ['instagram','youtube','twitter','tiktok','facebook','linkedin','twitch','spotify','discord','github','snapchat','pinterest','telegram'];
-  const socialLinks  = allLinks.filter(l => SOCIAL_IDS.includes(l.platform?.toLowerCase?.()) || SOCIAL_IDS.includes(detectPlatformFromUrl(l.url)));
-  const regularLinks = allLinks.filter(l => !SOCIAL_IDS.includes(l.platform?.toLowerCase?.()) || l.icon !== 'platform');
-  // Ensure no duplicate between social pills and link rows — show everything in link rows,
-  // show social pills as an additional quick-access row (only show pills if links exist that are truly social platform links)
-  const trulySocial = allLinks.filter(l => (l.icon === 'platform' && SOCIAL_IDS.includes(l.platform?.toLowerCase?.())));
-  const nonSocialLinks = allLinks.filter(l => !(l.icon === 'platform' && SOCIAL_IDS.includes(l.platform?.toLowerCase?.())));
+  // ISSUE 6: hide system-generated username — only show clean URL username
+  // data.username is the DB slug (may be auto-generated like creator_xxx)
+  // username (useParams) is the URL slug the creator published under
+  const showUsernameHandle = !isSystemUsername(username);
 
-  // Avatar URL
+  // Avatar URL resolution
   const avatarSrc = profile.avatar
     ? profile.avatar.startsWith('http') ? profile.avatar : `${apiBase}${profile.avatar}`
     : null;
 
+  // ISSUE 6: hide tagline if it looks like a system username
+  const safeTagline = profile.tagline && !isSystemUsername(profile.tagline) ? profile.tagline : '';
+
+  // Social platform links as pills (icon === 'platform' and known social)
+  const SOCIAL_IDS = ['instagram','youtube','twitter','tiktok','facebook','linkedin','twitch','spotify','discord','github','snapchat','pinterest','telegram'];
+  const socialPills = allLinks.filter(l => l.icon === 'platform' && SOCIAL_IDS.includes(l.platform?.toLowerCase?.()));
+
+  // Track analytics click
   const trackClick = () => {
     fetch(`${apiBase}/api/biolinks/click`, {
       method: 'POST',
@@ -263,15 +303,15 @@ const PublicBioLink = () => {
     <div className={styles['pbl-page']}>
       <div className={styles['pbl-card']}>
 
-        {/* ── Profile Header ───────────────────────────────────── */}
+        {/* ── Profile ─────────────────────────────────────── */}
         <motion.div
           className={styles['pbl-profile-section']}
           initial="hidden"
           animate="show"
           variants={stagger}
         >
-          {/* Avatar with spinning ring */}
-          <motion.div variants={fadeSlide} className={styles['pbl-avatar-ring']}>
+          {/* Avatar */}
+          <motion.div variants={fadeUp} className={styles['pbl-avatar-ring']}>
             {avatarSrc ? (
               <img
                 src={avatarSrc}
@@ -287,56 +327,62 @@ const PublicBioLink = () => {
           </motion.div>
 
           {/* Display name */}
-          <motion.h1 variants={fadeSlide} className={styles['pbl-display-name']}>
+          <motion.h1 variants={fadeUp} className={styles['pbl-display-name']}>
             {profile.displayName || username}
           </motion.h1>
 
-          {/* Username handle */}
-          <motion.p variants={fadeSlide} className={styles['pbl-username']}>
-            @{username}
-          </motion.p>
+          {/* ISSUE 6: @username handle — hidden if system-generated */}
+          {showUsernameHandle && !isSystemUsername(username) && (
+            <motion.p variants={fadeUp} className={styles['pbl-username']}>
+              @{username}
+            </motion.p>
+          )}
 
-          {/* Tagline */}
-          {profile.tagline && (
-            <motion.p variants={fadeSlide} className={styles['pbl-tagline']}>
-              {profile.tagline}
+          {/* ISSUE 6: Tagline — hidden if it looks like a system username */}
+          {safeTagline && (
+            <motion.p variants={fadeUp} className={styles['pbl-tagline']}>
+              {safeTagline}
             </motion.p>
           )}
         </motion.div>
 
-        {/* ── Social platform quick-pills ────────────────────────── */}
-        {trulySocial.length > 0 && (
+        {/* ── Social pills ─────────────────────────────────── */}
+        {socialPills.length > 0 && (
           <motion.div
             className={styles['pbl-social-row']}
             initial="hidden"
             animate="show"
             variants={stagger}
           >
-            {trulySocial.map(link => (
-              <motion.a
-                key={link.id || link.url}
-                variants={scaleIn}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles['pbl-social-pill']}
-                whileTap={{ scale: 0.92 }}
-                onClick={trackClick}
-              >
-                {getLinkIcon(link)}
-                <span>{link.title || link.platform}</span>
-              </motion.a>
-            ))}
+            {socialPills.map(link => {
+              const { icon, color } = resolveLinkMeta(link);
+              return (
+                <motion.a
+                  key={link.id || link.url}
+                  variants={cardPop}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles['pbl-social-pill']}
+                  style={{ borderColor: `${color}40`, color }}
+                  whileTap={{ scale: 0.92 }}
+                  onClick={trackClick}
+                >
+                  {icon}
+                  <span>{link.title || link.platform}</span>
+                </motion.a>
+              );
+            })}
           </motion.div>
         )}
 
-        {/* ── Tab switcher ──────────────────────────────────────── */}
+        {/* ── Tab switcher ─────────────────────────────────── */}
         {hasShop && (
           <motion.div
             className={styles['pbl-tab-row']}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
+            transition={{ delay: 0.22, type: 'spring', stiffness: 300 }}
           >
             <button
               id="pbl-tab-links"
@@ -355,59 +401,59 @@ const PublicBioLink = () => {
           </motion.div>
         )}
 
-        {/* ── Main Content ─────────────────────────────────────── */}
+        {/* ── Content ──────────────────────────────────────── */}
         <AnimatePresence mode="wait">
 
-          {/* Links view */}
           {activeView === 'links' && (
             <motion.div
-              key="view-links"
+              key="links"
               className={styles['pbl-content-area']}
               initial="hidden"
               animate="show"
-              exit={{ opacity: 0, y: -6, transition: { duration: 0.15 } }}
+              exit={{ opacity: 0, y: -8, transition: { duration: 0.14 } }}
               variants={stagger}
             >
               {allLinks.length === 0 ? (
                 <motion.p
-                  variants={fadeSlide}
-                  style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: 13, padding: '24px 0' }}
+                  variants={fadeUp}
+                  style={{ textAlign: 'center', color: 'rgba(255,255,255,0.22)', fontSize: 13, padding: '28px 0' }}
                 >
-                  No links yet.
+                  No links added yet.
                 </motion.p>
-              ) : (
-                allLinks.map(link => (
-                  <LinkRow key={link.id || link.url} link={link} onTrackClick={trackClick} />
-                ))
-              )}
+              ) : allLinks.map(link => (
+                <LinkRow key={link.id || link.url} link={link} onTrackClick={trackClick} />
+              ))}
             </motion.div>
           )}
 
-          {/* Shop view */}
           {activeView === 'shop' && (
             <motion.div
-              key="view-shop"
+              key="shop"
               className={styles['pbl-shop-grid']}
               initial="hidden"
               animate="show"
-              exit={{ opacity: 0, y: -6, transition: { duration: 0.15 } }}
+              exit={{ opacity: 0, y: -8, transition: { duration: 0.14 } }}
               variants={stagger}
             >
               {products.map(product => (
-                <ProductCard key={product.id || product._id} product={product} apiBase={apiBase} />
+                <ProductCard
+                  key={product.id || product._id}
+                  product={product}
+                  apiBase={apiBase}
+                />
               ))}
             </motion.div>
           )}
 
         </AnimatePresence>
 
-        {/* ── Custom elements (text, video, gallery, CTA etc.) ── */}
+        {/* ── Custom elements (text, gallery, CTA, video etc.) ─ */}
         {elements.length > 0 && (
           <motion.div
             className={styles['pbl-elements-section']}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.35 }}
+            transition={{ delay: 0.38 }}
           >
             {elements
               .sort((a, b) => (a.position || 0) - (b.position || 0))
@@ -422,7 +468,7 @@ const PublicBioLink = () => {
           </motion.div>
         )}
 
-        {/* ── Sotix watermark ──────────────────────────────────── */}
+        {/* ── Watermark ────────────────────────────────────── */}
         <div className={styles['pbl-watermark']}>
           <Sparkles size={10} />
           <span>Powered by <a href="https://sotix.ai" target="_blank" rel="noopener noreferrer">Sotix AI</a></span>

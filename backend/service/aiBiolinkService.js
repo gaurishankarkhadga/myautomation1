@@ -1,23 +1,30 @@
 /**
  * aiBiolinkService.js
- * ─────────────────────────────────────────────────────────────────────────────
- * AI-powered BioLink organizer. Analyzes a creator's existing assets and
- * their latest social media content/trends to intelligently reorganize and
- * prioritize their BioLink products, links, and layout — WITHOUT creating
- * anything new. The creator's data stays in control; AI just optimizes it.
+ * AI-powered BioLink organizer. Analyzes existing assets + latest social media
+ * content/trends to intelligently reorganize and prioritize the BioLink layout.
+ * DOES NOT create new content — only optimizes existing assets.
  */
 
 const CreatorAsset = require('../model/CreatorAsset');
 const BioLink = require('../model/BioLink');
-const { Token, YTToken } = require('../model/Instaautomation').default
-    ? require('../model/Instaautomation').default
-    : (() => {
-        try { return require('../model/Instaautomation'); } catch { return {}; }
-    })();
 const { generateContentWithFallback } = require('./geminiClient');
 const axios = require('axios');
 
 const GRAPH_BASE = `${process.env.INSTAGRAM_GRAPH_API_BASE_URL || 'https://graph.instagram.com'}/v${process.env.INSTAGRAM_GRAPH_API_VERSION || '24.0'}`;
+
+// ─── Theme settings map (MUST match BioLinkEditPanel.jsx themes array) ────────
+// When AI recommends a theme, these settings are applied to biolink.settings
+const THEME_SETTINGS_MAP = {
+    glass:      { backgroundColor: '#000000',  textColor: '#ffffff', accentColor: 'rgba(51,51,51,0.8)',                              styleType: 'glass' },
+    neon:       { backgroundColor: '#060010',  textColor: '#e0d4ff', accentColor: '#7c3aed',                                         styleType: 'glass' },
+    dark:       { backgroundColor: '#0b1220',  textColor: '#e5e7eb', accentColor: '#3b82f6',                                         styleType: 'default' },
+    aurora:     { backgroundColor: '#0d1117',  textColor: '#ffffff', accentColor: 'linear-gradient(135deg,#a855f7,#3b82f6)',         styleType: 'glass' },
+    minimal:    { backgroundColor: '#0b1220',  textColor: '#e5e7eb', accentColor: '#3b82f6',                                         styleType: 'default' },
+    hydra:      { backgroundColor: '#334639',  textColor: '#e5e7eb', accentColor: '#d7d9d6',                                         styleType: 'default' },
+    cinematic:  { backgroundColor: '#0b1724',  textColor: '#e5e7eb', accentColor: '#3b82f6',                                         styleType: 'default' },
+    modern:     { backgroundColor: '#111827',  textColor: '#ffffff', accentColor: 'rgba(255,255,255,0.1)',                            styleType: 'timeline' },
+    creative:   { backgroundColor: 'linear-gradient(180deg,#ff6b9d 0%,#4ecdc4 100%)', textColor: '#ffffff', accentColor: '#ffffff',   styleType: 'perspective' },
+};
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -68,10 +75,11 @@ async function fetchLatestInstagramContext(userId) {
 /**
  * Analyzes creator assets + social media activity and returns an ordered,
  * prioritized arrangement for the BioLink products and links.
+ * Also applies the correct theme settings so the visual theme actually changes.
  *
  * @param {string} userId  - Creator's userId
- * @param {string} prompt  - Optional hint from the creator (e.g. "I just dropped a fitness ebook")
- * @returns {{ organizedProducts, organizedLinks, themeRecommendation, tagline, summary }}
+ * @param {string} prompt  - Optional hint from the creator
+ * @returns {{ success, organizedProducts, organizedLinks, themeRecommendation, tagline, summary }}
  */
 async function organizeBiolinkWithAI(userId, prompt = '') {
     console.log(`[AI-BioLink] Starting AI organization for userId: ${userId}`);
@@ -112,48 +120,55 @@ async function organizeBiolinkWithAI(userId, prompt = '') {
     const currentTagline = existingBiolink?.profile?.tagline || '';
 
     const aiPrompt = `
-You are an expert creator economy strategist and conversion optimizer.
+You are an expert creator economy strategist and BioLink conversion optimizer.
 
-A creator has connected their BioLink. Your job is to INTELLIGENTLY ORGANIZE their existing assets — 
-DO NOT create or invent any new products. Only work with what they have.
+A creator has connected their BioLink page. Your job is to INTELLIGENTLY ORGANIZE their existing
+assets based on current social media trends. DO NOT create or invent new products — only optimize what exists.
 
-=== CREATOR'S PROMPT (if any) ===
-${prompt || '(No specific instruction given — use latest social media content to decide priorities)'}
+=== BIOLINK DATA STRUCTURE (how assets are saved) ===
+- "product", "merch", "ebook", "service", "course" → shown in SHOP tab as product cards
+- "link", "affiliate_link" → shown in LINKS tab as clickable rows with icons
+- "text_template" → used as content blocks
 
-=== THEIR LATEST SOCIAL MEDIA CONTENT (most recent first) ===
+=== CREATOR INSTRUCTION (if any) ===
+${prompt || '(No specific instruction — use latest content to decide priorities)'}
+
+=== LATEST SOCIAL MEDIA CONTENT (most recent first) ===
 ${recentContentSummary}
 
-=== THEIR EXISTING ASSETS (these are the ONLY ones to organize) ===
+=== EXISTING ASSETS (ONLY organize these) ===
 ${JSON.stringify(assetSummary, null, 2)}
 
-=== CURRENT BIOLINK STATE ===
-- Theme: ${currentTheme}
-- Tagline: "${currentTagline}"
+=== CURRENT STATE ===
+- Active theme: ${currentTheme}
+- Current tagline: "${currentTagline}"
 
-=== YOUR TASK ===
-1. Analyze their latest content to identify WHAT their audience is currently excited about.
-2. Prioritize assets that ALIGN with the current content trend or creator's prompt.
-3. Suggest the ORDER of products/links for maximum click-through (most relevant = first).
-4. Suggest a short, punchy tagline that reflects their current content momentum.
-5. Recommend a theme: "glass", "neon", "dark", or "aurora" based on their niche.
+=== YOUR TASKS ===
+1. Identify what their audience is currently excited about from recent posts.
+2. Order assets so the MOST RELEVANT ones appear first for maximum conversion.
+3. Write a punchy tagline (max 55 chars) that matches their current content energy.
+4. Pick the best visual theme from: glass, neon, dark, aurora, minimal, cinematic.
+   - glass/aurora → creators with premium/luxury products
+   - neon → gaming, tech, futuristic content creators
+   - minimal/dark → clean minimal creators, coaches, educators
+   - cinematic → filmmakers, storytellers, brand builders
+5. Write a 2-sentence summary of what you organized and why.
 
-Return ONLY this JSON (no markdown, no extra text):
+Return ONLY this JSON object (no markdown, no code fences, no extra text):
 {
   "organizedAssetOrder": [
-    { "assetId": "the_exact_id_from_above", "reason": "why first" }
+    { "assetId": "exact_id_from_above", "reason": "why prioritized" }
   ],
-  "tagline": "Short punchy tagline based on current content trend",
-  "themeRecommendation": "glass | neon | dark | aurora",
-  "summary": "2-sentence explanation of what you did and why",
-  "trendInsight": "What trend from their recent content drove these decisions"
+  "tagline": "Short punchy tagline max 55 chars",
+  "themeRecommendation": "glass",
+  "summary": "2 sentences max 200 chars",
+  "trendInsight": "Key trend from recent content driving these decisions"
 }
 
-CRITICAL RULES:
-- organizedAssetOrder must ONLY contain IDs from the assets list above
-- Keep organizedAssetOrder to a max of 8 items
-- tagline must be under 60 characters
-- summary must be under 200 characters
-- Return ONLY the raw JSON object, no markdown fences
+RULES:
+- organizedAssetOrder MUST only reference IDs from the assets list above — nothing invented
+- Max 8 items in organizedAssetOrder
+- Return ONLY valid JSON, nothing else
 `;
 
     try {
@@ -198,14 +213,19 @@ CRITICAL RULES:
                 clickCount: 0,
             }));
 
-        console.log(`[AI-BioLink] Organization complete. ${organizedProducts.length} products, ${organizedLinks.length} links ordered.`);
+        // 7. Resolve full theme settings from theme ID (fixes Issue 1: theme not applying visually)
+        const resolvedTheme = aiOutput.themeRecommendation || 'glass';
+        const themeSettings = THEME_SETTINGS_MAP[resolvedTheme] || THEME_SETTINGS_MAP.glass;
+
+        console.log(`[AI-BioLink] Organization complete. ${organizedProducts.length} products, ${organizedLinks.length} links. Theme: ${resolvedTheme}`);
 
         return {
             success: true,
             organizedProducts,
             organizedLinks,
             tagline: aiOutput.tagline || currentTagline,
-            themeRecommendation: aiOutput.themeRecommendation || 'glass',
+            themeRecommendation: resolvedTheme,
+            themeSettings,
             summary: aiOutput.summary || '',
             trendInsight: aiOutput.trendInsight || '',
         };
