@@ -120,6 +120,12 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   const location = useLocation();
   const editIdRef = useRef(null);
   const savingRef = useRef(false);
+  const biolinkDataRef = useRef(biolinkData);
+
+  // Keep ref in sync with state for accurate auto-saves
+  useEffect(() => {
+    biolinkDataRef.current = biolinkData;
+  }, [biolinkData]);
 
   const sections = [
     { id: 'profile', label: 'Profile', icon: <User size={20} />, color: 'var(--primary-color)' },
@@ -780,13 +786,18 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
       const authHeaders = getBioLinkAuthHeaders();
       const backendUrl = import.meta.env.VITE_API_BASE_URL;
+      
+      // ALWAYS use the ref to get the freshest data, solving the "vanishes after a few seconds" bug
+      const currentData = biolinkDataRef.current;
+      
       // Use editIdRef as the source of truth for _id (it updates synchronously)
-      const currentId = biolinkData._id || editIdRef.current;
+      const currentId = currentData._id || editIdRef.current;
+      
       const payload = {
-        ...biolinkData,
+        ...currentData,
         _id: currentId || undefined,
         _new: (isNew && !currentId) ? true : undefined,
-        username: biolinkData.username || undefined
+        username: currentData.username || undefined
       };
 
       console.log('Auto-saving with payload:', { _id: currentId, isNew });
@@ -900,6 +911,8 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         category: ''
       }]
     }));
+    setAutoSaveStatus('saving');
+    debouncedAutoSave();
   };
 
   const updateProduct = (index, field, value) => {
@@ -909,6 +922,8 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         i === index ? { ...product, [field]: value } : product
       )
     }));
+    setAutoSaveStatus('saving');
+    debouncedAutoSave();
   };
 
   const removeProduct = (index) => {
@@ -916,6 +931,8 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       ...prev,
       products: prev.products.filter((_, i) => i !== index)
     }));
+    setAutoSaveStatus('saving');
+    debouncedAutoSave();
   };
 
   const handleProductImageUpload = async (index, file) => {
@@ -2087,31 +2104,27 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             </div>
             <div className="mobile-preview" style={{
               background: biolinkData.settings.backgroundColor,
-              color: biolinkData.settings.textColor
+              color: biolinkData.settings.textColor,
+              fontFamily: "'Inter', sans-serif",
+              padding: '52px 20px 88px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              overflowY: 'auto'
             }}>
               <div className="mobile-header">
-                {(() => {
-                  const styleType = biolinkData.settings.styleType || (biolinkData.theme === 'glass' ? 'glass' : biolinkData.theme === 'modern' ? 'timeline' : biolinkData.theme === 'creative' ? 'perspective' : 'default');
-                  const avatarStyle = {
-                    border: styleType === 'glass' || styleType === 'timeline' || styleType === 'perspective'
-                      ? '3px solid rgba(255, 255, 255, 0.3)'
-                      : 'none'
-                  };
-                  return (
-                    <div className="mobile-avatar" style={avatarStyle}>
-                      {biolinkData.profile.avatar ? (
-                        <img src={biolinkData.profile.avatar.startsWith('http') ? biolinkData.profile.avatar : `${import.meta.env.VITE_API_BASE_URL}${biolinkData.profile.avatar}`}
-                          alt="Profile" />
-                      ) : (
-                        <div className="avatar-placeholder"></div>
-                      )}
-                    </div>
-                  );
-                })()}
-                <h4 style={{ color: biolinkData.settings.textColor }}>
+                <div className="mobile-avatar" style={{ border: '3px solid #06040f' }}>
+                  {biolinkData.profile.avatar ? (
+                    <img src={biolinkData.profile.avatar.startsWith('http') ? biolinkData.profile.avatar : `${import.meta.env.VITE_API_BASE_URL}${biolinkData.profile.avatar}`}
+                      alt="Profile" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <div className="avatar-placeholder" style={{ background: 'rgba(139, 92, 246, 0.12)' }}></div>
+                  )}
+                </div>
+                <h4 style={{ color: biolinkData.settings.textColor, fontSize: '20px', fontWeight: '800', margin: '12px 0 4px', letterSpacing: '-0.5px' }}>
                   {biolinkData.profile.displayName || 'Your Name'}
                 </h4>
-                <p style={{ color: biolinkData.settings.textColor }}>
+                <p style={{ color: `${biolinkData.settings.textColor}99`, fontSize: '13px', margin: '0' }}>
                   {biolinkData.profile.tagline || 'Your tagline here'}
                 </p>
               </div>
@@ -2119,68 +2132,70 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
               {(biolinkData.products || []).length > 0 && (
                 <div style={{
                   display: 'flex',
-                  backgroundColor: biolinkData.settings.accentColor || '#8b5cf6',
-                  borderRadius: '25px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.09)',
+                  borderRadius: '100px',
                   padding: '4px',
-                  marginBottom: '16px',
+                  marginBottom: '20px',
                   width: '100%',
-                  maxWidth: '200px',
-                  margin: '0 auto 16px auto'
+                  backdropFilter: 'blur(16px)',
+                  boxSizing: 'border-box'
                 }}>
                   <button
                     onClick={() => setPreviewActiveView('links')}
                     style={{
-                      flex: 1, padding: '8px 12px', border: 'none', borderRadius: '20px',
-                      fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.3s ease',
-                      backgroundColor: previewActiveView === 'links' ? '#ffffff' : 'transparent',
-                      color: previewActiveView === 'links' ? (biolinkData.settings.accentColor || '#8b5cf6') : '#ffffff'
+                      flex: 1, padding: '9px 0', border: 'none', borderRadius: '100px',
+                      fontSize: '12px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s ease', textTransform: 'uppercase', letterSpacing: '1px',
+                      backgroundColor: previewActiveView === 'links' ? `${biolinkData.settings.accentColor}33` : 'transparent',
+                      color: previewActiveView === 'links' ? biolinkData.settings.textColor : 'rgba(255,255,255,0.35)'
                     }}
-                  >LINK</button>
+                  >LINKS</button>
                   <button
                     onClick={() => setPreviewActiveView('shop')}
                     style={{
-                      flex: 1, padding: '10px 12px', border: 'none', borderRadius: '20px',
-                      fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.3s ease',
-                      backgroundColor: previewActiveView === 'shop' ? '#ffffff' : 'transparent',
-                      color: previewActiveView === 'shop' ? (biolinkData.settings.accentColor || '#8b5cf6') : '#ffffff'
+                      flex: 1, padding: '9px 0', border: 'none', borderRadius: '100px',
+                      fontSize: '12px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s ease', textTransform: 'uppercase', letterSpacing: '1px',
+                      backgroundColor: previewActiveView === 'shop' ? `${biolinkData.settings.accentColor}33` : 'transparent',
+                      color: previewActiveView === 'shop' ? biolinkData.settings.textColor : 'rgba(255,255,255,0.35)'
                     }}
                   >SHOP</button>
                 </div>
               )}
 
-              <div className="mobile-links">
+              <div className="mobile-links" style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
                 {previewActiveView === 'links' && (biolinkData.links || []).map((link) => {
-                  const styleType = biolinkData.settings.styleType || (biolinkData.theme === 'glass' ? 'glass' : biolinkData.theme === 'modern' ? 'timeline' : biolinkData.theme === 'creative' ? 'perspective' : 'default');
-                  const isGlass = styleType === 'glass';
-                  const isTimeline = styleType === 'timeline';
-                  const isPerspective = styleType === 'perspective';
-                  const linkStyle = isGlass
-                    ? { background: 'rgba(51, 51, 51, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#ffffff', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', backdropFilter: 'blur(10px)' }
-                    : isTimeline
-                      ? { background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', color: '#ffffff', backdropFilter: 'blur(10px)' }
-                      : isPerspective
-                        ? { background: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.3)', color: '#000000', boxShadow: 'var(--shadow-md)' }
-                        : { background: biolinkData.settings.accentColor, color: biolinkData.settings.textColor };
+                  const styleType = biolinkData.settings.styleType || 'glass';
+                  let linkStyle = {};
+                  if (styleType === 'glass') {
+                    linkStyle = { background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.13)', backdropFilter: 'blur(24px) saturate(180%)', color: biolinkData.settings.textColor };
+                  } else if (styleType === 'timeline') {
+                    linkStyle = { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(16px)', color: biolinkData.settings.textColor };
+                  } else if (styleType === 'perspective') {
+                    linkStyle = { background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', color: '#111111' };
+                  } else {
+                    linkStyle = { background: `${biolinkData.settings.accentColor}22`, border: `1px solid ${biolinkData.settings.accentColor}44`, color: biolinkData.settings.textColor };
+                  }
 
                   const platform = socialPlatforms.find(p => p.id === link.platform);
                   const platformIcon = platform?.icon;
 
                   return (
-                    <div key={link.id} className="mobile-link" style={linkStyle}>
-                      <div className="link-icon">
+                    <div key={link.id} className="mobile-link" style={{ ...linkStyle, display: 'flex', alignItems: 'center', gap: '12px', padding: '0 16px 0 12px', height: '58px', borderRadius: '18px', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 3, borderRadius: '0 3px 3px 0', background: biolinkData.settings.accentColor || '#8b5cf6' }}></div>
+                      <div className="link-icon" style={{ width: '36px', height: '36px', borderRadius: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)' }}>
                         {link.icon === 'platform' && platformIcon ? (
-                          <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ width: '17px', height: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             {platformIcon}
                           </div>
                         ) : link.icon && link.icon !== 'platform' ? (
-                          <span style={{ fontSize: '16px' }}>{link.icon}</span>
+                          <span style={{ fontSize: '15px' }}>{link.icon}</span>
                         ) : (
-                          <span style={{ fontSize: '16px' }}>🌐</span>
+                          <span style={{ fontSize: '15px' }}>🌐</span>
                         )}
                       </div>
-                      <span className="link-text">{link.title}</span>
-                      <div className="link-arrow">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <span className="link-text" style={{ flex: 1, fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{link.title}</span>
+                      <div className="link-arrow" style={{ color: 'rgba(255, 255, 255, 0.22)' }}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M9 18l6-6-6-6" />
                         </svg>
                       </div>

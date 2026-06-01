@@ -133,7 +133,7 @@ const cardPop = {
 };
 
 // ─── Link Row ─────────────────────────────────────────────
-const LinkRow = React.memo(function LinkRow({ link, onTrackClick }) {
+const LinkRow = React.memo(function LinkRow({ link, onTrackClick, themeStyle }) {
   const { icon, color, colorBg } = resolveLinkMeta(link);
 
   return (
@@ -144,6 +144,7 @@ const LinkRow = React.memo(function LinkRow({ link, onTrackClick }) {
       rel="noopener noreferrer"
       className={styles['pbl-link-card']}
       style={{
+        ...themeStyle,
         '--pbl-platform-color':    color,
         '--pbl-platform-color-bg': colorBg,
       }}
@@ -170,7 +171,7 @@ const LinkRow = React.memo(function LinkRow({ link, onTrackClick }) {
 });
 
 // ─── Product Card ─────────────────────────────────────────
-const ProductCard = React.memo(function ProductCard({ product, apiBase }) {
+const ProductCard = React.memo(function ProductCard({ product, apiBase, themeStyle }) {
   const imgSrc = product.image
     ? product.image.startsWith('http') ? product.image : `${apiBase}${product.image}`
     : null;
@@ -182,6 +183,7 @@ const ProductCard = React.memo(function ProductCard({ product, apiBase }) {
       target="_blank"
       rel="noopener noreferrer"
       className={styles['pbl-product-card']}
+      style={themeStyle}
       whileTap={{ scale: 0.95 }}
     >
       <div className={styles['pbl-product-img-wrap']}>
@@ -273,24 +275,68 @@ const PublicBioLink = () => {
   const elements = (data.elements || []).filter(el => el.isActive !== false);
   const hasShop  = products.length > 0;
 
-  // ISSUE 6: hide system-generated username — only show clean URL username
-  // data.username is the DB slug (may be auto-generated like creator_xxx)
-  // username (useParams) is the URL slug the creator published under
+  // ── THEME: read stored settings from DB ─────────────────
+  // These are saved by BioLinkEditPanel when creator picks a theme.
+  // Must be applied as INLINE STYLES — CSS module has no access to DB values.
+  const bgColor     = settings.backgroundColor || '#06040f';
+  const textColor   = settings.textColor       || '#ffffff';
+  const accentColor = settings.accentColor     || '#8b5cf6';
+  const styleType   = settings.styleType       || 'glass';
+
+  // Link card style varies by theme styleType
+  const getLinkCardThemeStyle = () => {
+    if (styleType === 'glass')    return {
+      background: 'rgba(255,255,255,0.07)',
+      border: '1px solid rgba(255,255,255,0.13)',
+      backdropFilter: 'blur(24px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+      color: textColor,
+    };
+    if (styleType === 'timeline') return {
+      background: 'rgba(255,255,255,0.08)',
+      border: '1px solid rgba(255,255,255,0.15)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      color: textColor,
+    };
+    if (styleType === 'perspective') return {
+      background: '#ffffff',
+      border: '1px solid rgba(0,0,0,0.08)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+      color: '#111111',
+    };
+    // default — use accent color
+    return {
+      background: `${accentColor}22`,
+      border: `1px solid ${accentColor}44`,
+      color: textColor,
+    };
+  };
+
+  const linkCardTheme = getLinkCardThemeStyle();
+
+  // Tab button active style (uses accentColor)
+  const tabActiveStyle = {
+    background: `${accentColor}33`,
+    color: textColor,
+  };
+
+  // System username hiding
   const showUsernameHandle = !isSystemUsername(username);
 
-  // Avatar URL resolution
+  // Avatar URL
   const avatarSrc = profile.avatar
     ? profile.avatar.startsWith('http') ? profile.avatar : `${apiBase}${profile.avatar}`
     : null;
 
-  // ISSUE 6: hide tagline if it looks like a system username
+  // Hide tagline if it looks like a system username
   const safeTagline = profile.tagline && !isSystemUsername(profile.tagline) ? profile.tagline : '';
 
-  // Social platform links as pills (icon === 'platform' and known social)
+  // Social pills
   const SOCIAL_IDS = ['instagram','youtube','twitter','tiktok','facebook','linkedin','twitch','spotify','discord','github','snapchat','pinterest','telegram'];
   const socialPills = allLinks.filter(l => l.icon === 'platform' && SOCIAL_IDS.includes(l.platform?.toLowerCase?.()));
 
-  // Track analytics click
+  // Track analytics
   const trackClick = () => {
     fetch(`${apiBase}/api/biolinks/click`, {
       method: 'POST',
@@ -299,8 +345,17 @@ const PublicBioLink = () => {
     }).catch(() => {});
   };
 
+  // Page-level CSS custom properties injected inline — every child inherits theme
+  const pageThemeVars = {
+    '--pbl-bg':      bgColor,
+    '--pbl-text':    textColor,
+    '--pbl-accent':  accentColor,
+    background:      bgColor,
+    color:           textColor,
+  };
+
   return (
-    <div className={styles['pbl-page']}>
+    <div className={styles['pbl-page']} style={pageThemeVars}>
       <div className={styles['pbl-card']}>
 
         {/* ── Profile ─────────────────────────────────────── */}
@@ -327,20 +382,20 @@ const PublicBioLink = () => {
           </motion.div>
 
           {/* Display name */}
-          <motion.h1 variants={fadeUp} className={styles['pbl-display-name']}>
+          <motion.h1 variants={fadeUp} className={styles['pbl-display-name']} style={{ color: textColor }}>
             {profile.displayName || username}
           </motion.h1>
 
-          {/* ISSUE 6: @username handle — hidden if system-generated */}
-          {showUsernameHandle && !isSystemUsername(username) && (
-            <motion.p variants={fadeUp} className={styles['pbl-username']}>
+          {/* @username handle — hidden if system-generated */}
+          {showUsernameHandle && (
+            <motion.p variants={fadeUp} className={styles['pbl-username']} style={{ color: `${textColor}60` }}>
               @{username}
             </motion.p>
           )}
 
-          {/* ISSUE 6: Tagline — hidden if it looks like a system username */}
+          {/* Tagline — hidden if system username */}
           {safeTagline && (
-            <motion.p variants={fadeUp} className={styles['pbl-tagline']}>
+            <motion.p variants={fadeUp} className={styles['pbl-tagline']} style={{ color: `${textColor}99` }}>
               {safeTagline}
             </motion.p>
           )}
@@ -387,6 +442,7 @@ const PublicBioLink = () => {
             <button
               id="pbl-tab-links"
               className={`${styles['pbl-tab-btn']} ${activeView === 'links' ? styles['pbl-tab-btn--active'] : ''}`}
+              style={activeView === 'links' ? tabActiveStyle : {}}
               onClick={() => setActiveView('links')}
             >
               Links
@@ -394,6 +450,7 @@ const PublicBioLink = () => {
             <button
               id="pbl-tab-shop"
               className={`${styles['pbl-tab-btn']} ${activeView === 'shop' ? styles['pbl-tab-btn--active'] : ''}`}
+              style={activeView === 'shop' ? tabActiveStyle : {}}
               onClick={() => setActiveView('shop')}
             >
               Shop
@@ -421,7 +478,7 @@ const PublicBioLink = () => {
                   No links added yet.
                 </motion.p>
               ) : allLinks.map(link => (
-                <LinkRow key={link.id || link.url} link={link} onTrackClick={trackClick} />
+                <LinkRow key={link.id || link.url} link={link} onTrackClick={trackClick} themeStyle={linkCardTheme} />
               ))}
             </motion.div>
           )}
@@ -440,6 +497,7 @@ const PublicBioLink = () => {
                   key={product.id || product._id}
                   product={product}
                   apiBase={apiBase}
+                  themeStyle={linkCardTheme}
                 />
               ))}
             </motion.div>

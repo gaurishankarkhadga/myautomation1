@@ -16,8 +16,8 @@
   display: flex;
   justify-content: center;
   background: #06040f;
-  overflow-y: auto;          /* ISSUE 5 FIX: enable scrolling */
-  overflow-x: hidden;
+  overflow: visible;         /* Let the browser handle all scrolling naturally */
+  -webkit-overflow-scrolling: touch;
   -webkit-tap-highlight-color: transparent;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
@@ -489,12 +489,5 @@
   .pbl-card {
     min-height: auto;
     border-radius: 32px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    backdrop-filter: blur(40px) saturate(200%);
-    -webkit-backdrop-filter: blur(40px) saturate(200%);
-    box-shadow:
-      0 48px 96px rgba(0, 0, 0, 0.6),
-      inset 0 1px 0 rgba(255, 255, 255, 0.07);
   }
 }

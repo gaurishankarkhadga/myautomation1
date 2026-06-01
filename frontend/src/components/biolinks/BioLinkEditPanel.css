@@ -2894,14 +2894,13 @@
 .preview-overlay-content .mobile-preview {
   width: 340px;
   max-width: 90vw;
-  height: auto;
-  min-height: 500px;
-  max-height: 70dvh;
+  height: 70dvh;
   border: 3px solid var(--primary-color);
   border-radius: 28px;
   overflow-y: auto;
   overflow-x: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  -webkit-overflow-scrolling: touch;
 }
 
 .preview-close-btn {

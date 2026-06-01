@@ -61,11 +61,9 @@ input:focus {
     box-shadow: none;
 }
 
-/* ── CRITICAL: prevent body/html from scrolling ────────────── */
+/* ── CRITICAL: prevent body/html from scrolling (scoped to .chathub instead) ────────────── */
 html,
 body {
-    height: 100%;
-    overflow: hidden;
     background: var(--bg);
     font-family: 'Inter', system-ui, sans-serif;
     color: var(--text-primary);
