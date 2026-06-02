@@ -10,7 +10,9 @@ import Assets from './pages/Assets';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import DataDeletion from './pages/DataDeletion';
+import { ThemeProvider } from './Base';
 import './App.css';
+
 // Shows connect page if not authenticated, redirects to chat if authenticated
 function ConnectOrChat() {
   const instaToken = localStorage.getItem('insta_token');
@@ -53,26 +55,28 @@ function ConnectOrChat() {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<ConnectOrChat />} />
-        
-        {/* Dashboard Shell layout using ChatHub */}
-        <Route element={<ChatHub />}>
-          <Route path="/chat" element={<></>} />
-          <Route path="/biolink" element={<BioLink />} />
-          <Route path="/biolink/:subPageId" element={<BioLink />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/assets" element={<Assets />} />
-          <Route path="/settings" element={<AdvancedSettings />} />
-        </Route>
+    <ThemeProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<ConnectOrChat />} />
+          
+          {/* Dashboard Shell layout using ChatHub */}
+          <Route element={<ChatHub />}>
+            <Route path="/chat" element={<></>} />
+            <Route path="/biolink" element={<BioLink />} />
+            <Route path="/biolink/:subPageId" element={<BioLink />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/assets" element={<Assets />} />
+            <Route path="/settings" element={<AdvancedSettings />} />
+          </Route>
 
-        <Route path="/p/:username" element={<PublicBioLink />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
-        <Route path="/data-deletion" element={<DataDeletion />} />
-      </Routes>
-    </Router>
+          <Route path="/p/:username" element={<PublicBioLink />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+          <Route path="/data-deletion" element={<DataDeletion />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 

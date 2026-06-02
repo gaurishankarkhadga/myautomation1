@@ -1556,19 +1556,58 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         <summary style={{ cursor: 'pointer', fontWeight: 600, padding: '0.5rem 0' }}>Custom Theme Settings</summary>
         <div style={{ marginTop: '1rem' }}>
           <div className="form-group">
-            <label>Background Image URL</label>
-            <input
-              type="text"
-              value={biolinkData.settings.backgroundImage || ''}
-              onChange={(e) => {
-                const value = e.target.value;
-                setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundImage: value } }));
-                setAutoSaveStatus('saving');
-                setTimeout(autoSave, 2000);
-              }}
-              placeholder="https://example.com/image.jpg"
-              className="simple-input"
-            />
+            <label>Background Image</label>
+            <div className="background-image-upload">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files && e.target.files[0];
+                  if (!file) return;
+                  try {
+                    const formData = new FormData();
+                    formData.append('backgroundImage', file);
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/background-image`, {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${token}` },
+                      body: formData
+                    });
+                    if (response.ok) {
+                      const data = await response.json();
+                      const imageUrl = data.imageUrl;
+                      setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundImage: imageUrl } }));
+                      setAutoSaveStatus('saving');
+                      setTimeout(autoSave, 2000);
+                    } else {
+                      alert('Failed to upload background image');
+                    }
+                  } catch (error) {
+                    console.error('Upload error', error);
+                  }
+                }}
+                style={{ display: 'none' }}
+                id="background-image-upload"
+              />
+              <label htmlFor="background-image-upload" className="upload-image-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'var(--primary)', color: 'white', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                <Camera size={16} />
+                {biolinkData.settings.backgroundImage ? 'Change Background' : 'Upload Background'}
+              </label>
+              {biolinkData.settings.backgroundImage && (
+                 <button type="button" onClick={() => {
+                     setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundImage: '' } }));
+                     setAutoSaveStatus('saving');
+                     setTimeout(autoSave, 2000);
+                 }} style={{ marginLeft: '10px', padding: '8px 16px', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                   Remove
+                 </button>
+              )}
+            </div>
+            {biolinkData.settings.backgroundImage && (
+              <div style={{ marginTop: '15px', width: '100%', height: '120px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }}>
+                <img src={biolinkData.settings.backgroundImage.startsWith('http') ? biolinkData.settings.backgroundImage : `${import.meta.env.VITE_API_BASE_URL || ''}${biolinkData.settings.backgroundImage}`} alt="Background" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            )}
           </div>
 
           <div className="form-group" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
@@ -2062,7 +2101,9 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
               <span>Pull down to close</span>
             </div>
             <div className="mobile-preview" style={{
-              background: biolinkData.settings.backgroundColor,
+              background: biolinkData.settings.backgroundImage 
+                ? `url(${biolinkData.settings.backgroundImage.startsWith('http') ? biolinkData.settings.backgroundImage : `${import.meta.env.VITE_API_BASE_URL || ''}${biolinkData.settings.backgroundImage}`}) center / cover` 
+                : biolinkData.settings.backgroundColor,
               color: biolinkData.settings.textColor
             }}>
               <div className="mobile-header">

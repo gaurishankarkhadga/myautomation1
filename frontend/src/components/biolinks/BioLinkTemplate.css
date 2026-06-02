@@ -1,8 +1,9 @@
 /* BioLink Template - Simple & Clean Design */
 .biolink-template-container {
-  background: #f8fafc;
+  background: var(--bg);
   min-height: 100vh;
   padding: 2rem;
+  color: var(--text-primary);
 }
 
 /* Template Header */
@@ -14,12 +15,12 @@
 .biolink-template-header h2 {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0 0 1rem 0;
 }
 
 .biolink-template-header p {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 1.1rem;
   margin: 0;
 }
@@ -28,22 +29,23 @@
 .biolink-template-content {
   max-width: 800px;
   margin: 0 auto;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
 }
 
 /* Themes Section */
 .biolink-template-themes-section {
   padding: 2rem;
-  border-bottom: 2px solid #f1f5f9;
+  border-bottom: 2px solid var(--border);
 }
 
 .biolink-template-themes-section h3 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0 0 1.5rem 0;
 }
 
@@ -54,24 +56,25 @@
 }
 
 .biolink-template-theme-card {
-  background: white;
-  border: 2px solid #e2e8f0;
+  background: var(--surface-2);
+  border: 2px solid var(--border);
   border-radius: 12px;
   padding: 1.5rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast) ease;
   text-align: center;
+  color: var(--text-primary);
 }
 
 .biolink-template-theme-card:hover {
-  border-color: #3b82f6;
+  border-color: var(--primary);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .biolink-template-theme-card.biolink-template-selected {
-  border-color: #3b82f6;
-  background-color: #f0f9ff;
+  border-color: var(--primary);
+  background-color: var(--surface-3);
 }
 
 .biolink-template-theme-preview-small {
@@ -84,17 +87,17 @@
 }
 
 .biolink-template-theme-preview-small.minimal {
-  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  background: linear-gradient(135deg, var(--surface-2), var(--surface-3));
 }
 
 .biolink-template-theme-preview-small.modern {
-  background: linear-gradient(135deg, #1e293b, #334155);
+  background: linear-gradient(135deg, var(--bg), var(--surface));
 }
 
 .biolink-template-preview-avatar {
   width: 50px;
   height: 50px;
-  background: #3b82f6;
+  background: var(--primary);
   border-radius: 50%;
   margin: 1.5rem auto 1rem;
 }
@@ -105,7 +108,7 @@
 
 .biolink-template-preview-link {
   height: 30px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--border);
   border-radius: 6px;
   margin-bottom: 0.5rem;
 }
@@ -113,12 +116,12 @@
 .biolink-template-theme-card h4 {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0 0 0.5rem 0;
 }
 
 .biolink-template-theme-card p {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.875rem;
   margin: 0;
 }
@@ -126,13 +129,13 @@
 /* Colors Section */
 .biolink-template-colors-section {
   padding: 2rem;
-  border-bottom: 2px solid #f1f5f9;
+  border-bottom: 2px solid var(--border);
 }
 
 .biolink-template-colors-section h3 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0 0 1.5rem 0;
 }
 
@@ -146,38 +149,38 @@
   display: flex;
   gap: 0.5rem;
   padding: 0.75rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast) ease;
 }
 
 .biolink-template-color-palette:hover {
-  border-color: #3b82f6;
+  border-color: var(--primary);
 }
 
 .biolink-template-color-palette.biolink-template-selected {
-  border-color: #3b82f6;
-  background-color: #f0f9ff;
+  border-color: var(--primary);
+  background-color: var(--surface-3);
 }
 
 .biolink-template-color-swatch {
   width: 24px;
   height: 24px;
   border-radius: 4px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
 }
 
 /* Customization Section */
 .biolink-template-customization-section {
   padding: 2rem;
-  border-bottom: 2px solid #f1f5f9;
+  border-bottom: 2px solid var(--border);
 }
 
 .biolink-template-customization-section h3 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0 0 1.5rem 0;
 }
 
@@ -190,7 +193,7 @@
 .biolink-template-color-input label {
   display: block;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
   margin-bottom: 0.75rem;
 }
 
@@ -204,9 +207,9 @@
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast) ease;
 }
 
 .biolink-template-color-preview:hover {
@@ -216,8 +219,10 @@
 .biolink-template-color-input-field {
   width: 60px;
   height: 40px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border);
   border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
@@ -235,35 +240,36 @@
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast) ease;
 }
 
 .biolink-template-btn-primary {
-  background: #3b82f6;
-  color: white;
+  background: var(--primary);
+  color: #ffffff;
 }
 
 .biolink-template-btn-primary:hover {
-  background: #2563eb;
+  background: var(--primary-hover);
 }
 
 .biolink-template-btn-secondary {
-  background: #f1f5f9;
-  color: #475569;
-  border: 2px solid #e2e8f0;
+  background: var(--surface-2);
+  color: var(--text-primary);
+  border: 2px solid var(--border);
 }
 
 .biolink-template-btn-secondary:hover {
-  background: #e2e8f0;
+  background: var(--surface-3);
 }
 
 /* Preview Mode */
 .biolink-preview-mode {
   min-height: 100vh;
   padding: 2rem;
+  color: var(--text-primary);
 }
 
 .preview-header {
@@ -276,30 +282,30 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
-  color: #64748b;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast) ease;
   margin-bottom: 1rem;
 }
 
 .back-btn:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .preview-header h2 {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0 0 1rem 0;
 }
 
 .preview-header p {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 1.1rem;
   margin: 0;
 }
@@ -319,11 +325,11 @@
 .mobile-frame {
   width: 300px;
   height: 600px;
-  background: var(--card-bg);
-  border: 3px solid #1e293b;
+  background: var(--surface);
+  border: 3px solid var(--border-2);
   border-radius: 25px;
   padding: 2rem 1.5rem;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
 }
 
 .mobile-screen {
@@ -342,7 +348,7 @@
 .preview-avatar {
   width: 80px;
   height: 80px;
-  background: #3b82f6;
+  background: var(--primary);
   border-radius: 50%;
   margin: 0 auto 1rem;
 }
@@ -350,12 +356,12 @@
 .preview-profile h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0 0 0.5rem 0;
 }
 
 .preview-profile p {
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -367,7 +373,8 @@
 
 .preview-link {
   height: 50px;
-  background: #f1f5f9;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -375,7 +382,7 @@
 }
 
 .preview-link span {
-  color: #475569;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -387,16 +394,17 @@
 }
 
 .biolink-url-display {
-  background: white;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .biolink-url-display h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0 0 1rem 0;
 }
 
@@ -405,15 +413,15 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background-color: #eff6ff;
-  border: 2px solid #bfdbfe;
+  background-color: var(--surface-2);
+  border: 2px solid var(--border);
   border-radius: 8px;
   margin-bottom: 1rem;
 }
 
 .url-text {
   font-family: monospace;
-  color: #0369a1;
+  color: var(--primary);
   font-weight: 600;
   flex: 1;
 }
@@ -424,20 +432,20 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: #0ea5e9;
+  background: var(--primary);
   border: none;
   border-radius: 6px;
-  color: white;
+  color: #ffffff;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast) ease;
 }
 
 .copy-url-btn:hover {
-  background-color: #0284c7;
+  background-color: var(--primary-hover);
 }
 
 .url-hint {
-  color: #6b7280;
+  color: var(--text-muted);
   font-size: 0.875rem;
   margin: 0;
 }

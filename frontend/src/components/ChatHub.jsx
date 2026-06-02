@@ -7,8 +7,9 @@ import {
     Instagram, Youtube, CheckCircle, Circle, Loader,
     Bot, Activity, ChevronRight, RotateCcw, Link2, Trash2,
     Sunrise, Sparkles, DollarSign, AlertTriangle, Scale,
-    TrendingUp, Eye, BarChart, Plus
+    TrendingUp, Eye, BarChart, Plus, Sun, Moon
 } from 'lucide-react';
+import { useTheme } from '../Base';
 import ToastNotification, { useToasts } from './ToastNotification';
 import BioLinkChatPreview from './chat/BioLinkChatPreview';
 import AutomationChatPreview from './chat/AutomationChatPreview';
@@ -30,6 +31,7 @@ const SUGGESTED_PROMPTS = [
 function ChatHub() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { theme, toggleTheme } = useTheme();
 
     const [token, setToken] = useState('');
     const [userId, setUserId] = useState('');
@@ -479,7 +481,14 @@ function ChatHub() {
                 {/* Sidebar top */}
                 <div className="sidebar-top">
                     <div className="sidebar-brand">
-                        <img src="/assets/logo-icon-transparent.png" alt="Sotix Logo" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+                        <div style={{ position: 'relative', display: 'inline-block', flexShrink: 0 }}>
+                            <img src="/assets/logo-icon-transparent.png" alt="Sotix Logo" style={{ width: '24px', height: '24px', objectFit: 'contain', display: 'block' }} />
+                            {isTyping && (
+                                <div className="logo-bot-badge mini">
+                                    <Bot size={8} strokeWidth={3} />
+                                </div>
+                            )}
+                        </div>
                         <span>Sotix AI</span>
                     </div>
                     <button className="mob-icon-btn close-btn" onClick={() => setSidebarOpen(false)} id="mob-sidebar-close" aria-label="Close sidebar">
@@ -626,7 +635,14 @@ function ChatHub() {
                         <button className="desk-menu-btn" onClick={() => setSidebarOpen(v => !v)} aria-label="Toggle sidebar">
                             <Menu size={18} />
                         </button>
-                        <img src="/assets/logo-icon-transparent.png" alt="Sotix Logo" style={{ width: '36px', height: '36px', objectFit: 'contain', marginRight: '12px' }} />
+                        <div style={{ position: 'relative', display: 'inline-block', flexShrink: 0, marginRight: '12px' }}>
+                            <img src="/assets/logo-icon-transparent.png" alt="Sotix Logo" style={{ width: '36px', height: '36px', objectFit: 'contain', display: 'block' }} />
+                            {isTyping && (
+                                <div className="logo-bot-badge">
+                                    <Bot size={11} strokeWidth={2.5} />
+                                </div>
+                            )}
+                        </div>
                         <div>
                             <h1 className="chat-title">Sotix AI</h1>
                             <p className="chat-subtitle">Your social media command center</p>
@@ -708,6 +724,9 @@ function ChatHub() {
                             <div className="pd-footer">
                                 <button className="pd-footer-btn" onClick={() => { navigate('/settings'); setShowProfileDropdown(false); }}>
                                     <Settings size={14} /> Settings
+                                </button>
+                                <button className="pd-footer-btn" onClick={toggleTheme}>
+                                    {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />} Theme: {theme === 'dark' ? 'Light' : 'Dark'}
                                 </button>
                                 <button className="pd-footer-btn danger" onClick={() => { handleDisconnect(); setShowProfileDropdown(false); }}>
                                     <LogOut size={14} /> Disconnect
@@ -936,7 +955,7 @@ function ChatHub() {
                             <div className="chat-welcome" id="chat-welcome">
                                 <div className="welcome-icon-wrap"><Zap size={28} strokeWidth={2} /></div>
                                 <h2 className="welcome-title">Welcome to Sotix AI</h2>
-                                <p className="welcome-sub">Tell me what you need — I'll handle everything behind the scenes.</p>
+                                {/* <p className="welcome-sub">Tell me what you need — I'll handle everything behind the scenes.</p> */}
                                 <div className="suggested-grid" id="suggested-prompts">
                                     {SUGGESTED_PROMPTS.map(({ icon: Icon, text, label }, i) => (
                                         <button key={i} className="suggest-btn" onClick={() => sendMessage(text)}
@@ -967,7 +986,22 @@ function ChatHub() {
                         {(activeTab === 'current' ? messages : historyMessages).map((msg, i) => (
                             <div key={i} className={`msg-row ${msg.role}`} id={`msg-${i}`}>
                                 {msg.role === 'assistant' && (
-                                    <div className="msg-avatar"><Bot size={14} strokeWidth={2} /></div>
+                                    <div className="msg-avatar">
+                                        <img src="/assets/logo-icon-transparent.png" alt="Sotix Logo" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                                    </div>
+                                )}
+                                {msg.role === 'user' && (
+                                    <div className="msg-avatar">
+                                        {profile && profile.profile_picture_url ? (
+                                            <img 
+                                                src={profile.profile_picture_url} 
+                                                alt={profile.username || 'User'} 
+                                                style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+                                            />
+                                        ) : (
+                                            <User size={14} strokeWidth={2} style={{ color: 'var(--text-muted)' }} />
+                                        )}
+                                    </div>
                                 )}
                                 <div className="msg-bubble">
                                     <div className="msg-text"
@@ -1062,7 +1096,12 @@ function ChatHub() {
                         {/* Typing indicator */}
                         {isTyping && (
                             <div className="msg-row assistant" id="typing-indicator">
-                                <div className="msg-avatar"><Bot size={14} strokeWidth={2} /></div>
+                                <div className="msg-avatar" style={{ position: 'relative' }}>
+                                    <img src="/assets/logo-icon-transparent.png" alt="Sotix Logo" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                                    <div className="logo-bot-badge mini" style={{ bottom: '-1px', right: '-1px' }}>
+                                        <Bot size={7} strokeWidth={3} />
+                                    </div>
+                                </div>
                                 <div className="msg-bubble typing-bubble">
                                     <span /><span /><span />
                                 </div>
@@ -1084,8 +1123,8 @@ function ChatHub() {
                 )}
 
                 {/* Input bar */}
-                <div className="chat-input-bar" id="chat-input-container">
-                    <div className="input-wrap">
+                <div className={`chat-input-bar ${inputValue.trim() ? 'has-text' : ''} ${isTyping ? 'ai-typing' : ''}`} id="chat-input-container">
+                    <div className={`input-wrap ${inputValue.trim() ? 'has-text' : ''} ${isTyping ? 'disabled' : ''}`}>
                         <textarea
                             ref={inputRef}
                             value={inputValue}
@@ -1100,7 +1139,7 @@ function ChatHub() {
                         <button
                             onClick={() => sendMessage()}
                             disabled={isTyping || !inputValue.trim()}
-                            className="send-btn"
+                            className={`send-btn ${inputValue.trim() ? 'active' : ''}`}
                             id="chat-send-btn"
                             aria-label="Send message"
                         >

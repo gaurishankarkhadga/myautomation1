@@ -308,6 +308,17 @@ router.post('/avatar', authenticateToken, upload.single('avatar'), async (req, r
   }
 });
 
+// Upload background image
+router.post('/background-image', authenticateToken, upload.single('backgroundImage'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    res.json({ success: true, imageUrl: `/uploads/biolinks/${req.file.filename}` });
+  } catch (error) {
+    console.error('Error uploading background image:', error);
+    res.status(500).json({ error: 'Failed to upload background image' });
+  }
+});
+
 // Upload product image
 router.post('/product-image', authenticateToken, upload.single('productImage'), async (req, res) => {
   try {

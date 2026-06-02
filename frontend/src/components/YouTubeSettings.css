@@ -1,12 +1,12 @@
 :root {
     --yt-red: #FF0000;
-    --yt-dark: #0f0f0f;
-    --yt-gray-hover: #272727;
-    --yt-text-main: #f1f1f1;
-    --yt-text-secondary: #aaaaaa;
-    --yt-border: rgba(255, 255, 255, 0.1);
-    --yt-glass: rgba(255, 255, 255, 0.05);
-    --yt-glass-border: rgba(255, 255, 255, 0.1);
+    --yt-dark: var(--bg);
+    --yt-gray-hover: var(--surface-2);
+    --yt-text-main: var(--text-primary);
+    --yt-text-secondary: var(--text-muted);
+    --yt-border: var(--border);
+    --yt-glass: var(--glass-bg);
+    --yt-glass-border: var(--glass-border);
 }
 
 .yt-dashboard {

@@ -3,33 +3,8 @@
    Fixed ChatGPT-style layout. Mobile-first. No body scroll.
    ============================================================ */
 
+@import '../Base.css';
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-/* ── Design tokens ─────────────────────────────────────────── */
-:root {
-    --bg: #0a0a0a;
-    --surface: rgba(255, 255, 255, 0.055);
-    --surface-2: rgba(255, 255, 255, 0.09);
-    --surface-3: rgba(255, 255, 255, 0.13);
-    --border: rgba(255, 255, 255, 0.09);
-    --border-2: rgba(255, 255, 255, 0.16);
-    --text-primary: #efefef;
-    --text-muted: rgba(220, 220, 220, 0.55);
-    --text-faint: rgba(200, 200, 200, 0.28);
-    --green: #4ade80;
-    --green-dim: rgba(74, 222, 128, 0.10);
-    --red: #f87171;
-    --sidebar-w: 260px;
-    --topbar-h: 52px;
-    --radius: 12px;
-    --radius-sm: 8px;
-
-    /* Professional Refinements */
-    --accent: #8b5cf6;
-    --accent-gradient: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
-    --accent-glow: 0 0 24px rgba(139, 92, 246, 0.2);
-    --grid-color: rgba(255, 255, 255, 0.03);
-}
 
 /* ── Micro-Animations ── */
 @keyframes slideUpFade {
@@ -162,11 +137,11 @@ body {
     overflow: hidden;
     /* Fix top/bottom, scroll middle globally */
     overflow-x: hidden;
-    background: rgba(13, 13, 13, 0.85);
+    background: var(--glass-bg);
     /* Grounded background */
     backdrop-filter: blur(12px) saturate(120%);
     -webkit-backdrop-filter: blur(12px) saturate(120%);
-    border-right: 1px solid rgba(255, 255, 255, 0.04);
+    border-right: 1px solid var(--glass-border);
     z-index: 390;
     position: relative;
     scrollbar-width: none;
@@ -243,7 +218,7 @@ body {
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    background: rgba(20, 20, 20, 0.7);
+    background: var(--surface);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--border);
@@ -339,7 +314,7 @@ body {
 }
 
 .active-badge-btn:hover {
-    background: rgba(20, 20, 20, 0.7);
+    background: var(--surface-2);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
 }
@@ -407,7 +382,7 @@ body {
 .quota-bar-bg {
     width: 100%;
     height: 6px;
-    background: rgba(20, 20, 20, 0.7);
+    background: var(--surface-2);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-radius: 3px;
@@ -416,13 +391,13 @@ body {
 
 .quota-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #bb86fc, #6200ea);
+    background: linear-gradient(90deg, var(--primary), var(--primary-hover));
     border-radius: 3px;
     transition: width 0.4s ease;
 }
 
 .quota-bar-fill.danger {
-    background: linear-gradient(90deg, #ff5252, #f44336);
+    background: linear-gradient(90deg, var(--danger), var(--danger-hover));
 }
 
 .quota-warning {
@@ -460,7 +435,7 @@ body {
 
 .sidebar-action-btn:hover,
 .sidebar-action-btn.active-tab {
-    background: rgba(20, 20, 20, 0.7);
+    background: var(--surface);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     color: var(--text-primary);
@@ -530,7 +505,7 @@ body {
 }
 
 .conn-btn:hover {
-    background: rgba(20, 20, 20, 0.7);
+    background: var(--surface-2);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-color: var(--border-2);
@@ -581,7 +556,7 @@ body {
 }
 
 .footer-btn:hover {
-    background: rgba(20, 20, 20, 0.7);
+    background: var(--surface-2);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     color: var(--text-primary);
@@ -641,20 +616,20 @@ body {
     display: none;
     align-items: center;
     justify-content: center;
-    background: rgba(20, 20, 20, 0.7);
+    background: var(--glass-bg);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--border-2);
     border-radius: var(--radius-sm);
-    color: #e0e0e0;
+    color: var(--text-primary);
     cursor: pointer;
     transition: all 0.15s;
     flex-shrink: 0;
 }
 
 .desk-menu-btn svg {
-    color: #e0e0e0;
-    stroke: #e0e0e0;
+    color: var(--text-primary);
+    stroke: var(--text-primary);
 }
 
 .desk-menu-btn:hover {
@@ -662,8 +637,8 @@ body {
 }
 
 .desk-menu-btn:hover svg {
-    color: #fff;
-    stroke: #fff;
+    color: var(--primary);
+    stroke: var(--primary);
 }
 
 .bot-icon {
@@ -732,7 +707,7 @@ body {
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     /* smooth momentum on iOS */
-    padding: 20px 16px 20px;
+    padding: 24px 150px 24px;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -764,7 +739,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(20, 20, 20, 0.7);
+    background: var(--surface);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--border-2);
@@ -823,7 +798,7 @@ body {
 }
 
 .suggest-btn:hover {
-    background: rgba(20, 20, 20, 0.7);
+    background: var(--surface-2);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-color: var(--border-2);
@@ -872,7 +847,7 @@ body {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: rgba(20, 20, 20, 0.7);
+    background: var(--surface);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--border);
@@ -899,26 +874,34 @@ body {
 }
 
 .msg-row.user .msg-bubble {
-    background: rgba(255, 255, 255, 0.10);
-    border: 1px solid rgba(255, 255, 255, 0.13);
+    background: var(--surface-3);
+    border: 1px solid var(--border-2);
     border-bottom-right-radius: 4px;
     color: var(--text-primary);
+    box-shadow: 
+        inset 0 1px 1px var(--glass-border),
+        var(--shadow-sm);
 }
 
 .msg-row.assistant .msg-bubble {
-    background: var(--surface);
+    background: var(--surface-2);
     border: 1px solid var(--border);
     border-bottom-left-radius: 4px;
     color: var(--text-primary);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
+    backdrop-filter: blur(14px) saturate(120%);
+    -webkit-backdrop-filter: blur(14px) saturate(120%);
+    box-shadow: 
+        inset 0 1px 1px var(--glass-border),
+        var(--shadow-sm);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .msg-row.assistant .msg-bubble:hover {
-    border-color: rgba(139, 92, 246, 0.4);
-    box-shadow: var(--accent-glow);
-    background: var(--surface-2);
+    border-color: var(--primary);
+    box-shadow: 
+        0 0 24px var(--accent-glow),
+        inset 0 1px 1.5px var(--glass-border);
+    background: var(--surface-3);
 }
 
 .msg-text {
@@ -926,7 +909,7 @@ body {
 }
 
 .msg-text strong {
-    color: #fff;
+    color: var(--text-primary);
     font-weight: 600;
 }
 
@@ -1023,7 +1006,7 @@ body {
 
 .triage-badge.other,
 .triage-badge.untriaged {
-    background: rgba(20, 20, 20, 0.7);
+    background: var(--surface);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     color: var(--text-muted);
@@ -1042,7 +1025,7 @@ body {
     position: absolute;
     bottom: -8px;
     right: -8px;
-    background: rgba(20, 20, 20, 0.9);
+    background: var(--surface-3);
     border: 1px solid rgba(248, 113, 113, 0.4);
     color: var(--red);
     cursor: pointer;
@@ -1081,49 +1064,69 @@ body {
 .typing-bubble {
     display: flex !important;
     align-items: center;
-    gap: 5px;
-    padding: 12px 16px !important;
-    min-width: 52px;
+    gap: 6px;
+    padding: 12px 18px !important;
+    min-width: 64px;
+    background: rgba(139, 92, 246, 0.08) !important;
+    border: 1px solid rgba(139, 92, 246, 0.25) !important;
+    border-radius: var(--radius);
+    border-bottom-left-radius: 4px !important;
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    box-shadow: 
+        inset 0 1px 1px rgba(255, 255, 255, 0.15),
+        0 8px 24px rgba(0, 0, 0, 0.35);
+    animation: typingBubbleFloat 2s ease-in-out infinite alternate;
+}
+
+@keyframes typingBubbleFloat {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-4px); }
 }
 
 .typing-bubble span {
     display: block;
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    background: var(--text-faint);
-    animation: typingPulse 1.2s ease-in-out infinite;
+    background: var(--accent); /* neon purple */
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.8);
+    animation: typingPulse 1.4s ease-in-out infinite;
+}
+
+.typing-bubble span:nth-child(1) {
+    animation-delay: 0s;
 }
 
 .typing-bubble span:nth-child(2) {
     animation-delay: 0.2s;
+    background: #3b82f6; /* neon blue */
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
 }
 
 .typing-bubble span:nth-child(3) {
     animation-delay: 0.4s;
+    background: #60a5fa; /* neon light blue */
+    box-shadow: 0 0 8px rgba(96, 165, 250, 0.8);
 }
 
 @keyframes typingPulse {
-
-    0%,
-    80%,
-    100% {
-        opacity: 0.3;
-        transform: scale(0.85);
+    0%, 100% {
+        opacity: 0.35;
+        transform: translateY(0) scale(0.85);
     }
-
-    40% {
+    50% {
         opacity: 1;
-        transform: scale(1);
+        transform: translateY(-6px) scale(1.15);
     }
 }
 
 /* ── Input bar — ALWAYS visible, always at bottom ──────────── */
 .chat-input-bar {
     flex-shrink: 0;
-    padding: 20px 0; /* More vertical breathing room */
+    padding: 24px 0; /* More vertical breathing room */
     background: transparent;
-    border-top: none; /* Removed the line to match the floating look */
+    border-top: none;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1135,21 +1138,78 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: rgba(18, 18, 18, 0.85); /* Deep translucent */
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    border-radius: 99px; /* Pill shape */
-    padding: 6px 6px 6px 24px; /* More left padding for text */
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    background: var(--glass-bg); /* Translucent background */
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    box-shadow: 
+        inset 0 1px 0 var(--glass-border),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.05),
+        var(--shadow-lg);
+    border-radius: 99px;
+    padding: 6px 6px 6px 24px;
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     width: 90%;
     max-width: 800px;
+    position: relative;
 }
 
+/* Bulletproof modern gradient border using mask composite */
+.input-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 99px;
+    padding: 1.2px; /* Sleeker, thinner border line */
+    background: var(--glass-border);
+    -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    transition: background 0.45s ease;
+    z-index: 2;
+}
 
-.input-wrap:focus-within {
-    border-color: rgba(255, 255, 255, 0.25);
+.input-wrap:focus-within,
+.input-wrap.has-text {
+    background: linear-gradient(120deg, var(--glass-bg) 0%, rgba(139, 92, 246, 0.06) 40%, rgba(59, 130, 246, 0.06) 60%, var(--glass-bg) 100%);
+    background-size: 200% 200%;
+    animation: liquidFlowInside 8s ease infinite alternate;
+    box-shadow: 
+        inset 0 1.5px 0 var(--glass-border), /* Razor-sharp top glass highlight */
+        inset 0 -1.5px 0 rgba(0, 0, 0, 0.2), /* Bottom shadow bezel */
+        inset 0 4px 20px rgba(0, 0, 0, 0.15), /* Deep 3D inner cavity shadow */
+        inset 0 0 15px rgba(139, 92, 246, 0.08), /* Inner liquid glow */
+        var(--shadow-xl);
+    transform: translateY(-2px);
+}
+
+@keyframes liquidFlowInside {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+@property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
+.input-wrap:focus-within::before,
+.input-wrap.has-text::before {
+    background: linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%); /* Fallback */
+    background: conic-gradient(from var(--angle), #4285f4, #9b72cb, #d96570, #f48c06, #4285f4);
+    animation: rotateConic 3s linear infinite;
+}
+
+@keyframes rotateConic {
+    0% {
+        --angle: 0deg;
+    }
+    100% {
+        --angle: 360deg;
+    }
 }
 
 .chat-input {
@@ -1159,83 +1219,116 @@ body {
     outline: none;
     color: var(--text-primary);
     font-size: 15px;
-    /* 15px min prevents iOS auto-zoom */
     font-family: 'Inter', sans-serif;
     resize: none;
-    min-height: 22px;
+    min-height: 24px;
     max-height: 140px;
-    line-height: 1.55;
+    line-height: 1.6;
     overflow-y: auto;
     scrollbar-width: none;
-    caret-color: var(--text-primary);
+    caret-color: #a78bfa; /* Violet carets */
+    padding-top: 10px;
+    padding-bottom: 10px;
+    position: relative;
+    z-index: 3; /* Sits above all glow background elements */
 }
 
 .chat-input::placeholder {
-    color: var(--text-faint);
+    color: var(--text-faint); /* Clear placeholder visibility */
 }
 
 .chat-input::-webkit-scrollbar {
     display: none;
 }
 
+/* Gemini Send Button — hollow resting circle, morphs to solid white active circle */
 .send-btn {
-    width: 44px; /* Optimized circular size for both mobile & desktop */
+    width: 44px;
     height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.1); 
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 50%; /* Back to perfect circle as per latest reference */
-    color: #fff;
-    cursor: pointer;
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 50%;
+    color: var(--text-faint);
+    cursor: not-allowed;
     flex-shrink: 0;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+    transform: scale(0.9);
+    opacity: 0.6;
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
 }
 
-.send-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.25);
-    transform: scale(1.05); /* Subtle pop effect */
+.send-btn.active {
+    background: var(--text-primary);
+    border-color: var(--text-primary);
+    color: var(--bg);
+    cursor: pointer;
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 
+        0 8px 24px var(--accent-glow),
+        inset 0 1px 0 var(--glass-border);
+}
+
+.send-btn.active:hover {
+    transform: scale(1.08);
+    background: var(--text-primary);
+    border-color: var(--text-primary);
+    box-shadow: 0 10px 28px var(--accent-glow);
+}
+
+.send-btn.active:active {
+    transform: scale(0.92);
+    background: var(--text-primary);
+    transition: transform 0.1s ease;
+}
+
+.send-btn svg {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px;
+    min-height: 20px;
+    color: currentColor !important;
+    stroke: currentColor !important;
+    stroke-width: 2.3px;
+    display: block;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    z-index: 2;
+}
+
+.send-btn.active svg {
+    color: var(--bg) !important;
+    stroke: var(--bg) !important;
+    transform: translateX(1px); /* Visual alignment shift */
+}
+
+.send-btn.active:hover svg {
+    transform: translateX(3px) scale(1.05); /* Slide-glide interactive cue */
 }
 
 .send-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
-}
-
-.send-btn svg {
-    width: 30px !important; /* Forced maximum visibility */
-    height: 30px !important;
-    min-width: 30px;
-    min-height: 30px;
-    color: #fff !important;
-    stroke: #fff !important;
-    stroke-width: 2.2px; /* Slightly refined for larger size */
-    display: block;
-    flex-shrink: 0;
-    transition: transform 0.2s ease;
-}
-
-.send-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-.send-btn:disabled {
-    opacity: 0.2;
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1.5px solid var(--border);
 }
 
+.send-btn:disabled svg {
+    color: var(--text-faint) !important;
+    stroke: var(--text-faint) !important;
+}
 
-
-
-.send-btn:disabled svg,
-.send-btn:disabled svg * {
-    color: rgba(180, 180, 180, 0.4) !important;
-    stroke: rgba(180, 180, 180, 0.4) !important;
+.send-btn .spin {
+    color: var(--text-primary) !important;
+    stroke: var(--text-primary) !important;
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px;
+    min-height: 20px;
 }
 
 .input-hint {
@@ -1266,8 +1359,8 @@ body {
 }
 
 .mob-icon-btn:hover svg {
-    color: #fff;
-    stroke: #fff;
+    color: var(--primary);
+    stroke: var(--primary);
 }
 
 /* ── Spinner ────────────────────────────────────────────────── */
@@ -1304,11 +1397,11 @@ body {
     gap: 10px;
     padding: 12px 14px;
     border-radius: var(--radius);
-    background: rgba(28, 28, 28, 0.92);
+    background: var(--surface-2);
     backdrop-filter: blur(16px) saturate(140%);
     -webkit-backdrop-filter: blur(16px) saturate(140%);
     border: 1px solid var(--border);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-lg);
     pointer-events: auto;
     font-size: 13px;
     color: var(--text-primary);
@@ -1365,11 +1458,11 @@ body {
 }
 
 .toast-warning {
-    border-left: 3px solid #f59e0b;
+    border-left: 3px solid var(--warning);
 }
 
 .toast-info {
-    border-left: 3px solid #60a5fa;
+    border-left: 3px solid var(--secondary);
 }
 
 /* Animations */
@@ -1617,16 +1710,16 @@ body {
 @media (min-width: 769px) {
     .nav-profile-btn {
         gap: 16px;
-        background: rgba(18, 18, 18, 0.85); /* Premium pill for desktop only */
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: var(--glass-bg); /* Premium pill for desktop only */
+        border: 1px solid var(--glass-border);
         padding: 4px 4px 4px 18px;
         border-radius: 99px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        box-shadow: var(--shadow-md);
     }
     
     .nav-profile-btn:hover {
-        background: rgba(25, 25, 25, 0.95);
-        border-color: rgba(255, 255, 255, 0.15);
+        background: var(--surface-2);
+        border-color: var(--border-2);
         transform: translateY(-1px);
     }
 }
@@ -1643,7 +1736,7 @@ body {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: rgba(20, 20, 20, 0.7);
+    background: var(--surface);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     display: flex;
@@ -1668,7 +1761,7 @@ body {
 .nav-username {
     font-size: 13.5px;
     font-weight: 600;
-    color: #fff;
+    color: var(--text-primary);
     letter-spacing: -0.2px;
 }
 
@@ -1704,12 +1797,12 @@ body {
     top: calc(var(--topbar-h) + 10px);
     right: 16px;
     width: 280px;
-    background: rgba(15, 15, 15, 0.85);
+    background: var(--glass-bg);
     backdrop-filter: blur(35px) saturate(160%);
     -webkit-backdrop-filter: blur(35px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--glass-border);
     border-radius: 18px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-xl);
     z-index: 999;
     overflow: hidden;
     padding: 16px;
@@ -1894,7 +1987,7 @@ body {
 }
 
 .pd-footer-btn:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--surface-2);
 }
 
 .pd-footer-btn.danger {
@@ -1902,7 +1995,7 @@ body {
 }
 
 .pd-footer-btn.danger:hover {
-    background: rgba(248, 113, 113, 0.08);
+    background: rgba(239, 68, 68, 0.12);
 }
 
 /* Animations */
@@ -2088,7 +2181,7 @@ body {
 }
 
 .floating-new-chat-btn:hover {
-    background: rgba(20, 20, 20, 0.7);
+    background: var(--surface-2);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-color: var(--border-2);
@@ -2122,7 +2215,7 @@ body {
         align-items: center !important;
         justify-content: stretch !important;
         padding: 0 !important;
-        background: rgba(10, 10, 10, 0.6);
+        background: var(--glass-bg);
         backdrop-filter: blur(35px) saturate(160%);
         -webkit-backdrop-filter: blur(35px) saturate(160%);
         position: fixed;
@@ -2281,11 +2374,11 @@ body {
 
 .msg-formatted-content .msg-h2 {
     margin: 28px 0 14px 0;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 1.3rem;
     font-weight: 800;
     letter-spacing: 0.5px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border);
     padding-bottom: 6px;
 }
 
@@ -2524,4 +2617,93 @@ body {
 
 .chathub-sub-route-container .assets-panel {
     height: 100% !important;
+}
+
+/* Glowing Bot badge overlay on Sotix "S" brand logo during AI response generation */
+.logo-bot-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    background: var(--accent-gradient);
+    color: #ffffff;
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px var(--accent-glow);
+    border: 1.5px solid var(--bg);
+    animation: logoBadgePulse 1.5s ease-in-out infinite alternate;
+    z-index: 10;
+}
+
+.logo-bot-badge.mini {
+    width: 12px;
+    height: 12px;
+    bottom: -2px;
+    right: -2px;
+    border-width: 1.2px;
+}
+
+/* Ensure the bot icon path in Lucide SVG inside the small badge is positioned perfectly */
+.logo-bot-badge svg {
+    width: 9px !important;
+    height: 9px !important;
+    min-width: 9px !important;
+    min-height: 9px !important;
+    stroke-width: 2.5px !important;
+    color: #ffffff !important;
+}
+
+.logo-bot-badge.mini svg {
+    width: 7px !important;
+    height: 7px !important;
+    min-width: 7px !important;
+    min-height: 7px !important;
+    stroke-width: 3px !important;
+}
+
+@keyframes logoBadgePulse {
+    0% {
+        transform: scale(0.92);
+        box-shadow: 0 0 6px rgba(139, 92, 246, 0.4);
+    }
+    100% {
+        transform: scale(1.12);
+        box-shadow: 0 0 14px rgba(139, 92, 246, 0.9);
+    }
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    z-index: 10;
+}
+
+.theme-toggle-btn:hover {
+    background: var(--surface-2);
+    border-color: var(--border-2);
+    color: var(--primary);
+    transform: scale(1.08);
+}
+
+.theme-toggle-btn:active {
+    transform: scale(0.92);
+}
+
+/* Mobile Adjustments for Theme Button */
+.mob-theme-btn {
+    width: 32px;
+    height: 32px;
 }

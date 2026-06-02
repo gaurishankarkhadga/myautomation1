@@ -213,6 +213,10 @@ const biolinkSchema = new mongoose.Schema({
       type: String,
       default: '#ffffff'
     },
+    backgroundImage: {
+      type: String,
+      trim: true
+    },
     textColor: {
       type: String,
       default: '#1e1b4b'
