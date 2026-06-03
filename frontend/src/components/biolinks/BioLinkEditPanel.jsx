@@ -4,7 +4,8 @@ import { debounce } from 'lodash';
 import {
   Plus, Eye, Share2, User, FileText, Link, MousePointer,
   GripHorizontal, X, Palette, Upload, Camera, Video, Minus,
-  Smartphone, ChevronLeft, ChevronRight, ArrowLeft
+  Smartphone, ChevronLeft, ChevronRight, ArrowLeft,
+  ChevronUp, ChevronDown, Edit2, Trash2
 } from 'lucide-react';
 import BioLinkElement from './BioLinkElement';
 import './BioLinkEditPanel.css';
@@ -21,6 +22,12 @@ const getBioLinkAuthHeaders = () => {
 
 const hasPlatformAuth = () => {
   return !!(localStorage.getItem('insta_token') || localStorage.getItem('yt_channel_id'));
+};
+
+const getMediaUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+  return `${import.meta.env.VITE_API_BASE_URL || ''}${url}`;
 };
 
 const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, onUpdate }) => {
@@ -115,6 +122,16 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   ).current;
   const [user, setUser] = useState(userProp);
   const [showElementPopup, setShowElementPopup] = useState(false);
+  const [showAddProductForm, setShowAddProductForm] = useState(false);
+  const [editingProductIndex, setEditingProductIndex] = useState(null);
+  const [productFormData, setProductFormData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    image: '',
+    url: ''
+  });
+  const [productImageUploading, setProductImageUploading] = useState(false);
   const fileInputRef = useRef(null);
   const isHydratingRef = useRef(false);
   const appliedTemplateRef = useRef(false);
@@ -129,11 +146,11 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   }, [biolinkData]);
 
   const sections = [
-    { id: 'profile', label: 'Profile', icon: <User size={20} />, color: 'var(--primary-color)' },
-    { id: 'links', label: 'Links', icon: <Link size={20} />, color: 'var(--accent-color)' },
-    { id: 'shop', label: 'Shop', icon: <MousePointer size={20} />, color: 'var(--success-color)' },
-    { id: 'themes', label: 'Theme', icon: <Palette size={20} />, color: 'var(--secondary-color)' },
-    { id: 'others', label: 'Others', icon: <FileText size={20} />, color: 'var(--info-color)' }
+    { id: 'profile', label: 'Profile Settings', icon: <User size={20} />, color: 'var(--primary-color)' },
+    { id: 'links', label: 'Social Links', icon: <Link size={20} />, color: 'var(--accent-color)' },
+    { id: 'shop', label: 'Shop Products', icon: <MousePointer size={20} />, color: 'var(--success-color)' },
+    { id: 'themes', label: 'Choose Theme', icon: <Palette size={20} />, color: 'var(--secondary-color)' },
+    { id: 'others', label: 'Media Content', icon: <FileText size={20} />, color: 'var(--info-color)' }
   ];
 
   const themes = [
@@ -965,6 +982,36 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     }
   };
 
+  const handleNewProductImageUpload = async (file) => {
+    if (!file) return;
+    setProductImageUploading(true);
+    const formData = new FormData();
+    formData.append('productImage', file);
+
+    try {
+      const authHeaders = getBioLinkAuthHeaders();
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/product-image`, {
+        method: 'POST',
+        headers: { ...authHeaders },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const imageUrl = `${import.meta.env.VITE_API_BASE_URL}${data.imageUrl}`;
+        setProductFormData(prev => ({ ...prev, image: imageUrl }));
+      } else {
+        console.error('Product image upload failed:', response.status);
+        alert('Failed to upload product image. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error uploading product image:', error);
+      alert('Error uploading product image. Please try again.');
+    } finally {
+      setProductImageUploading(false);
+    }
+  };
+
 
 
   const changeTheme = (themeId) => {
@@ -1226,80 +1273,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
       {/* Shop Sub-section */}
       <div className="content-subsection">
-        <div className="section-header">
-          <h3>Shop Products</h3>
-          <button className="add-btn" onClick={addProduct}>
-            <Plus size={16} />
-            Add Product
-          </button>
-        </div>
-        <div className="links-container">
-          {(biolinkData.products || []).map((product, index) => (
-            <div key={product.id} className="simple-link-row">
-              <input
-                type="text"
-                value={product.name}
-                onChange={(e) => updateProduct(index, 'name', e.target.value)}
-                placeholder="Product Name"
-                className="simple-input title-field"
-              />
-              <input
-                type="text"
-                value={product.description}
-                onChange={(e) => updateProduct(index, 'description', e.target.value)}
-                placeholder="Description"
-                className="simple-input"
-              />
-              <input
-                type="text"
-                value={product.price}
-                onChange={(e) => updateProduct(index, 'price', e.target.value)}
-                placeholder="Price"
-                className="simple-input"
-              />
-              <div className="product-image-upload">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleProductImageUpload(index, e.target.files[0])}
-                  style={{ display: 'none' }}
-                  id={`product-image-${index}`}
-                />
-                <label htmlFor={`product-image-${index}`} className="upload-image-btn">
-                  <Camera size={16} />
-                  {product.image ? 'Change Image' : 'Upload Image'}
-                </label>
-                {product.image && (
-                  <div className="product-image-preview">
-                    <img src={product.image} alt="Product" />
-                  </div>
-                )}
-              </div>
-              <input
-                type="url"
-                value={product.url}
-                onChange={(e) => updateProduct(index, 'url', e.target.value)}
-                placeholder="Product URL"
-                className="simple-input url-field"
-              />
-              <button
-                className="remove-btn-simple"
-                onClick={() => removeProduct(index)}
-                title="Remove product"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          ))}
-          {(biolinkData.products || []).length === 0 && (
-            <div className="empty-state">
-              <button className="first-link-btn" onClick={addProduct}>
-                <Plus size={20} />
-                <span>Add Your First Product</span>
-              </button>
-            </div>
-          )}
-        </div>
+        {renderShopSection()}
       </div>
 
       {/* Divider */}
@@ -1364,7 +1338,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
               <div className="avatar-preview">
                 {biolinkData.profile.avatar ? (
                   <img
-                    src={biolinkData.profile.avatar.startsWith('http') ? biolinkData.profile.avatar : `${import.meta.env.VITE_API_BASE_URL}${biolinkData.profile.avatar}`}
+                    src={getMediaUrl(biolinkData.profile.avatar)}
                     alt="Profile"
                     className="avatar-image"
                     onError={(e) => {
@@ -1512,150 +1486,338 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     </div>
   );
 
-  const renderShopSection = () => (
-    <div className="section-content">
-      <div className="links-container">
-        <div className="section-header">
-          <h3>Shop Products</h3>
-          <button className="add-btn first-link-btn" onClick={addProduct}>
-            <Plus size={18} />
-            Add New Product
-          </button>
-        </div>
+  const renderShopSection = () => {
+    const products = biolinkData.products || [];
 
-        {(biolinkData.products || []).map((product, index) => (
-          <div key={product.id} className="simple-link-row">
-            <input
-              type="text"
-              value={product.name}
-              onChange={(e) => updateProduct(index, 'name', e.target.value)}
-              placeholder="Product Name"
-              className="simple-input title-field"
-            />
-
-            <input
-              type="text"
-              value={product.description}
-              onChange={(e) => updateProduct(index, 'description', e.target.value)}
-              placeholder="Description"
-              className="simple-input"
-            />
-
-            <input
-              type="text"
-              value={product.price}
-              onChange={(e) => updateProduct(index, 'price', e.target.value)}
-              placeholder="Price"
-              className="simple-input"
-            />
-
-            <div className="product-image-upload">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleProductImageUpload(index, e.target.files[0])}
-                style={{ display: 'none' }}
-                id={`product-image-${index}`}
-              />
-              <label htmlFor={`product-image-${index}`} className="upload-image-btn">
-                <Camera size={16} />
-                {product.image ? 'Change Image' : 'Upload Image'}
-              </label>
-              {product.image && (
-                <div className="product-image-preview">
-                  <img src={product.image} alt="Product" />
-                </div>
-              )}
-            </div>
-
-            <input
-              type="url"
-              value={product.url}
-              onChange={(e) => updateProduct(index, 'url', e.target.value)}
-              placeholder="Product URL"
-              className="simple-input url-field"
-            />
-
+    return (
+      <div className="section-content">
+        <div className="links-container">
+          <div className="section-header">
+            <h3>Shop Products</h3>
             <button
-              className="remove-btn-simple"
-              onClick={() => removeProduct(index)}
-              title="Remove product"
+              className="add-btn first-link-btn"
+              onClick={() => {
+                if (showAddProductForm) {
+                  setShowAddProductForm(false);
+                  setEditingProductIndex(null);
+                  setProductFormData({ name: '', description: '', price: '', image: '', url: '' });
+                } else {
+                  setShowAddProductForm(true);
+                  setEditingProductIndex(null);
+                  setProductFormData({ name: '', description: '', price: '', image: '', url: '' });
+                }
+              }}
             >
-              <X size={14} />
+              {showAddProductForm ? <X size={16} /> : <Plus size={18} />}
+              {showAddProductForm ? 'Cancel' : 'Add New Product'}
             </button>
           </div>
-        ))}
 
-        {/* Redundant 'First Product' button removed as the header button is now always visible and sticky */}
+          {showAddProductForm && (
+            <div className="asset-add-form">
+              <input
+                type="text"
+                placeholder="Product Name *"
+                value={productFormData.name}
+                onChange={e => setProductFormData(p => ({ ...p, name: e.target.value }))}
+                className="asset-input"
+              />
+              <input
+                type="text"
+                placeholder="Description"
+                value={productFormData.description}
+                onChange={e => setProductFormData(p => ({ ...p, description: e.target.value }))}
+                className="asset-input"
+              />
+              <input
+                type="url"
+                placeholder="Product URL"
+                value={productFormData.url}
+                onChange={e => setProductFormData(p => ({ ...p, url: e.target.value }))}
+                className="asset-input"
+              />
+
+              <div className="asset-image-upload">
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="product-image-upload-field"
+                  onChange={e => handleNewProductImageUpload(e.target.files[0])}
+                  style={{ display: 'none' }}
+                />
+                <label htmlFor="product-image-upload-field" className="asset-upload-label">
+                  {productImageUploading ? 'Uploading...' : productFormData.image ? 'Change Image' : 'Upload Cover Image'}
+                </label>
+                {productFormData.image && (
+                  <div className="asset-image-preview">
+                    <img src={getMediaUrl(productFormData.image)} alt="Preview" />
+                    <button
+                      type="button"
+                      className="remove-image-btn"
+                      onClick={() => setProductFormData(p => ({ ...p, image: '' }))}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <input
+                type="text"
+                placeholder="Price"
+                value={productFormData.price}
+                onChange={e => setProductFormData(p => ({ ...p, price: e.target.value }))}
+                className="asset-input"
+              />
+
+              <button
+                className="asset-save-btn"
+                onClick={() => {
+                  if (editingProductIndex !== null) {
+                    setBiolinkData(prev => {
+                      const nextProducts = [...prev.products];
+                      nextProducts[editingProductIndex] = {
+                        ...nextProducts[editingProductIndex],
+                        ...productFormData
+                      };
+                      return { ...prev, products: nextProducts };
+                    });
+                  } else {
+                    setBiolinkData(prev => ({
+                      ...prev,
+                      products: [...prev.products, {
+                        id: Date.now(),
+                        ...productFormData
+                      }]
+                    }));
+                  }
+                  setShowAddProductForm(false);
+                  setEditingProductIndex(null);
+                  setProductFormData({ name: '', description: '', price: '', image: '', url: '' });
+                  setAutoSaveStatus('saving');
+                  debouncedAutoSave();
+                }}
+                disabled={!productFormData.name.trim()}
+              >
+                <Plus size={14} /> {editingProductIndex !== null ? 'Update Changes' : 'Add'}
+              </button>
+            </div>
+          )}
+
+          {products.length === 0 && !showAddProductForm ? (
+            <div className="empty-state">
+              <button
+                className="first-link-btn"
+                onClick={() => {
+                  setShowAddProductForm(true);
+                  setEditingProductIndex(null);
+                  setProductFormData({ name: '', description: '', price: '', image: '', url: '' });
+                }}
+              >
+                <Plus size={20} />
+                <span>Add Your First Product</span>
+              </button>
+            </div>
+          ) : (
+            <div className="assets-list grid-layout">
+              {products.map((product, idx) => (
+                <div key={product.id || idx} className="asset-item asset-card">
+                  {product.image && (
+                    <div className="asset-card-image">
+                      <img src={getMediaUrl(product.image)} alt={product.name} />
+                    </div>
+                  )}
+                  <div className="asset-item-info">
+                    <span className="asset-item-title">{product.name || 'Product'}</span>
+                    {product.description && (
+                      <span className="asset-item-desc">{product.description}</span>
+                    )}
+                    {product.price && <span className="asset-item-price">${product.price}</span>}
+                  </div>
+                  <div className="asset-item-actions-bar">
+                    {product.url ? (
+                      <a href={product.url} target="_blank" rel="noopener noreferrer" className="asset-checkout-btn">
+                        Checkout
+                      </a>
+                    ) : (
+                      <span />
+                    )}
+                    <div className="asset-item-actions">
+                      <button
+                        onClick={() => {
+                          setEditingProductIndex(idx);
+                          setProductFormData({
+                            name: product.name || '',
+                            description: product.description || '',
+                            price: product.price || '',
+                            image: product.image || '',
+                            url: product.url || ''
+                          });
+                          setShowAddProductForm(true);
+                        }}
+                        title="Edit"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setBiolinkData(prev => ({
+                            ...prev,
+                            products: prev.products.filter((_, i) => i !== idx)
+                          }));
+                          setAutoSaveStatus('saving');
+                          debouncedAutoSave();
+                        }}
+                        title="Delete"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderThemesSection = () => (
     <div className="section-content">
       <h3>Choose Theme</h3>
-      <details style={{ marginBottom: '1.5rem', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.5rem 1rem' }}>
-        <summary style={{ cursor: 'pointer', fontWeight: 600, padding: '0.5rem 0' }}>Custom Theme Settings</summary>
-        <div style={{ marginTop: '1rem' }}>
+      <div className="custom-theme-card">
+        <h4 className="custom-theme-title">Custom Theme Settings</h4>
+        <div className="custom-theme-fields">
           <div className="form-group">
-            <label>Background Image URL</label>
-            <input
-              type="text"
-              value={biolinkData.settings.backgroundImage || ''}
-              onChange={(e) => {
-                const value = e.target.value;
-                setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundImage: value } }));
-                setAutoSaveStatus('saving');
-                setTimeout(autoSave, 2000);
-              }}
-              placeholder="https://example.com/image.jpg"
-              className="simple-input"
-            />
+            <label className="form-label-custom">Background Image</label>
+            <div className="background-image-upload">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files && e.target.files[0];
+                  if (!file) return;
+                  try {
+                    const formData = new FormData();
+                    formData.append('backgroundImage', file);
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/background-image`, {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${token}` },
+                      body: formData
+                    });
+                    if (response.ok) {
+                      const data = await response.json();
+                      const imageUrl = data.imageUrl;
+                      setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundImage: imageUrl } }));
+                      setAutoSaveStatus('saving');
+                      setTimeout(autoSave, 2000);
+                    } else {
+                      alert('Failed to upload background image');
+                    }
+                  } catch (error) {
+                    console.error('Upload error', error);
+                  }
+                }}
+                style={{ display: 'none' }}
+                id="background-image-upload"
+              />
+              <label htmlFor="background-image-upload" className="upload-image-btn">
+                <Camera size={16} />
+                {biolinkData.settings.backgroundImage ? 'Change Background' : 'Upload Background'}
+              </label>
+              {biolinkData.settings.backgroundImage && (
+                <button
+                  type="button"
+                  className="remove-bg-btn"
+                  onClick={() => {
+                     setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundImage: '' } }));
+                     setAutoSaveStatus('saving');
+                     setTimeout(autoSave, 2000);
+                  }}
+                >
+                  <X size={16} /> Remove
+                </button>
+              )}
+            </div>
+            {biolinkData.settings.backgroundImage && (
+              <div className="bg-preview-card">
+                <img 
+                  src={getMediaUrl(biolinkData.settings.backgroundImage)} 
+                  alt="Background Preview" 
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentNode.classList.add('broken');
+                  }}
+                />
+                <div className="bg-preview-overlay">
+                  <span>Background Preview</span>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="form-group" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-            <div>
-              <label>Accent Color</label>
-              <input
-                type="color"
-                value={safeColor(biolinkData.settings.accentColor)}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, accentColor: value } }));
-                  setAutoSaveStatus('saving');
-                  setTimeout(autoSave, 2000);
-                }}
-              />
+          <div className="custom-colors-grid">
+            <div className="color-picker-item">
+              <label className="form-label-custom">Accent Color</label>
+              <div className="color-input-wrapper">
+                <div className="color-swatch" style={{ backgroundColor: safeColor(biolinkData.settings.accentColor) }}>
+                  <input
+                    type="color"
+                    value={safeColor(biolinkData.settings.accentColor)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, accentColor: value } }));
+                      setAutoSaveStatus('saving');
+                      setTimeout(autoSave, 2000);
+                    }}
+                  />
+                </div>
+                <span className="color-hex-value">{safeColor(biolinkData.settings.accentColor)}</span>
+              </div>
             </div>
-            <div>
-              <label>Text Color</label>
-              <input
-                type="color"
-                value={safeColor(biolinkData.settings.textColor)}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, textColor: value } }));
-                  setAutoSaveStatus('saving');
-                  setTimeout(autoSave, 2000);
-                }}
-              />
+
+            <div className="color-picker-item">
+              <label className="form-label-custom">Text Color</label>
+              <div className="color-input-wrapper">
+                <div className="color-swatch" style={{ backgroundColor: safeColor(biolinkData.settings.textColor) }}>
+                  <input
+                    type="color"
+                    value={safeColor(biolinkData.settings.textColor)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, textColor: value } }));
+                      setAutoSaveStatus('saving');
+                      setTimeout(autoSave, 2000);
+                    }}
+                  />
+                </div>
+                <span className="color-hex-value">{safeColor(biolinkData.settings.textColor)}</span>
+              </div>
             </div>
-            <div>
-              <label>Background Color</label>
-              <input
-                type="color"
-                value={safeColor(biolinkData.settings.backgroundColor)}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundColor: value } }));
-                  setAutoSaveStatus('saving');
-                  setTimeout(autoSave, 2000);
-                }}
-              />
+
+            <div className="color-picker-item">
+              <label className="form-label-custom">Background Color</label>
+              <div className="color-input-wrapper">
+                <div className="color-swatch" style={{ backgroundColor: safeColor(biolinkData.settings.backgroundColor) }}>
+                  <input
+                    type="color"
+                    value={safeColor(biolinkData.settings.backgroundColor)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundColor: value } }));
+                      setAutoSaveStatus('saving');
+                      setTimeout(autoSave, 2000);
+                    }}
+                  />
+                </div>
+                <span className="color-hex-value">{safeColor(biolinkData.settings.backgroundColor)}</span>
+              </div>
             </div>
           </div>
         </div>
-      </details>
+      </div>
       <div className="themes-grid">
         {themes.map((theme) => (
           <div
@@ -1798,7 +1960,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                     <div className="gallery-preview">
                       {element.content.images.map((image, index) => (
                         <div key={index} className="gallery-preview-item">
-                          <img src={image} alt={`Gallery ${index + 1}`} />
+                          <img src={getMediaUrl(image)} alt={`Gallery ${index + 1}`} />
                         </div>
                       ))}
                     </div>
@@ -1855,7 +2017,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                         <div className="video-grid-2x2" style={{ maxHeight: '150px', height: '150px' }}>
                           <div className="video-item-2x2">
                             <video
-                              src={element.content.url.startsWith('http') ? element.content.url : `${import.meta.env.VITE_API_BASE_URL}${element.content.url}`}
+                              src={getMediaUrl(element.content.url)}
                               controls
                               style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
                             />
@@ -1866,7 +2028,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                         </div>
                       ) : (
                         <video
-                          src={element.content.url.startsWith('http') ? element.content.url : `${import.meta.env.VITE_API_BASE_URL}${element.content.url}`}
+                          src={getMediaUrl(element.content.url)}
                           controls
                           style={{ width: '100%', maxHeight: '150px', borderRadius: '8px' }}
                         />
@@ -2048,21 +2210,25 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       {/* Top bar - clean: save status + preview + save + publish */}
       <div className="edit-toolbar-mobile">
         <button className="ep-back-btn" onClick={() => navigate(-1)} aria-label="Go Back">
-          <ArrowLeft size={24} strokeWidth={2.5} />
+          <ArrowLeft size={20} strokeWidth={2.5} />
         </button>
-        <div className="auto-save-status">
-          <div className={`status-dot ${autoSaveStatus}`}></div>
-          {autoSaveStatus === 'saving' && 'Saving...'}
-          {autoSaveStatus === 'saved' && '✓ Saved'}
+        <div className="header-center-title">
+          <span>{sections[currentStep]?.label}</span>
         </div>
-        <div className="toolbar-actions">
-          <button className="toolbar-icon-btn" onClick={() => setShowPreview(true)} title="Preview">
-            <Smartphone size={18} />
-          </button>
-          <button className="toolbar-btn-mobile" onClick={async () => { setAutoSaveStatus('saving'); await autoSave(); alert('Saved'); }}>
+        <div className="header-combined-pill">
+          <div className="header-status-item">
+            <span className={`status-dot ${autoSaveStatus}`}></span>
+            <span className="status-text">
+              {autoSaveStatus === 'saving' ? 'Saving...' : 'Saved'}
+            </span>
+          </div>
+          <button 
+            className="header-pill-btn save-btn" 
+            onClick={async () => { setAutoSaveStatus('saving'); await autoSave(); alert('Saved'); }}
+          >
             Save
           </button>
-          <button className="toolbar-btn-mobile publish" onClick={publishBiolink}>
+          <button className="header-pill-btn publish-btn" onClick={publishBiolink}>
             Publish
           </button>
         </div>
@@ -2107,7 +2273,9 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
               <span>Pull down to close</span>
             </div>
             <div className="mobile-preview" style={{
-              background: biolinkData.settings.backgroundColor,
+              background: biolinkData.settings.backgroundImage 
+                ? `url(${getMediaUrl(biolinkData.settings.backgroundImage)}) center / cover` 
+                : biolinkData.settings.backgroundColor,
               color: biolinkData.settings.textColor,
               fontFamily: "'Inter', sans-serif",
               padding: '52px 20px 88px',
@@ -2119,7 +2287,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
               <div className="mobile-header">
                 <div className="mobile-avatar" style={{ border: '3px solid #06040f' }}>
                   {biolinkData.profile.avatar ? (
-                    <img src={biolinkData.profile.avatar.startsWith('http') ? biolinkData.profile.avatar : `${import.meta.env.VITE_API_BASE_URL}${biolinkData.profile.avatar}`}
+                    <img src={getMediaUrl(biolinkData.profile.avatar)}
                       alt="Profile" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                   ) : (
                     <div className="avatar-placeholder" style={{ background: 'rgba(139, 92, 246, 0.12)' }}></div>
@@ -2216,7 +2384,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                             <div className="preview-shop-image">
                               {product.image ? (
                                 <img
-                                  src={product.image.startsWith('http') ? product.image : `${import.meta.env.VITE_API_BASE_URL}${product.image}`}
+                                  src={getMediaUrl(product.image)}
                                   alt={product.name}
                                   onError={(e) => { e.target.style.display = 'none'; }}
                                 />

@@ -649,7 +649,7 @@ function ChatHub() {
                         </div>
                     </div>
                     <div className="chat-header-right">
-                        {profile && (
+                        {profile && location.pathname !== '/biolink/editor' && (
                             <div className="nav-profile-wrapper">
                                 <button
                                     className="nav-profile-btn"

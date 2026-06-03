@@ -2,6 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import BioLinkElement from '../subpages/BioLinkElement';
 
+const getMediaUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+  return `${import.meta.env.VITE_API_BASE_URL || ''}${url}`;
+};
+
 const PublicBioLink = () => {
   const { username } = useParams();
   const [data, setData] = useState(null);
@@ -126,7 +132,7 @@ const PublicBioLink = () => {
   const styleType = settings.styleType || (theme === 'glass' ? 'glass' : theme === 'modern' ? 'timeline' : theme === 'creative' ? 'perspective' : 'default');
 
   const pageBg = settings.backgroundImage
-    ? `url(${settings.backgroundImage.startsWith('http') ? settings.backgroundImage : (import.meta.env.VITE_API_BASE_URL || '') + settings.backgroundImage}) center / cover`
+    ? `url(${getMediaUrl(settings.backgroundImage)}) center / cover`
     : '#0b1220';
 
   const phoneBg = (settings.backgroundColor || '#000').includes('gradient')
@@ -308,7 +314,7 @@ const PublicBioLink = () => {
           <div style={{ width: 80, height: 80, margin: '0 auto 16px', borderRadius: '9999px', overflow: 'hidden', border: '3px solid rgba(255,255,255,0.3)' }}>
             {profile.avatar ? (
               <img
-                src={profile.avatar.startsWith('http') ? profile.avatar : `${import.meta.env.VITE_API_BASE_URL}${profile.avatar}`}
+                src={getMediaUrl(profile.avatar)}
                 alt="avatar"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', borderRadius: 'inherit' }}
                 onError={(e) => {
@@ -452,7 +458,7 @@ const PublicBioLink = () => {
                   }}>
                     {product.image ? (
                       <img
-                        src={product.image.startsWith('http') ? product.image : `${import.meta.env.VITE_API_BASE_URL}${product.image}`}
+                        src={getMediaUrl(product.image)}
                         alt={product.name}
                         style={{
                           width: '100%',

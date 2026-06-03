@@ -19,6 +19,12 @@ import {
 import BioLinkElement from './BioLinkElement';
 import styles from './PublicBioLink.module.css';
 
+const getMediaUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+  return `${import.meta.env.VITE_API_BASE_URL || ''}${url}`;
+};
+
 // ─── Platform brand colours ───────────────────────────────
 const PLATFORM_COLORS = {
   instagram:  '#e1306c',
@@ -172,9 +178,7 @@ const LinkRow = React.memo(function LinkRow({ link, onTrackClick, themeStyle }) 
 
 // ─── Product Card ─────────────────────────────────────────
 const ProductCard = React.memo(function ProductCard({ product, apiBase, themeStyle }) {
-  const imgSrc = product.image
-    ? product.image.startsWith('http') ? product.image : `${apiBase}${product.image}`
-    : null;
+  const imgSrc = product.image ? getMediaUrl(product.image) : null;
 
   return (
     <motion.a
@@ -282,6 +286,7 @@ const PublicBioLink = () => {
   const textColor   = settings.textColor       || '#ffffff';
   const accentColor = settings.accentColor     || '#8b5cf6';
   const styleType   = settings.styleType       || 'glass';
+  const backgroundImage = settings.backgroundImage ? `url(${getMediaUrl(settings.backgroundImage)}) center / cover no-repeat` : null;
 
   // Link card style varies by theme styleType
   const getLinkCardThemeStyle = () => {
@@ -325,9 +330,7 @@ const PublicBioLink = () => {
   const showUsernameHandle = !isSystemUsername(username);
 
   // Avatar URL
-  const avatarSrc = profile.avatar
-    ? profile.avatar.startsWith('http') ? profile.avatar : `${apiBase}${profile.avatar}`
-    : null;
+  const avatarSrc = profile.avatar ? getMediaUrl(profile.avatar) : null;
 
   // Hide tagline if it looks like a system username
   const safeTagline = profile.tagline && !isSystemUsername(profile.tagline) ? profile.tagline : '';
@@ -350,7 +353,8 @@ const PublicBioLink = () => {
     '--pbl-bg':      bgColor,
     '--pbl-text':    textColor,
     '--pbl-accent':  accentColor,
-    background:      bgColor,
+    background:      backgroundImage || bgColor,
+    backgroundAttachment: backgroundImage ? 'fixed' : 'scroll',
     color:           textColor,
   };
 

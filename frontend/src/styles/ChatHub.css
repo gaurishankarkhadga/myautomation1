@@ -594,16 +594,17 @@ body {
 
 /* ── Desktop chat header (fixed inside main) ─────────────────── */
 .chat-header {
+    position: absolute;
+    top: 20px;
+    right: 24px;
     display: flex;
     align-items: center;
-    justify-content: flex-end; /* Align profile to the right */
-    padding: 0 20px;
-    height: 58px;
-    flex-shrink: 0;
-    border-bottom: none; /* Removed navbar line */
-    background: transparent; /* Made navbar invisible */
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    justify-content: flex-end;
+    padding: 0;
+    height: auto;
+    border-bottom: none;
+    background: transparent;
+    z-index: 100;
     gap: 12px;
 }
 
