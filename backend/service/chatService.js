@@ -111,7 +111,7 @@ CONTEXT:
 - Creator's userId: ${context.userId}
 - Connected platforms: Instagram, YouTube (possibly)
 - The creator manages their social media automation through this chat.
-- IMPORTANT: When setting 'layoutStyle' for biolinks, you MUST ONLY use "default" OR "socialsTopBottom". NEVER invent values like "socialsTop" or "upper".
+- IMPORTANT: When setting 'layoutStyle' for biolinks, you MUST ONLY use "default", "socialsTop", OR "socialsBottom". If they do not specify top or bottom, use "default".
 
 EXAMPLES (covering diverse real-world inputs):
 User: "replies on" → [{"intent": "enable_comment_autoreply", "params": {"mode": "ai_smart"}, "confidence": 0.85}]
@@ -141,11 +141,11 @@ User: "add my course link mysite.com/course price 49 and turn on smart dm" → [
 User: "setting dikha" → [{"intent": "get_preferences", "params": {}, "confidence": 0.85}]
 User: "sab reset kr de" → [{"intent": "reset_preferences", "params": {}, "confidence": 0.9}]
 User: "create biolink with modern look" → [{"intent": "create_biolink", "params": {"style": "modern"}, "confidence": 0.95}]
-User: "create a modern biolink with social icons on top and bottom" → [{"intent": "create_biolink", "params": {"style": "modern", "layoutStyle": "socialsTopBottom"}, "confidence": 0.95}]
+User: "create a modern biolink with social icons on top" → [{"intent": "create_biolink", "params": {"style": "modern", "layoutStyle": "socialsTop"}, "confidence": 0.95}]
 User: "make a biolink with my social media and courses" → [{"intent": "create_biolink", "params": {"style": "modern"}, "confidence": 0.9}]
-User: "show social icons on top and bottom" → [{"intent": "update_biolink", "params": {"layoutStyle": "socialsTopBottom"}, "confidence": 0.95}]
-User: "move social links to the upper part" → [{"intent": "update_biolink", "params": {"layoutStyle": "socialsTopBottom"}, "confidence": 0.9}]
-User: "update my biolink theme to glass and show socials on top and bottom" → [{"intent": "update_biolink", "params": {"theme": "glass", "layoutStyle": "socialsTopBottom"}, "confidence": 0.9}]
+User: "show social icons on bottom" → [{"intent": "update_biolink", "params": {"layoutStyle": "socialsBottom"}, "confidence": 0.95}]
+User: "move social links to the upper part" → [{"intent": "update_biolink", "params": {"layoutStyle": "socialsTop"}, "confidence": 0.9}]
+User: "update my biolink theme to glass and show socials on top" → [{"intent": "update_biolink", "params": {"theme": "glass", "layoutStyle": "socialsTop"}, "confidence": 0.9}]
 User: "biolink bana do modern wala" → [{"intent": "create_biolink", "params": {"style": "modern"}, "confidence": 0.9}]
 User: "if dm fails send 'hey will reply soon'" → [{"intent": "set_dm_fallback", "params": {"message": "hey will reply soon"}, "confidence": 0.9}]
 User: "run for 1 hour only on latest post, 30 comments max" → [{"intent": "set_content_target", "params": {"target": "recent"}, "confidence": 0.9}, {"intent": "set_time_limit", "params": {"hours": 1}, "confidence": 0.9}, {"intent": "set_comment_limit", "params": {"maxReplies": 30}, "confidence": 0.9}]

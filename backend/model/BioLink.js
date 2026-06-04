@@ -236,7 +236,7 @@ const biolinkSchema = new mongoose.Schema({
     layoutStyle: {
       type: String,
       default: 'default',
-      enum: ['default', 'socialsTopBottom']
+      enum: ['default', 'socialsTop', 'socialsBottom', 'socialsTopBottom']
     }
   },
   analytics: {

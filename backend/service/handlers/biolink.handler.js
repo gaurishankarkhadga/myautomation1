@@ -214,7 +214,7 @@ module.exports = {
                         accentColor: themeSettings.accentColor,
                         borderRadius: '12px',
                         spacing: '16px',
-                        layoutStyle: ['default', 'socialsTopBottom'].includes(params.layoutStyle) ? params.layoutStyle : (params.layoutStyle ? 'socialsTopBottom' : 'default')
+                        layoutStyle: ['default', 'socialsTop', 'socialsBottom'].includes(params.layoutStyle) ? params.layoutStyle : (params.layoutStyle ? 'socialsTop' : 'default')
                     },
                     
                     analytics: { views: 0, clicks: 0 },
@@ -263,7 +263,7 @@ module.exports = {
                     updates['profile.displayName'] = params.name || params.displayName;
                 }
                 if (params.layoutStyle) {
-                    updates['settings.layoutStyle'] = ['default', 'socialsTopBottom'].includes(params.layoutStyle) ? params.layoutStyle : 'socialsTopBottom';
+                    updates['settings.layoutStyle'] = ['default', 'socialsTop', 'socialsBottom'].includes(params.layoutStyle) ? params.layoutStyle : 'socialsTop';
                 }
                 if (params.tagline) updates['profile.tagline'] = params.tagline;
                 if (params.bio) updates['profile.bio'] = params.bio;

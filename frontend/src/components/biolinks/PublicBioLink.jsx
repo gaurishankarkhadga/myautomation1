@@ -344,7 +344,7 @@ const PublicBioLink = () => {
   );
 
   // Filter out social links from the main list if they are displayed as icons top and bottom
-  const displayLinks = layoutStyle === 'socialsTopBottom' 
+  const displayLinks = ['socialsTop', 'socialsBottom'].includes(layoutStyle) 
     ? allLinks.filter(l => !socialPills.includes(l)) 
     : allLinks;
 
@@ -444,11 +444,11 @@ const PublicBioLink = () => {
           )}
         </motion.div>
 
-        {/* ── Top Social Icons (if layout is socialsTopBottom) ── */}
-        {layoutStyle === 'socialsTopBottom' && socialPills.length > 0 && renderIconOnlySocials()}
+        {/* ── Top Social Icons (if layout is socialsTop) ── */}
+        {layoutStyle === 'socialsTop' && socialPills.length > 0 && renderIconOnlySocials()}
 
         {/* ── Social pills (default layout) ─────────────────────────────────── */}
-        {layoutStyle !== 'socialsTopBottom' && socialPills.length > 0 && (
+        {!['socialsTop', 'socialsBottom'].includes(layoutStyle) && socialPills.length > 0 && (
           <motion.div
             className={styles['pbl-social-row']}
             initial="hidden"
@@ -572,8 +572,8 @@ const PublicBioLink = () => {
           </motion.div>
         )}
 
-        {/* ── Bottom Social Icons (if layout is socialsTopBottom) ── */}
-        {layoutStyle === 'socialsTopBottom' && socialPills.length > 0 && (
+        {/* ── Bottom Social Icons (if layout is socialsBottom) ── */}
+        {layoutStyle === 'socialsBottom' && socialPills.length > 0 && (
           <div style={{ marginTop: '32px', marginBottom: '8px' }}>
             {renderIconOnlySocials()}
           </div>
