@@ -447,35 +447,6 @@ const PublicBioLink = () => {
         {/* ── Top Social Icons (if layout is socialsTop) ── */}
         {layoutStyle === 'socialsTop' && socialPills.length > 0 && renderIconOnlySocials()}
 
-        {/* ── Social pills (default layout) ─────────────────────────────────── */}
-        {!['socialsTop', 'socialsBottom'].includes(layoutStyle) && socialPills.length > 0 && (
-          <motion.div
-            className={styles['pbl-social-row']}
-            initial="hidden"
-            animate="show"
-            variants={stagger}
-          >
-            {socialPills.map(link => {
-              const { icon, color } = resolveLinkMeta(link);
-              return (
-                <motion.a
-                  key={link.id || link.url}
-                  variants={cardPop}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles['pbl-social-pill']}
-                  style={{ borderColor: `${color}40`, color }}
-                  whileTap={{ scale: 0.92 }}
-                  onClick={trackClick}
-                >
-                  {icon}
-                  <span>{link.title || link.platform}</span>
-                </motion.a>
-              );
-            })}
-          </motion.div>
-        )}
 
         {/* ── Tab switcher ─────────────────────────────────── */}
         {hasShop && (
