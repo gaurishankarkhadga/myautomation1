@@ -1729,9 +1729,16 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             }}
             style={{ 
               flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'default' || !biolinkData.settings.layoutStyle ? 'var(--primary-color)' : 'transparent'}`, 
-              background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease'
+              background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
+              display: 'flex', flexDirection: 'column', alignItems: 'center'
             }}
           >
+            <div style={{width: '60px', height: '80px', background: 'var(--bg-secondary)', borderRadius: '8px', margin: '0 auto 12px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', border: '1px solid var(--border-color)'}}>
+              <div style={{width: '24px', height: '24px', borderRadius: '50%', background: 'var(--text-secondary)', opacity: 0.5}}></div>
+              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--primary-color)', opacity: 0.6}}></div>
+              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
+              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
+            </div>
             <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>Standard</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Classic list view</div>
           </div>
@@ -1744,9 +1751,25 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             }}
             style={{ 
               flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsTopBottom' ? 'var(--primary-color)' : 'transparent'}`, 
-              background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease'
+              background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
+              display: 'flex', flexDirection: 'column', alignItems: 'center'
             }}
           >
+            <div style={{width: '60px', height: '80px', background: 'var(--bg-secondary)', borderRadius: '8px', margin: '0 auto 12px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', border: '1px solid var(--border-color)'}}>
+              <div style={{width: '24px', height: '24px', borderRadius: '50%', background: 'var(--text-secondary)', opacity: 0.5}}></div>
+              <div style={{display: 'flex', gap: '3px', marginBottom: '2px'}}>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+              </div>
+              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
+              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
+              <div style={{display: 'flex', gap: '3px', marginTop: 'auto'}}>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+              </div>
+            </div>
             <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>Modern</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Social icons Top & Bottom</div>
           </div>

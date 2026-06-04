@@ -140,6 +140,7 @@ User: "add my course link mysite.com/course price 49 and turn on smart dm" → [
 User: "setting dikha" → [{"intent": "get_preferences", "params": {}, "confidence": 0.85}]
 User: "sab reset kr de" → [{"intent": "reset_preferences", "params": {}, "confidence": 0.9}]
 User: "create biolink with modern look" → [{"intent": "create_biolink", "params": {"style": "modern"}, "confidence": 0.95}]
+User: "create a modern biolink with social icons on top and bottom" → [{"intent": "create_biolink", "params": {"style": "modern", "layoutStyle": "socialsTopBottom"}, "confidence": 0.95}]
 User: "make a biolink with my social media and courses" → [{"intent": "create_biolink", "params": {"style": "modern"}, "confidence": 0.9}]
 User: "show social icons on top and bottom" → [{"intent": "update_biolink", "params": {"layoutStyle": "socialsTopBottom"}, "confidence": 0.95}]
 User: "update my biolink theme to glass and show socials on top and bottom" → [{"intent": "update_biolink", "params": {"theme": "glass", "layoutStyle": "socialsTopBottom"}, "confidence": 0.9}]

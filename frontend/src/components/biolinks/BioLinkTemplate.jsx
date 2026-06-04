@@ -112,6 +112,22 @@ const BioLinkTemplate = ({ isPreview = false, biolink = null, user = null }) => 
     const links = Array.isArray(biolink.links) ? biolink.links : [];
     const elements = Array.isArray(biolink.elements) ? biolink.elements : [];
     const accent = settings.accentColor || '#3b82f6';
+    const layoutStyle = settings.layoutStyle || 'default';
+    
+    const activeLinks = links.filter(l => l.isActive !== false);
+    const SOCIAL_IDS = ['instagram','youtube','twitter','tiktok','facebook','linkedin','twitch','spotify','discord','github','snapchat','pinterest','telegram'];
+    const socialLinks = activeLinks.filter(l => l.icon === 'platform' && SOCIAL_IDS.includes(l.platform?.toLowerCase?.()));
+    const renderLinks = layoutStyle === 'socialsTopBottom' ? activeLinks.filter(l => !socialLinks.includes(l)) : activeLinks;
+
+    const renderMockSocials = () => (
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 20, flexWrap: 'wrap' }}>
+        {socialLinks.map(l => (
+          <div key={l.id} style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: '#fff', fontWeight: 'bold' }}>
+             {l.platform?.substring(0, 1).toUpperCase() || '?'}
+          </div>
+        ))}
+      </div>
+    );
     
     return (
       <div style={{ 
@@ -157,7 +173,9 @@ const BioLinkTemplate = ({ isPreview = false, biolink = null, user = null }) => 
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {links.filter(l => l.isActive !== false).map((link) => (
+            {layoutStyle === 'socialsTopBottom' && socialLinks.length > 0 && renderMockSocials()}
+            
+            {renderLinks.map((link) => (
               <div key={link.id} style={{ 
                 background: accent, 
                 color: '#fff', 
@@ -177,6 +195,12 @@ const BioLinkTemplate = ({ isPreview = false, biolink = null, user = null }) => 
               {elements.map((el) => (
                 <BioLinkElement key={el.id} element={el} isPreview={true} settings={settings} />
               ))}
+            </div>
+          )}
+
+          {layoutStyle === 'socialsTopBottom' && socialLinks.length > 0 && (
+            <div style={{ marginTop: 32 }}>
+              {renderMockSocials()}
             </div>
           )}
         </div>
