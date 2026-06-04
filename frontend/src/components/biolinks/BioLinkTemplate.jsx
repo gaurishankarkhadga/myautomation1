@@ -116,7 +116,10 @@ const BioLinkTemplate = ({ isPreview = false, biolink = null, user = null }) => 
     
     const activeLinks = links.filter(l => l.isActive !== false);
     const SOCIAL_IDS = ['instagram','youtube','twitter','tiktok','facebook','linkedin','twitch','spotify','discord','github','snapchat','pinterest','telegram'];
-    const socialLinks = activeLinks.filter(l => l.icon === 'platform' && SOCIAL_IDS.includes(l.platform?.toLowerCase?.()));
+    const socialLinks = activeLinks.filter(l => 
+      (l.icon === 'platform' || SOCIAL_IDS.includes(l.icon?.toLowerCase?.())) && 
+      SOCIAL_IDS.includes(l.platform?.toLowerCase?.())
+    );
     const renderLinks = layoutStyle === 'socialsTopBottom' ? activeLinks.filter(l => !socialLinks.includes(l)) : activeLinks;
 
     const renderMockSocials = () => (

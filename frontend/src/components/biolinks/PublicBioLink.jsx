@@ -338,7 +338,15 @@ const PublicBioLink = () => {
 
   // Social pills
   const SOCIAL_IDS = ['instagram','youtube','twitter','tiktok','facebook','linkedin','twitch','spotify','discord','github','snapchat','pinterest','telegram'];
-  const socialPills = allLinks.filter(l => l.icon === 'platform' && SOCIAL_IDS.includes(l.platform?.toLowerCase?.()));
+  const socialPills = allLinks.filter(l => 
+    (l.icon === 'platform' || SOCIAL_IDS.includes(l.icon?.toLowerCase?.())) && 
+    SOCIAL_IDS.includes(l.platform?.toLowerCase?.())
+  );
+
+  // Filter out social links from the main list if they are displayed as icons top and bottom
+  const displayLinks = layoutStyle === 'socialsTopBottom' 
+    ? allLinks.filter(l => !socialPills.includes(l)) 
+    : allLinks;
 
   // Track analytics
   const trackClick = () => {
@@ -508,14 +516,14 @@ const PublicBioLink = () => {
               exit={{ opacity: 0, y: -8, transition: { duration: 0.14 } }}
               variants={stagger}
             >
-              {allLinks.length === 0 ? (
+              {displayLinks.length === 0 ? (
                 <motion.p
                   variants={fadeUp}
                   style={{ textAlign: 'center', color: 'rgba(255,255,255,0.22)', fontSize: 13, padding: '28px 0' }}
                 >
                   No links added yet.
                 </motion.p>
-              ) : allLinks.map(link => (
+              ) : displayLinks.map(link => (
                 <LinkRow key={link.id || link.url} link={link} onTrackClick={trackClick} themeStyle={linkCardTheme} />
               ))}
             </motion.div>
