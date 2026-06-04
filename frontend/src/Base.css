@@ -53,8 +53,8 @@
   --border-2: rgba(255, 255, 255, 0.16);
   
   --text-primary: #efefef;
-  --text-muted: rgba(220, 220, 220, 0.55);
-  --text-faint: rgba(200, 200, 200, 0.28);
+  --text-muted: rgba(235, 235, 235, 0.82);
+  --text-faint: rgba(220, 220, 220, 0.50);
   
   --green: #4ade80;
   --green-dim: rgba(74, 222, 128, 0.1);
@@ -63,7 +63,7 @@
   --accent: #8b5cf6;
   --accent-gradient: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
   --accent-glow: 0 0 24px rgba(139, 92, 246, 0.2);
-  --grid-color: rgba(255, 255, 255, 0.03);
+  --grid-color: rgba(255, 255, 255, 0.15);
 
   --scroll-thumb: rgba(255, 255, 255, 0.1);
   --scroll-thumb-hover: rgba(255, 255, 255, 0.2);
@@ -119,7 +119,7 @@
   --accent: #8b5cf6;
   --accent-gradient: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
   --accent-glow: 0 0 24px rgba(139, 92, 246, 0.15);
-  --grid-color: rgba(15, 23, 42, 0.02);
+  --grid-color: rgba(15, 23, 42, 0.08);
 
   --scroll-thumb: rgba(0, 0, 0, 0.15);
   --scroll-thumb-hover: rgba(0, 0, 0, 0.3);
@@ -141,8 +141,8 @@
   --border-2: rgba(255, 255, 255, 0.16);
   
   --text-primary: #efefef;
-  --text-muted: rgba(220, 220, 220, 0.55);
-  --text-faint: rgba(200, 200, 200, 0.28);
+  --text-muted: rgba(235, 235, 235, 0.82);
+  --text-faint: rgba(220, 220, 220, 0.50);
   
   --green: #4ade80;
   --green-dim: rgba(74, 222, 128, 0.1);
@@ -151,7 +151,7 @@
   --accent: #8b5cf6;
   --accent-gradient: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
   --accent-glow: 0 0 24px rgba(139, 92, 246, 0.2);
-  --grid-color: rgba(255, 255, 255, 0.03);
+  --grid-color: rgba(255, 255, 255, 0.15);
 
   --scroll-thumb: rgba(255, 255, 255, 0.1);
   --scroll-thumb-hover: rgba(255, 255, 255, 0.2);

@@ -2698,6 +2698,18 @@
   background: var(--bg-color);
 }
 
+.desktop-edit-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+}
+
+.desktop-preview-wrapper {
+  display: none;
+}
+
 /* Top toolbar - compact, always visible */
 .edit-toolbar-mobile {
   display: flex;
@@ -3045,6 +3057,10 @@
     width: 375px;
     max-height: 75dvh;
   }
+
+  .desktop-preview-wrapper {
+    display: none;
+  }
 }
 
 /* Desktop: centered editor, no side panel needed */
@@ -3054,12 +3070,20 @@
     padding: 24px 40px 32px;
   }
 
+  .desktop-edit-wrapper {
+    max-width: 768px;
+    margin: 0 auto;
+    border-right: none;
+    background: transparent;
+  }
+
+
   .edit-toolbar-mobile {
     background: transparent !important;
-    border-bottom: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    padding: 10px 24px !important;
+    padding: 16px 24px !important;
     position: relative;
     top: auto;
     left: auto;
@@ -3069,9 +3093,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: auto;
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
+    width: 100%;
   }
 
   /* Floating effects for buttons on desktop */
@@ -3129,10 +3151,7 @@
     display: none !important;
   }
 
-  .preview-fab {
-    bottom: 84px;
-    right: 40px;
-  }
+
 
   /* Premium compact inline step nav for desktop */
   .inline-step-nav {

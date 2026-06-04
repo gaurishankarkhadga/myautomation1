@@ -1139,13 +1139,14 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: var(--glass-bg); /* Translucent background */
+    background: #0c0c0e; /* Solid deep black */
+    border: 1px solid rgba(255, 255, 255, 0.12); /* Clean visible border */
     backdrop-filter: blur(28px) saturate(180%);
     -webkit-backdrop-filter: blur(28px) saturate(180%);
     box-shadow: 
-        inset 0 1px 0 var(--glass-border),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.05),
-        var(--shadow-lg);
+        0 2px 8px rgba(0, 0, 0, 0.6),
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
     border-radius: 99px;
     padding: 6px 6px 6px 24px;
     transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1161,7 +1162,7 @@ body {
     inset: 0;
     border-radius: 99px;
     padding: 1.2px; /* Sleeker, thinner border line */
-    background: var(--glass-border);
+    background: rgba(255, 255, 255, 0.12); /* Clean visible default border */
     -webkit-mask: 
         linear-gradient(#fff 0 0) content-box, 
         linear-gradient(#fff 0 0);
@@ -1174,15 +1175,15 @@ body {
 
 .input-wrap:focus-within,
 .input-wrap.has-text {
-    background: linear-gradient(120deg, var(--glass-bg) 0%, rgba(139, 92, 246, 0.06) 40%, rgba(59, 130, 246, 0.06) 60%, var(--glass-bg) 100%);
+    background: linear-gradient(120deg, #0c0c0e 0%, rgba(139, 92, 246, 0.08) 40%, rgba(59, 130, 246, 0.08) 60%, #0c0c0e 100%);
     background-size: 200% 200%;
     animation: liquidFlowInside 8s ease infinite alternate;
+    border-color: rgba(139, 92, 246, 0.35); /* Accent border on focus */
     box-shadow: 
-        inset 0 1.5px 0 var(--glass-border), /* Razor-sharp top glass highlight */
-        inset 0 -1.5px 0 rgba(0, 0, 0, 0.2), /* Bottom shadow bezel */
-        inset 0 4px 20px rgba(0, 0, 0, 0.15), /* Deep 3D inner cavity shadow */
-        inset 0 0 15px rgba(139, 92, 246, 0.08), /* Inner liquid glow */
-        var(--shadow-xl);
+        0 0 0 1px rgba(139, 92, 246, 0.15),
+        0 4px 16px rgba(0, 0, 0, 0.5),
+        0 8px 40px rgba(139, 92, 246, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
     transform: translateY(-2px);
 }
 
@@ -1235,7 +1236,8 @@ body {
 }
 
 .chat-input::placeholder {
-    color: var(--text-faint); /* Clear placeholder visibility */
+    color: var(--text-muted); /* Clear placeholder visibility */
+    opacity: 0.7;
 }
 
 .chat-input::-webkit-scrollbar {
@@ -2266,7 +2268,7 @@ body {
     inset: 0;
     z-index: -1;
     background-image:
-        radial-gradient(circle at 1px 1px, var(--grid-color) 1px, transparent 0);
+        radial-gradient(circle at 1.5px 1.5px, var(--grid-color) 1.5px, transparent 0);
     background-size: 32px 32px;
     animation: gridPan 60s linear infinite;
     pointer-events: none;
@@ -2329,7 +2331,7 @@ body {
 
 .msg-formatted-content {
     line-height: 1.6;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     font-size: 0.95rem;
 }
 
@@ -2344,7 +2346,7 @@ body {
 }
 
 .msg-formatted-content .msg-italic {
-    color: var(--text-tertiary);
+    color: var(--text-muted);
     font-style: italic;
 }
 

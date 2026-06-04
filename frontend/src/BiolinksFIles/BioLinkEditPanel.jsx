@@ -1074,6 +1074,35 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     }
   };
 
+  const handleLinkDragStart = (e, linkId, index) => {
+    e.dataTransfer.setData('linkId', linkId);
+    e.dataTransfer.setData('linkIndex', index);
+  };
+
+  const handleLinkDrop = (e, dropIndex) => {
+    e.preventDefault();
+    const draggedLinkId = e.dataTransfer.getData('linkId');
+    if (!draggedLinkId) return;
+    const draggedIndex = parseInt(e.dataTransfer.getData('linkIndex'));
+
+    if (draggedIndex !== dropIndex && !isNaN(draggedIndex)) {
+      setBiolinkData(prev => {
+        const newLinks = [...prev.links];
+        const [draggedLink] = newLinks.splice(draggedIndex, 1);
+        newLinks.splice(dropIndex, 0, draggedLink);
+
+        newLinks.forEach((l, pos) => {
+          l.position = pos;
+        });
+
+        const next = { ...prev, links: newLinks };
+        return next;
+      });
+      setAutoSaveStatus('saving');
+      setTimeout(autoSave, 2000);
+    }
+  };
+
 
 
   const renderSectionContent = () => {
@@ -2169,66 +2198,239 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     );
   }
 
+  const livePreviewContent = (
+    <div className="mobile-preview" style={{
+      background: biolinkData.settings.backgroundImage 
+        ? `url(${getMediaUrl(biolinkData.settings.backgroundImage)}) center / cover` 
+        : biolinkData.settings.backgroundColor,
+      color: biolinkData.settings.textColor
+    }}>
+      <div className="mobile-header">
+        {(() => {
+          const styleType = biolinkData.settings.styleType || (biolinkData.theme === 'glass' ? 'glass' : biolinkData.theme === 'modern' ? 'timeline' : biolinkData.theme === 'creative' ? 'perspective' : 'default');
+          const avatarStyle = {
+            border: styleType === 'glass' || styleType === 'timeline' || styleType === 'perspective'
+              ? '3px solid rgba(255, 255, 255, 0.3)'
+              : 'none'
+          };
+          return (
+            <div className="mobile-avatar" style={avatarStyle}>
+              {biolinkData.profile.avatar ? (
+                <img src={getMediaUrl(biolinkData.profile.avatar)}
+                  alt="Profile" />
+              ) : (
+                <div className="avatar-placeholder"></div>
+              )}
+            </div>
+          );
+        })()}
+        <h4 style={{ color: biolinkData.settings.textColor }}>
+          {biolinkData.profile.displayName || 'Your Name'}
+        </h4>
+        <p style={{ color: biolinkData.settings.textColor }}>
+          {biolinkData.profile.tagline || 'Your tagline here'}
+        </p>
+      </div>
+
+      {(biolinkData.products || []).length > 0 && (
+        <div style={{
+          display: 'flex',
+          backgroundColor: biolinkData.settings.accentColor || '#8b5cf6',
+          borderRadius: '25px',
+          padding: '4px',
+          marginBottom: '16px',
+          width: '100%',
+          maxWidth: '200px',
+          margin: '0 auto 16px auto'
+        }}>
+          <button
+            onClick={() => setPreviewActiveView('links')}
+            style={{
+              flex: 1, padding: '8px 12px', border: 'none', borderRadius: '20px',
+              fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.3s ease',
+              backgroundColor: previewActiveView === 'links' ? '#ffffff' : 'transparent',
+              color: previewActiveView === 'links' ? (biolinkData.settings.accentColor || '#8b5cf6') : '#ffffff'
+            }}
+          >LINK</button>
+          <button
+            onClick={() => setPreviewActiveView('shop')}
+            style={{
+              flex: 1, padding: '10px 12px', border: 'none', borderRadius: '20px',
+              fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.3s ease',
+              backgroundColor: previewActiveView === 'shop' ? '#ffffff' : 'transparent',
+              color: previewActiveView === 'shop' ? (biolinkData.settings.accentColor || '#8b5cf6') : '#ffffff'
+            }}
+          >SHOP</button>
+        </div>
+      )}
+
+      <div className="mobile-links">
+        {previewActiveView === 'links' && (biolinkData.links || []).map((link, index) => {
+          const styleType = biolinkData.settings.styleType || (biolinkData.theme === 'glass' ? 'glass' : biolinkData.theme === 'modern' ? 'timeline' : biolinkData.theme === 'creative' ? 'perspective' : 'default');
+          const isGlass = styleType === 'glass';
+          const isTimeline = styleType === 'timeline';
+          const isPerspective = styleType === 'perspective';
+          const linkStyle = isGlass
+            ? { background: 'rgba(51, 51, 51, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#ffffff', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', backdropFilter: 'blur(10px)' }
+            : isTimeline
+              ? { background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', color: '#ffffff', backdropFilter: 'blur(10px)' }
+              : isPerspective
+                ? { background: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.3)', color: '#000000', boxShadow: 'var(--shadow-md)' }
+                : { background: biolinkData.settings.accentColor, color: biolinkData.settings.textColor };
+
+          const platform = socialPlatforms.find(p => p.id === link.platform);
+          const platformIcon = platform?.icon;
+
+          return (
+            <div 
+              key={link.id} 
+              className="mobile-link" 
+              style={linkStyle}
+              draggable
+              onDragStart={(e) => handleLinkDragStart(e, link.id, index)}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleLinkDrop(e, index)}
+            >
+              <div className="link-icon">
+                {link.icon === 'platform' && platformIcon ? (
+                  <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {platformIcon}
+                  </div>
+                ) : link.icon && link.icon !== 'platform' ? (
+                  <span style={{ fontSize: '16px' }}>{link.icon}</span>
+                ) : (
+                  <span style={{ fontSize: '16px' }}>🌐</span>
+                )}
+              </div>
+              <span className="link-text">{link.title}</span>
+              <div className="link-arrow">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </div>
+            </div>
+          );
+        })}
+
+        {previewActiveView === 'shop' && (
+          <div className="preview-shop-rows">
+            {Array.from({ length: Math.ceil((biolinkData.products || []).length / 2) }, (_, rowIndex) => (
+              <div key={rowIndex} className="preview-shop-row">
+                {(biolinkData.products || []).slice(rowIndex * 2, rowIndex * 2 + 2).map((product) => (
+                  <div key={product.id} className="preview-shop-item">
+                    <div className="preview-shop-image">
+                      {product.image ? (
+                        <img
+                          src={getMediaUrl(product.image)}
+                          alt={product.name}
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      ) : (
+                        <div className="preview-shop-placeholder">📦</div>
+                      )}
+                    </div>
+                    <div className="preview-shop-info">
+                      <div className="preview-shop-name">{product.name}</div>
+                      {product.price && <div className="preview-shop-price">{product.price}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {(biolinkData.elements || []).map((element, index) => (
+          <div
+            key={element.id}
+            className="mobile-element"
+            draggable
+            onDragStart={(e) => handleDragStart(e, element.id, index)}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, index)}
+          >
+            <BioLinkElement
+              element={element}
+              isPreview={true}
+              settings={biolinkData.settings}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="biolink-edit-panel mobile-first">
-      {/* Top bar - clean: save status + preview + save + publish */}
-      <div className="edit-toolbar-mobile">
-        <button className="ep-back-btn" onClick={() => navigate(-1)} aria-label="Go Back">
-          <ArrowLeft size={20} strokeWidth={2.5} />
-        </button>
-        <div className="header-center-title">
-          <span>{sections[currentStep]?.label}</span>
-        </div>
-        <div className="header-combined-pill">
-          <div className="header-status-item">
-            <span className={`status-dot ${autoSaveStatus}`}></span>
-            <span className="status-text">
-              {autoSaveStatus === 'saving' ? 'Saving...' : 'Saved'}
-            </span>
+      <div className="desktop-edit-wrapper">
+        {/* Top bar - clean: save status + preview + save + publish */}
+        <div className="edit-toolbar-mobile">
+          <button className="ep-back-btn" onClick={() => navigate(-1)} aria-label="Go Back">
+            <ArrowLeft size={20} strokeWidth={2.5} />
+          </button>
+          <div className="header-center-title">
+            <span>{sections[currentStep]?.label}</span>
           </div>
+          <div className="header-combined-pill">
+            <div className="header-status-item">
+              <span className={`status-dot ${autoSaveStatus}`}></span>
+              <span className="status-text">
+                {autoSaveStatus === 'saving' ? 'Saving...' : 'Saved'}
+              </span>
+            </div>
+            <button 
+              className="header-pill-btn save-btn" 
+              onClick={async () => { setAutoSaveStatus('saving'); await autoSave(); alert('Saved'); }}
+            >
+              Save
+            </button>
+            <button className="header-pill-btn publish-btn" onClick={publishBiolink}>
+              Publish
+            </button>
+          </div>
+        </div>
+
+        {/* Main scrollable content area */}
+        <div className="edit-content-mobile">
+          <div className="section-content-wrapper">
+            {renderSectionContent()}
+          </div>
+        </div>
+
+        {/* Fixed Step Navigation at the bottom */}
+        <div className="inline-step-nav">
           <button 
-            className="header-pill-btn save-btn" 
-            onClick={async () => { setAutoSaveStatus('saving'); await autoSave(); alert('Saved'); }}
+            className="step-nav-btn back" 
+            onClick={goBack}
+            disabled={currentStep === 0}
           >
-            Save
+            <ChevronLeft size={18} />
+            Back
           </button>
-          <button className="header-pill-btn publish-btn" onClick={publishBiolink}>
-            Publish
-          </button>
+          
+          {currentStep < sections.length - 1 ? (
+            <button className="step-nav-btn next" onClick={goNext}>
+              Next
+              <ChevronRight size={18} />
+            </button>
+          ) : (
+            <button className="step-nav-btn finish" onClick={publishBiolink}>
+              Publish 🚀
+            </button>
+          )}
         </div>
       </div>
-
-      {/* Main scrollable content area */}
-      <div className="edit-content-mobile">
-        <div className="section-content-wrapper">
-          {renderSectionContent()}
-        </div>
-      </div>
-
-      {/* Fixed Step Navigation at the bottom */}
-      <div className="inline-step-nav">
-        <button 
-          className="step-nav-btn back" 
-          onClick={goBack}
-          disabled={currentStep === 0}
-        >
-          <ChevronLeft size={18} />
-          Back
+      
+      {/* Desktop permanent live preview */}
+      <div className="desktop-preview-wrapper">
+        {livePreviewContent}
+        <button className="preview-open-external" onClick={() => window.open(`/p/${(biolinkData?.username || user?.username)}`, '_blank')} style={{ marginTop: '20px' }}>
+          <Eye size={16} />
+          Open in New Tab
         </button>
-        
-        {currentStep < sections.length - 1 ? (
-          <button className="step-nav-btn next" onClick={goNext}>
-            Next
-            <ChevronRight size={18} />
-          </button>
-        ) : (
-          <button className="step-nav-btn finish" onClick={publishBiolink}>
-            Publish 🚀
-          </button>
-        )}
       </div>
 
-      {/* Full-screen preview overlay */}
+      {/* Full-screen preview overlay (Mobile only) */}
       {showPreview && (
         <div className="preview-overlay" onClick={() => setShowPreview(false)}>
           <div className="preview-overlay-content" onClick={(e) => e.stopPropagation()}>
@@ -2236,158 +2438,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
               <div className="handle-bar"></div>
               <span>Pull down to close</span>
             </div>
-            <div className="mobile-preview" style={{
-              background: biolinkData.settings.backgroundImage 
-                ? `url(${getMediaUrl(biolinkData.settings.backgroundImage)}) center / cover` 
-                : biolinkData.settings.backgroundColor,
-              color: biolinkData.settings.textColor
-            }}>
-              <div className="mobile-header">
-                {(() => {
-                  const styleType = biolinkData.settings.styleType || (biolinkData.theme === 'glass' ? 'glass' : biolinkData.theme === 'modern' ? 'timeline' : biolinkData.theme === 'creative' ? 'perspective' : 'default');
-                  const avatarStyle = {
-                    border: styleType === 'glass' || styleType === 'timeline' || styleType === 'perspective'
-                      ? '3px solid rgba(255, 255, 255, 0.3)'
-                      : 'none'
-                  };
-                  return (
-                    <div className="mobile-avatar" style={avatarStyle}>
-                      {biolinkData.profile.avatar ? (
-                        <img src={getMediaUrl(biolinkData.profile.avatar)}
-                          alt="Profile" />
-                      ) : (
-                        <div className="avatar-placeholder"></div>
-                      )}
-                    </div>
-                  );
-                })()}
-                <h4 style={{ color: biolinkData.settings.textColor }}>
-                  {biolinkData.profile.displayName || 'Your Name'}
-                </h4>
-                <p style={{ color: biolinkData.settings.textColor }}>
-                  {biolinkData.profile.tagline || 'Your tagline here'}
-                </p>
-              </div>
-
-              {(biolinkData.products || []).length > 0 && (
-                <div style={{
-                  display: 'flex',
-                  backgroundColor: biolinkData.settings.accentColor || '#8b5cf6',
-                  borderRadius: '25px',
-                  padding: '4px',
-                  marginBottom: '16px',
-                  width: '100%',
-                  maxWidth: '200px',
-                  margin: '0 auto 16px auto'
-                }}>
-                  <button
-                    onClick={() => setPreviewActiveView('links')}
-                    style={{
-                      flex: 1, padding: '8px 12px', border: 'none', borderRadius: '20px',
-                      fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.3s ease',
-                      backgroundColor: previewActiveView === 'links' ? '#ffffff' : 'transparent',
-                      color: previewActiveView === 'links' ? (biolinkData.settings.accentColor || '#8b5cf6') : '#ffffff'
-                    }}
-                  >LINK</button>
-                  <button
-                    onClick={() => setPreviewActiveView('shop')}
-                    style={{
-                      flex: 1, padding: '10px 12px', border: 'none', borderRadius: '20px',
-                      fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.3s ease',
-                      backgroundColor: previewActiveView === 'shop' ? '#ffffff' : 'transparent',
-                      color: previewActiveView === 'shop' ? (biolinkData.settings.accentColor || '#8b5cf6') : '#ffffff'
-                    }}
-                  >SHOP</button>
-                </div>
-              )}
-
-              <div className="mobile-links">
-                {previewActiveView === 'links' && (biolinkData.links || []).map((link) => {
-                  const styleType = biolinkData.settings.styleType || (biolinkData.theme === 'glass' ? 'glass' : biolinkData.theme === 'modern' ? 'timeline' : biolinkData.theme === 'creative' ? 'perspective' : 'default');
-                  const isGlass = styleType === 'glass';
-                  const isTimeline = styleType === 'timeline';
-                  const isPerspective = styleType === 'perspective';
-                  const linkStyle = isGlass
-                    ? { background: 'rgba(51, 51, 51, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#ffffff', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', backdropFilter: 'blur(10px)' }
-                    : isTimeline
-                      ? { background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', color: '#ffffff', backdropFilter: 'blur(10px)' }
-                      : isPerspective
-                        ? { background: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.3)', color: '#000000', boxShadow: 'var(--shadow-md)' }
-                        : { background: biolinkData.settings.accentColor, color: biolinkData.settings.textColor };
-
-                  const platform = socialPlatforms.find(p => p.id === link.platform);
-                  const platformIcon = platform?.icon;
-
-                  return (
-                    <div key={link.id} className="mobile-link" style={linkStyle}>
-                      <div className="link-icon">
-                        {link.icon === 'platform' && platformIcon ? (
-                          <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {platformIcon}
-                          </div>
-                        ) : link.icon && link.icon !== 'platform' ? (
-                          <span style={{ fontSize: '16px' }}>{link.icon}</span>
-                        ) : (
-                          <span style={{ fontSize: '16px' }}>🌐</span>
-                        )}
-                      </div>
-                      <span className="link-text">{link.title}</span>
-                      <div className="link-arrow">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M9 18l6-6-6-6" />
-                        </svg>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {previewActiveView === 'shop' && (
-                  <div className="preview-shop-rows">
-                    {Array.from({ length: Math.ceil((biolinkData.products || []).length / 2) }, (_, rowIndex) => (
-                      <div key={rowIndex} className="preview-shop-row">
-                        {(biolinkData.products || []).slice(rowIndex * 2, rowIndex * 2 + 2).map((product) => (
-                          <div key={product.id} className="preview-shop-item">
-                            <div className="preview-shop-image">
-                              {product.image ? (
-                                <img
-                                  src={getMediaUrl(product.image)}
-                                  alt={product.name}
-                                  onError={(e) => { e.target.style.display = 'none'; }}
-                                />
-                              ) : (
-                                <div className="preview-shop-placeholder">📦</div>
-                              )}
-                            </div>
-                            <div className="preview-shop-info">
-                              <div className="preview-shop-name">{product.name}</div>
-                              {product.price && <div className="preview-shop-price">{product.price}</div>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {(biolinkData.elements || []).map((element, index) => (
-                  <div
-                    key={element.id}
-                    className="mobile-element"
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, element.id, index)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, index)}
-                  >
-                    <BioLinkElement
-                      element={element}
-                      isPreview={true}
-                      settings={biolinkData.settings}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
+            {livePreviewContent}
             <button className="preview-close-btn" onClick={() => setShowPreview(false)}>
               <X size={20} />
               Close Preview

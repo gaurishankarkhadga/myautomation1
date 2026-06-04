@@ -75,3 +75,20 @@ We will know *exactly* what phrase converts an uncertain fan into a buyer for a 
 1. **Solidify the MVP Architecture:** Ensure the multi-tenant persona execution is completely bug-free.
 2. **Lock in 5 "Lighthouse" Beta Users:** We need 5 highly recognizable creators to use Sotix and publicly attribute revenue growth to it.
 3. **Fundraising Narrative:** We pitch VCs not as a "social media tool," but as a **B2B SaaS expanding the margins of digital entrepreneurs via Agentic AI.**
+
+
+
+
+now you need to do biggest update and development in biolink ok
+1 -> Add Live MobilePreview on edit pannel :- in edit pannel do it two part left(width40%) and right(width60%) got it , here this is for only desktop view keep in mind 
+2 -> Live Preview mobile view there must everything adjustable , dragable , rearrangable
+
+
+1 -> Add three new Layout of biolink system or arrangement in completely different go with refrencee screenshot got it 
+
+
+
+
+
+
+
