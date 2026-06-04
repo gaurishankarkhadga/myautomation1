@@ -90,7 +90,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       products: [],
       theme: 'minimal',
       elements: [],
-      settings: { backgroundColor: '#0b1220', textColor: '#e5e7eb', accentColor: '#3b82f6' },
+      settings: { backgroundColor: 'var(--bg)', textColor: 'var(--text-primary)', accentColor: 'var(--accent)' },
       username: ''
     };
     return {
@@ -101,9 +101,9 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       theme: raw.theme || 'minimal',
       elements: Array.isArray(raw.elements) ? raw.elements : [],
       settings: {
-        backgroundColor: '#0b1220',
-        textColor: '#e5e7eb',
-        accentColor: '#3b82f6',
+        backgroundColor: 'var(--bg)',
+        textColor: 'var(--text-primary)',
+        accentColor: 'var(--accent)',
         ...(raw.settings || {})
       },
       username: raw.username || userProp?.username || ''
@@ -154,26 +154,26 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   ];
 
   const themes = [
-    { id: 'hydra', name: 'Hydra', description: 'Soft brand poster', styles: { backgroundColor: '#334639', textColor: '#e5e7eb', accentColor: '#d7d9d6', styleType: 'default' } },
-    { id: 'glass', name: 'Glass Morphism', description: 'Modern transparency with depth', styles: { backgroundColor: '#000000', textColor: '#ffffff', accentColor: 'rgba(51, 51, 51, 0.8)', styleType: 'glass' } },
-    { id: 'cinematic', name: 'Cinematic Poster', description: 'Gradient poster', styles: { backgroundColor: '#0b1724', textColor: '#e5e7eb', accentColor: '#3b82f6', styleType: 'default' } },
+    { id: 'hydra', name: 'Hydra', description: 'Soft brand poster', styles: { backgroundColor: 'var(--surface)', textColor: 'var(--text-primary)', accentColor: 'var(--primary)', styleType: 'default' } },
+    { id: 'glass', name: 'Glass Morphism', description: 'Modern transparency with depth', styles: { backgroundColor: 'var(--glass-bg)', textColor: 'var(--text-primary)', accentColor: 'var(--glass-border)', styleType: 'glass' } },
+    { id: 'cinematic', name: 'Cinematic Poster', description: 'Gradient poster', styles: { backgroundColor: 'var(--bg-gradient)', textColor: 'var(--text-primary)', accentColor: 'var(--secondary)', styleType: 'default' } },
     {
       id: 'minimal',
       name: 'Minimal',
       description: 'Clean and simple design',
-      styles: { backgroundColor: '#0b1220', textColor: '#e5e7eb', accentColor: '#3b82f6', styleType: 'default' }
+      styles: { backgroundColor: 'var(--bg)', textColor: 'var(--text-primary)', accentColor: 'var(--primary)', styleType: 'default' }
     },
     {
       id: 'modern',
       name: 'Timeline Story',
       description: 'Tell your story chronologically',
-      styles: { backgroundColor: 'var(--topbar-bg)', textColor: '#ffffff', accentColor: 'rgba(255, 255, 255, 0.1)', styleType: 'timeline' }
+      styles: { backgroundColor: 'var(--bg)', textColor: 'var(--text-primary)', accentColor: 'var(--border)', styleType: 'timeline' }
     },
     {
       id: 'creative',
       name: '3D Perspective',
       description: 'Stand out with depth & dimension',
-      styles: { backgroundColor: 'linear-gradient(180deg, #ff6b9d 0%, #4ecdc4 100%)', textColor: '#ffffff', accentColor: '#ffffff', styleType: 'perspective' }
+      styles: { backgroundColor: 'var(--surface-2)', textColor: 'var(--text-primary)', accentColor: 'var(--accent)', styleType: 'perspective' }
     }
   ];
 
