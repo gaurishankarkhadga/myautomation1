@@ -104,6 +104,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         backgroundColor: 'var(--bg)',
         textColor: 'var(--text-primary)',
         accentColor: 'var(--accent)',
+        layoutStyle: 'default',
         ...(raw.settings || {})
       },
       username: raw.username || userProp?.username || ''
@@ -1715,6 +1716,42 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   const renderThemesSection = () => (
     <div className="section-content">
       <h3>Choose Theme</h3>
+      
+      <div className="layout-selection-card" style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '16px', marginBottom: '24px', border: '1px solid var(--border-color)' }}>
+        <h4 className="custom-theme-title" style={{ marginTop: 0, marginBottom: '16px', fontSize: '1rem' }}>Layout Style</h4>
+        <div className="layout-options" style={{ display: 'flex', gap: '12px' }}>
+          <div 
+            className={`layout-option ${biolinkData.settings.layoutStyle === 'default' || !biolinkData.settings.layoutStyle ? 'active' : ''}`}
+            onClick={() => {
+              setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'default' } }));
+              setAutoSaveStatus('saving');
+              setTimeout(autoSave, 2000);
+            }}
+            style={{ 
+              flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'default' || !biolinkData.settings.layoutStyle ? 'var(--primary-color)' : 'transparent'}`, 
+              background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease'
+            }}
+          >
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>Standard</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Classic list view</div>
+          </div>
+          <div 
+            className={`layout-option ${biolinkData.settings.layoutStyle === 'socialsTopBottom' ? 'active' : ''}`}
+            onClick={() => {
+              setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'socialsTopBottom' } }));
+              setAutoSaveStatus('saving');
+              setTimeout(autoSave, 2000);
+            }}
+            style={{ 
+              flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsTopBottom' ? 'var(--primary-color)' : 'transparent'}`, 
+              background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease'
+            }}
+          >
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>Modern</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Social icons Top & Bottom</div>
+          </div>
+        </div>
+      </div>
       <div className="custom-theme-card">
         <h4 className="custom-theme-title">Custom Theme Settings</h4>
         <div className="custom-theme-fields">

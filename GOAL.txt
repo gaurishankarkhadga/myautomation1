@@ -84,8 +84,11 @@ now you need to do biggest update and development in biolink ok
 2 -> Live Preview mobile view there must everything adjustable , dragable , rearrangable
 
 
-1 -> Add three new Layout of biolink system or arrangement in completely different go with refrencee screenshot got it 
+1 -> Add onee new Layout of biolink system or arrangement in completely different got it
+Explaination How its actaully completely different gotit 
 
+IN Biolink for social media plateform onnly show there icons or logo just below the profile username below just below the username on biolink got it , same like last of complete biolink show those complete social media icons got it , this is new and it will must be unique and modern,
+Proper use backend with complete database integreation for this withotu skiping anything for the final preview or final output got it 
 
 
 

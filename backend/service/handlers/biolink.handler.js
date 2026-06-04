@@ -213,7 +213,8 @@ module.exports = {
                         textColor: themeSettings.textColor,
                         accentColor: themeSettings.accentColor,
                         borderRadius: '12px',
-                        spacing: '16px'
+                        spacing: '16px',
+                        layoutStyle: params.layoutStyle || 'default'
                     },
                     
                     analytics: { views: 0, clicks: 0 },
@@ -260,6 +261,9 @@ module.exports = {
                 }
                 if (params.name || params.displayName) {
                     updates['profile.displayName'] = params.name || params.displayName;
+                }
+                if (params.layoutStyle) {
+                    updates['settings.layoutStyle'] = params.layoutStyle;
                 }
                 if (params.tagline) updates['profile.tagline'] = params.tagline;
                 if (params.bio) updates['profile.bio'] = params.bio;

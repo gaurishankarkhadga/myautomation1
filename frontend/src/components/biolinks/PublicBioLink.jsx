@@ -286,6 +286,7 @@ const PublicBioLink = () => {
   const textColor   = settings.textColor       || '#ffffff';
   const accentColor = settings.accentColor     || '#8b5cf6';
   const styleType   = settings.styleType       || 'glass';
+  const layoutStyle = settings.layoutStyle     || 'default';
   const backgroundImage = settings.backgroundImage ? `url(${getMediaUrl(settings.backgroundImage)}) center / cover no-repeat` : null;
 
   // Link card style varies by theme styleType
@@ -348,6 +349,36 @@ const PublicBioLink = () => {
     }).catch(() => {});
   };
 
+  // Render helper for compact social icons
+  const renderIconOnlySocials = () => (
+    <motion.div
+      className={styles['pbl-social-icons-compact']}
+      initial="hidden"
+      animate="show"
+      variants={stagger}
+    >
+      {socialPills.map(link => {
+        const { icon, color } = resolveLinkMeta(link);
+        return (
+          <motion.a
+            key={link.id || link.url}
+            variants={cardPop}
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles['pbl-compact-icon']}
+            style={{ background: `${color}1A`, color: color, borderColor: `${color}40` }}
+            whileTap={{ scale: 0.9 }}
+            onClick={trackClick}
+            title={link.title || link.platform}
+          >
+            {icon}
+          </motion.a>
+        );
+      })}
+    </motion.div>
+  );
+
   // Page-level CSS custom properties injected inline — every child inherits theme
   const pageThemeVars = {
     '--pbl-bg':      bgColor,
@@ -405,8 +436,11 @@ const PublicBioLink = () => {
           )}
         </motion.div>
 
-        {/* ── Social pills ─────────────────────────────────── */}
-        {socialPills.length > 0 && (
+        {/* ── Top Social Icons (if layout is socialsTopBottom) ── */}
+        {layoutStyle === 'socialsTopBottom' && socialPills.length > 0 && renderIconOnlySocials()}
+
+        {/* ── Social pills (default layout) ─────────────────────────────────── */}
+        {layoutStyle !== 'socialsTopBottom' && socialPills.length > 0 && (
           <motion.div
             className={styles['pbl-social-row']}
             initial="hidden"
@@ -528,6 +562,13 @@ const PublicBioLink = () => {
                 />
               ))}
           </motion.div>
+        )}
+
+        {/* ── Bottom Social Icons (if layout is socialsTopBottom) ── */}
+        {layoutStyle === 'socialsTopBottom' && socialPills.length > 0 && (
+          <div style={{ marginTop: '32px', marginBottom: '8px' }}>
+            {renderIconOnlySocials()}
+          </div>
         )}
 
         {/* ── Watermark ────────────────────────────────────── */}

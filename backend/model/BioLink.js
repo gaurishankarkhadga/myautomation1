@@ -232,6 +232,11 @@ const biolinkSchema = new mongoose.Schema({
     spacing: {
       type: String,
       default: '16px'
+    },
+    layoutStyle: {
+      type: String,
+      default: 'default',
+      enum: ['default', 'socialsTopBottom']
     }
   },
   analytics: {
