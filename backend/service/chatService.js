@@ -352,28 +352,10 @@ async function formatResponse(message, actionResults, hasChat, context, clarific
     }
 
     // If we only had actions (no general chat), build response from results
+    // Pure system actions — rely purely on the UI graphical blocks, no "garbage text"
     if (!hasChat && actionResults.length > 0) {
-        if (actionResults.length === 1) {
-            return {
-                response: actionResults[0].message,
-                toasts,
-                actions: actionResults
-            };
-        }
-
-        // Multiple actions — summarize
-        const summary = actionResults.map((r, i) => {
-            const icon = r.success ? '✅' : '❌';
-            return `${icon} **${formatIntentTitle(r.intent)}**: ${r.message}`;
-        }).join('\n\n');
-
-        const successCount = actionResults.filter(r => r.success).length;
-        const header = successCount === actionResults.length
-            ? `Done! All ${actionResults.length} tasks completed:`
-            : `Completed ${successCount}/${actionResults.length} tasks:`;
-
         return {
-            response: `${header}\n\n${summary}`,
+            response: '', // Empty response triggers the UI to hide `.msg-text` and exclusively show the ActionStatusWidget
             toasts,
             actions: actionResults
         };

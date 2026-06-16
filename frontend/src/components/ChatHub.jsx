@@ -15,6 +15,7 @@ import BioLinkChatPreview from './chat/BioLinkChatPreview';
 import AutomationChatPreview from './chat/AutomationChatPreview';
 import ViralCarouselPreview from './chat/ViralCarouselPreview';
 import ClarificationWidget from './chat/ClarificationWidget';
+import ActionStatusWidget from './chat/ActionStatusWidget';
 import DealNegotiatorSettings from './DealNegotiatorSettings';
 import '../styles/ChatHub.css';
 
@@ -1005,8 +1006,15 @@ function ChatHub() {
                                     </div>
                                 )}
                                 <div className="msg-bubble">
-                                    <div className="msg-text"
-                                        dangerouslySetInnerHTML={{ __html: formatContent(msg.content) }} />
+                                    {msg.content && msg.content.trim() !== '' && (
+                                        <div className="msg-text"
+                                            dangerouslySetInnerHTML={{ __html: formatContent(msg.content) }} />
+                                    )}
+
+                                    {/* Universal Action Status Widget */}
+                                    {msg.actions?.length > 0 && (
+                                        <ActionStatusWidget actions={msg.actions} />
+                                    )}
 
                                     {msg.actions?.length > 0 && (
                                         <div className="msg-badges">
