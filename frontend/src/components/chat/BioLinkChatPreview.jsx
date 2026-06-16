@@ -175,6 +175,7 @@ function BioLinkChatPreview({ biolinkId, url }) {
     const elements = biolink.elements || [];
     const theme = biolink.theme || 'modern';
     const styleType = settings.styleType || 'glass';
+    const layoutStyle = settings.layoutStyle || 'default';
 
     const phoneBg = (settings.backgroundColor || '#0b1220').includes('gradient')
         ? settings.backgroundColor
@@ -225,8 +226,13 @@ function BioLinkChatPreview({ biolinkId, url }) {
     const safeTagline = profile.tagline && !isSystemUsername(profile.tagline) ? profile.tagline : '';
 
     const SOCIAL_IDS = ['instagram','youtube','twitter','tiktok','facebook','linkedin','twitch','spotify','discord','github','snapchat','pinterest','telegram'];
-    const socialPills = links.filter(l => l.icon === 'platform' && SOCIAL_IDS.includes(l.platform?.toLowerCase?.()));
-    const regularLinks = links.filter(l => !(l.icon === 'platform' && SOCIAL_IDS.includes(l.platform?.toLowerCase?.())));
+    const socialPills = links.filter(l => 
+      (l.icon === 'platform' || SOCIAL_IDS.includes(l.icon?.toLowerCase?.())) && 
+      SOCIAL_IDS.includes(l.platform?.toLowerCase?.())
+    );
+    const regularLinks = ['socialsTop', 'socialsBottom'].includes(layoutStyle)
+      ? links.filter(l => !socialPills.includes(l))
+      : links;
 
     return (
         <div className="biolink-chat-preview" id="bcp-card">
@@ -290,9 +296,9 @@ function BioLinkChatPreview({ biolinkId, url }) {
                         </p>
                     )}
 
-                    {/* Social pills */}
-                    {socialPills.length > 0 && (
-                        <div className="bcp-social-row">
+                    {/* Social pills (Top) */}
+                    {layoutStyle === 'socialsTop' && socialPills.length > 0 && (
+                        <div className="bcp-social-icons-compact">
                             {socialPills.map(link => {
                                 const { icon, color } = resolveLinkMeta(link);
                                 return (
@@ -301,11 +307,10 @@ function BioLinkChatPreview({ biolinkId, url }) {
                                         href={link.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="bcp-social-pill"
-                                        style={{ borderColor: `${color}40`, color }}
+                                        className="bcp-compact-icon"
+                                        style={{ background: `${color}1A`, color: color, borderColor: `${color}40` }}
                                     >
                                         {icon}
-                                        <span>{link.title || link.platform}</span>
                                     </a>
                                 );
                             })}
@@ -402,6 +407,27 @@ function BioLinkChatPreview({ biolinkId, url }) {
                             {elements.map((el) => (
                                 <BioLinkElement key={el.id} element={el} isPreview={true} settings={settings} />
                             ))}
+                        </div>
+                    )}
+
+                    {/* Social pills (Bottom) */}
+                    {layoutStyle === 'socialsBottom' && socialPills.length > 0 && (
+                        <div className="bcp-social-icons-compact" style={{ marginTop: 16, marginBottom: 8 }}>
+                            {socialPills.map(link => {
+                                const { icon, color } = resolveLinkMeta(link);
+                                return (
+                                    <a
+                                        key={link.id || link.url}
+                                        href={link.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="bcp-compact-icon"
+                                        style={{ background: `${color}1A`, color: color, borderColor: `${color}40` }}
+                                    >
+                                        {icon}
+                                    </a>
+                                );
+                            })}
                         </div>
                     )}
                 </div>

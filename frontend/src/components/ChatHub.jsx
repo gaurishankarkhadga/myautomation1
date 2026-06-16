@@ -14,6 +14,7 @@ import ToastNotification, { useToasts } from './ToastNotification';
 import BioLinkChatPreview from './chat/BioLinkChatPreview';
 import AutomationChatPreview from './chat/AutomationChatPreview';
 import ViralCarouselPreview from './chat/ViralCarouselPreview';
+import ClarificationWidget from './chat/ClarificationWidget';
 import DealNegotiatorSettings from './DealNegotiatorSettings';
 import '../styles/ChatHub.css';
 
@@ -536,15 +537,15 @@ function ChatHub() {
                     <div className="sidebar-section">
                         <p className="sidebar-section-label">Quick Actions</p>
                         {[
-                            { icon: Link2, label: 'BioLinks', action: 'navigate', path: '/profile' },
+                            { icon: Link2, label: 'BioLinks', action: 'navigate', path: '/biolink/editor', state: { reset: true, new: true } },
                             { icon: BarChart2, label: 'View Status', msg: "What's my current setup?" },
                             { icon: Package, label: 'My Assets', action: 'assets' },
                             { icon: User, label: 'Profile', action: 'navigate', path: '/profile' },
                             { icon: RotateCcw, label: 'Preferences', msg: 'Show my preferences' },
-                        ].map(({ icon: Icon, label, msg, action, path }) => (
+                        ].map(({ icon: Icon, label, msg, action, path, state }) => (
                             <button key={label} className="sidebar-action-btn"
                                 onClick={() => {
-                                    if (action === 'navigate') { navigate(path); }
+                                    if (action === 'navigate') { navigate(path, state ? { state } : undefined); }
                                     else if (action === 'assets') { navigate('/assets'); }
                                     else { sendMessage(msg); }
                                     setSidebarOpen(false);
@@ -1060,6 +1061,14 @@ function ChatHub() {
                                     {msg.actions?.some(a => a.intent === 'generate_viral_script' && a.data?.carousel?.length > 0) && (
                                         <ViralCarouselPreview
                                             items={msg.actions.find(a => a.intent === 'generate_viral_script').data.carousel}
+                                        />
+                                    )}
+
+                                    {/* Dynamic Clarification Widget */}
+                                    {msg.actions?.some(a => a.intent === 'request_clarification' && a.data) && (
+                                        <ClarificationWidget
+                                            question={msg.actions.find(a => a.intent === 'request_clarification').data.question}
+                                            onReply={(text) => sendMessage(text)}
                                         />
                                     )}
 

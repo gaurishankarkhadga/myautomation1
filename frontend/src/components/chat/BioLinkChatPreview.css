@@ -207,6 +207,37 @@
     flex-shrink: 0;
 }
 
+/* ── Compact Social Icons (Top/Bottom) ──────────────────────── */
+.bcp-social-icons-compact {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.bcp-compact-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.04);
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.bcp-compact-icon:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.09);
+}
+
 /* ── Tab switcher (Links / Shop) ────────────────────────────── */
 .bcp-tab-row {
     display: flex;

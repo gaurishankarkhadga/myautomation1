@@ -40,8 +40,8 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   const [currentStep, setCurrentStep] = useState(0);
   const [previewActiveView, setPreviewActiveView] = useState('links');
   const [showPreview, setShowPreview] = useState(false);
-  const stepIds = ['profile', 'links', 'shop', 'themes', 'others'];
-  const activeSection = stepIds[currentStep] || 'profile';
+  const stepIds = ['overview', 'profile', 'links', 'shop', 'themes', 'others'];
+  const activeSection = stepIds[currentStep] || 'overview';
 
   const goNext = () => {
     const nextStep = Math.min(currentStep + 1, stepIds.length - 1);
@@ -147,6 +147,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   }, [biolinkData]);
 
   const sections = [
+    { id: 'overview', label: 'All Settings', icon: <GripHorizontal size={20} />, color: 'var(--primary-color)' },
     { id: 'profile', label: 'Profile Settings', icon: <User size={20} />, color: 'var(--primary-color)' },
     { id: 'links', label: 'Social Links', icon: <Link size={20} />, color: 'var(--accent-color)' },
     { id: 'shop', label: 'Shop Products', icon: <MousePointer size={20} />, color: 'var(--success-color)' },
@@ -1149,6 +1150,17 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         ref={sliderRef}
         onScroll={handleScroll}
       >
+        <div className="slider-slide all-settings-slide" style={{ display: 'block', paddingBottom: '3rem' }}>
+          {renderProfileSection()}
+          <div className="content-divider" style={{ borderTop: '1px solid var(--border-color)', margin: '1rem 0' }}></div>
+          {renderLinksSection()}
+          <div className="content-divider" style={{ borderTop: '1px solid var(--border-color)', margin: '1rem 0' }}></div>
+          {renderThemesSection()}
+          <div className="content-divider" style={{ borderTop: '1px solid var(--border-color)', margin: '1rem 0' }}></div>
+          {renderOthersSection()}
+          <div className="content-divider" style={{ borderTop: '1px solid var(--border-color)', margin: '1rem 0' }}></div>
+          {renderShopSection()}
+        </div>
         <div className="slider-slide">
           {renderProfileSection()}
         </div>
@@ -1513,6 +1525,85 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
         {/* Redundant 'First Link' button removed as the header button is now always visible and sticky */}
       </div>
+
+      <div className="layout-selection-card" style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '16px', marginTop: '24px', marginBottom: '24px', border: '1px solid var(--border-color)' }}>
+        <h4 className="custom-theme-title" style={{ marginTop: 0, marginBottom: '16px', fontSize: '1rem' }}>Layout Style</h4>
+        <div className="layout-options" style={{ display: 'flex', gap: '12px' }}>
+          <div 
+            className={`layout-option ${biolinkData.settings.layoutStyle === 'default' || !biolinkData.settings.layoutStyle ? 'active' : ''}`}
+            onClick={() => {
+              setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'default' } }));
+              setAutoSaveStatus('saving');
+              setTimeout(autoSave, 2000);
+            }}
+            style={{ 
+              flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'default' || !biolinkData.settings.layoutStyle ? 'var(--primary-color)' : 'transparent'}`, 
+              background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
+              display: 'flex', flexDirection: 'column', alignItems: 'center'
+            }}
+          >
+            <div style={{width: '60px', height: '80px', background: 'var(--bg-secondary)', borderRadius: '8px', margin: '0 auto 12px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', border: '1px solid var(--border-color)'}}>
+              <div style={{width: '24px', height: '24px', borderRadius: '50%', background: 'var(--text-secondary)', opacity: 0.5}}></div>
+              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--primary-color)', opacity: 0.6}}></div>
+              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
+              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
+            </div>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>Standard</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Classic list view</div>
+          </div>
+          <div 
+            className={`layout-option ${biolinkData.settings.layoutStyle === 'socialsTop' ? 'active' : ''}`}
+            onClick={() => {
+              setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'socialsTop' } }));
+              setAutoSaveStatus('saving');
+              setTimeout(autoSave, 2000);
+            }}
+            style={{ 
+              flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsTop' ? 'var(--primary-color)' : 'transparent'}`, 
+              background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
+              display: 'flex', flexDirection: 'column', alignItems: 'center'
+            }}
+          >
+            <div style={{width: '60px', height: '80px', background: 'var(--bg-secondary)', borderRadius: '8px', margin: '0 auto 12px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', border: '1px solid var(--border-color)'}}>
+              <div style={{width: '24px', height: '24px', borderRadius: '50%', background: 'var(--text-secondary)', opacity: 0.5}}></div>
+              <div style={{display: 'flex', gap: '3px', marginBottom: '2px'}}>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+              </div>
+              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
+              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
+            </div>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>Top Socials</div>
+          </div>
+          
+          <div 
+            className={`layout-option ${biolinkData.settings.layoutStyle === 'socialsBottom' ? 'active' : ''}`}
+            onClick={() => {
+              setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'socialsBottom' } }));
+              setAutoSaveStatus('saving');
+              setTimeout(autoSave, 2000);
+            }}
+            style={{ 
+              flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsBottom' ? 'var(--primary-color)' : 'transparent'}`, 
+              background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
+              display: 'flex', flexDirection: 'column', alignItems: 'center'
+            }}
+          >
+            <div style={{width: '60px', height: '80px', background: 'var(--bg-secondary)', borderRadius: '8px', margin: '0 auto 12px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', border: '1px solid var(--border-color)'}}>
+              <div style={{width: '24px', height: '24px', borderRadius: '50%', background: 'var(--text-secondary)', opacity: 0.5}}></div>
+              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
+              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
+              <div style={{display: 'flex', gap: '3px', marginTop: 'auto'}}>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+              </div>
+            </div>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>Bottom Socials</div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 
@@ -1634,21 +1725,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             </div>
           )}
 
-          {products.length === 0 && !showAddProductForm ? (
-            <div className="empty-state">
-              <button
-                className="first-link-btn"
-                onClick={() => {
-                  setShowAddProductForm(true);
-                  setEditingProductIndex(null);
-                  setProductFormData({ name: '', description: '', price: '', image: '', url: '' });
-                }}
-              >
-                <Plus size={20} />
-                <span>Add Your First Product</span>
-              </button>
-            </div>
-          ) : (
+          {products.length === 0 && !showAddProductForm ? null : (
             <div className="assets-list grid-layout">
               {products.map((product, idx) => (
                 <div key={product.id || idx} className="asset-item asset-card">
@@ -1716,85 +1793,6 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   const renderThemesSection = () => (
     <div className="section-content">
       <h3>Choose Theme</h3>
-      
-      <div className="layout-selection-card" style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '16px', marginBottom: '24px', border: '1px solid var(--border-color)' }}>
-        <h4 className="custom-theme-title" style={{ marginTop: 0, marginBottom: '16px', fontSize: '1rem' }}>Layout Style</h4>
-        <div className="layout-options" style={{ display: 'flex', gap: '12px' }}>
-          <div 
-            className={`layout-option ${biolinkData.settings.layoutStyle === 'default' || !biolinkData.settings.layoutStyle ? 'active' : ''}`}
-            onClick={() => {
-              setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'default' } }));
-              setAutoSaveStatus('saving');
-              setTimeout(autoSave, 2000);
-            }}
-            style={{ 
-              flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'default' || !biolinkData.settings.layoutStyle ? 'var(--primary-color)' : 'transparent'}`, 
-              background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
-              display: 'flex', flexDirection: 'column', alignItems: 'center'
-            }}
-          >
-            <div style={{width: '60px', height: '80px', background: 'var(--bg-secondary)', borderRadius: '8px', margin: '0 auto 12px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', border: '1px solid var(--border-color)'}}>
-              <div style={{width: '24px', height: '24px', borderRadius: '50%', background: 'var(--text-secondary)', opacity: 0.5}}></div>
-              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--primary-color)', opacity: 0.6}}></div>
-              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
-              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
-            </div>
-            <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>Standard</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Classic list view</div>
-          </div>
-          <div 
-            className={`layout-option ${biolinkData.settings.layoutStyle === 'socialsTop' ? 'active' : ''}`}
-            onClick={() => {
-              setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'socialsTop' } }));
-              setAutoSaveStatus('saving');
-              setTimeout(autoSave, 2000);
-            }}
-            style={{ 
-              flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsTop' ? 'var(--primary-color)' : 'transparent'}`, 
-              background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
-              display: 'flex', flexDirection: 'column', alignItems: 'center'
-            }}
-          >
-            <div style={{width: '60px', height: '80px', background: 'var(--bg-secondary)', borderRadius: '8px', margin: '0 auto 12px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', border: '1px solid var(--border-color)'}}>
-              <div style={{width: '24px', height: '24px', borderRadius: '50%', background: 'var(--text-secondary)', opacity: 0.5}}></div>
-              <div style={{display: 'flex', gap: '3px', marginBottom: '2px'}}>
-                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
-                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
-                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
-              </div>
-              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
-              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
-            </div>
-            <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>Top Socials</div>
-          </div>
-          
-          <div 
-            className={`layout-option ${biolinkData.settings.layoutStyle === 'socialsBottom' ? 'active' : ''}`}
-            onClick={() => {
-              setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'socialsBottom' } }));
-              setAutoSaveStatus('saving');
-              setTimeout(autoSave, 2000);
-            }}
-            style={{ 
-              flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsBottom' ? 'var(--primary-color)' : 'transparent'}`, 
-              background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
-              display: 'flex', flexDirection: 'column', alignItems: 'center'
-            }}
-          >
-            <div style={{width: '60px', height: '80px', background: 'var(--bg-secondary)', borderRadius: '8px', margin: '0 auto 12px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', border: '1px solid var(--border-color)'}}>
-              <div style={{width: '24px', height: '24px', borderRadius: '50%', background: 'var(--text-secondary)', opacity: 0.5}}></div>
-              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
-              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
-              <div style={{display: 'flex', gap: '3px', marginTop: 'auto'}}>
-                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
-                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
-                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
-              </div>
-            </div>
-            <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>Bottom Socials</div>
-          </div>
-        </div>
-      </div>
       <div className="custom-theme-card">
         <h4 className="custom-theme-title">Custom Theme Settings</h4>
         <div className="custom-theme-fields">

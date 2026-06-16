@@ -85,12 +85,39 @@ function verifyWebhookSignature(req) {
 }
 
 
+// ==================== RESILIENT API WRAPPER ====================
+/**
+ * Wraps Axios requests with an automatic exponential backoff retry mechanism.
+ * Essential for "zero-fraction" operation when Meta's API rate-limits or drops connections.
+ */
+async function resilientApiCall(requestFn, maxRetries = 3) {
+    let attempt = 0;
+    while (attempt < maxRetries) {
+        try {
+            return await requestFn();
+        } catch (error) {
+            attempt++;
+            const isRateLimit = error.response?.status === 429;
+            const isServerError = error.response?.status >= 500;
+            
+            if ((isRateLimit || isServerError) && attempt < maxRetries) {
+                const backoffMs = Math.pow(2, attempt) * 1000 + Math.random() * 500; // 2s, 4s, 8s + jitter
+                console.warn(`[Meta API] Request failed (Status: ${error.response?.status}). Retrying in ${Math.round(backoffMs)}ms (Attempt ${attempt}/${maxRetries})...`);
+                await new Promise(resolve => setTimeout(resolve, backoffMs));
+            } else {
+                // If it's a 400 Bad Request (e.g. invalid token, bad parameter) or we've exhausted retries, throw it.
+                throw error;
+            }
+        }
+    }
+}
+
 // this is only for th comment and message for access token and we can add as best replay
 async function replyToComment(commentId, message, accessToken) {
     try {
         console.log('[AutoReply] Replying to comment:', commentId);
 
-        const response = await axios.post(
+        const response = await resilientApiCall(() => axios.post(
             `${INSTAGRAM_CONFIG.graphBaseUrl}/${commentId}/replies`,
             {
                 message: message
@@ -100,7 +127,7 @@ async function replyToComment(commentId, message, accessToken) {
                     access_token: accessToken
                 }
             }
-        );
+        ));
 
         console.log('[AutoReply] Reply sent successfully. Reply ID:', response.data.id);
         return { success: true, replyId: response.data.id };

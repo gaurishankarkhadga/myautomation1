@@ -57,8 +57,22 @@ function getIntentList() {
 async function parseIntents(message, context) {
     const intentList = getIntentList();
 
+    // Format recent history for the prompt
+    let historyText = "No recent history.";
+    if (context.recentHistory && context.recentHistory.length > 0) {
+        // Exclude the very long action results from history, just keep the text
+        historyText = context.recentHistory.map(m => {
+            const role = m.role === 'user' ? 'Creator' : 'Sotix';
+            const text = m.content ? m.content.substring(0, 150) : '';
+            return `${role}: ${text}`;
+        }).join('\n');
+    }
+
     const prompt = `You are the AI brain of Sotix — a social media management platform for creators.
 Your job: understand ANYTHING the creator says (no matter how vague, messy, or creative) and convert it into structured action intents.
+
+RECENT CONVERSATION HISTORY (Use this for context, pronouns, and follow-ups):
+${historyText}
 
 CRITICAL RULES:
 1. Creators are NOT tech-savvy. They write casually: typos, slang, abbreviations, emojis, Hinglish (Hindi+English), mixed languages, or just vibes. ALWAYS figure out what they ACTUALLY mean.
@@ -88,6 +102,7 @@ CRITICAL RULES:
    - IMPORTANT: If the creator mentions a TIME DURATION with comment-to-dm, include "hours" DIRECTLY in the params. Do NOT create a separate set_time_limit intent. Example: "dm commenters for 30 hours" → hours: 30 inside enable_comment_to_dm params
    - IMPORTANT: If the creator mentions a MAX COMMENT COUNT with comment-to-dm, include "maxComments" DIRECTLY in the params. Do NOT create a separate set_comment_limit intent.
    - If the creator mentions a specific post/reel (recent, latest, first), include "targetMedia" in the params
+13. AUTO-CLARIFICATION (Human-like behavior): If the creator asks for something but is missing REQUIRED information to execute it (e.g., "Add my new course" but no URL/Price, or "Change it to 50" but history doesn't specify what "it" is), DO NOT hallucinate parameters. Instead, return the intent "request_clarification" with a param "question" asking the creator for the missing details in a natural, casual way.
 
 AVAILABLE INTENTS:
 ${intentList}
@@ -105,6 +120,7 @@ ${intentList}
 - remove_custom_instruction (remove a rule by number — params: {index: 1})
 - clear_custom_instructions (remove all custom rules)
 - get_morning_briefing (24h activity summary, morning update, "what happened")
+- request_clarification (when missing REQUIRED info to execute a command — params: {question: "What's the link for the course?"})
 - general_chat (for general questions, greetings, help, feedback, or anything not matching above)
 
 CONTEXT:
@@ -131,6 +147,8 @@ User: "bhai sab chalu kr de 2 ghante ke liye" → [{"intent": "enable_all_automa
 User: "meri latest reel pe comments ka reply kr" → [{"intent": "enable_comment_autoreply", "params": {"mode": "ai_smart"}, "confidence": 0.85}, {"intent": "set_content_target", "params": {"target": "recent"}, "confidence": 0.85}]
 User: "just do 50 and stop" → [{"intent": "set_comment_limit", "params": {"maxReplies": 50}, "confidence": 0.8}]
 User: "i want auto reply on my dm and comments both for 6 hrs" → [{"intent": "enable_comment_autoreply", "params": {"mode": "ai_smart"}, "confidence": 0.9}, {"intent": "enable_dm_autoreply", "params": {"mode": "ai_smart"}, "confidence": 0.9}, {"intent": "set_time_limit", "params": {"hours": 6}, "confidence": 0.9}]
+User: "Add a new course" → [{"intent": "request_clarification", "params": {"question": "Got it! What's the link and price for the new course?"}, "confidence": 0.95}]
+User: "Change it to 10 hours" (assuming history shows comment replies) → [{"intent": "set_time_limit", "params": {"hours": 10}, "confidence": 0.9}]
 User: "pause for now" → [{"intent": "disable_all_automation", "params": {}, "confidence": 0.8}]
 User: "kl se band kr dena" → [{"intent": "set_time_limit", "params": {"hours": 24}, "confidence": 0.7}]
 User: "only yt" → [{"intent": "set_platform_preference", "params": {"instagram": false, "youtube": true}, "confidence": 0.85}]
@@ -274,9 +292,10 @@ Return ONLY a valid JSON array. No markdown, no explanation, no extra text. Just
 async function executeIntents(intents, context) {
     const results = [];
 
-    // Separate general_chat from actionable intents
-    const actionIntents = intents.filter(i => i.intent !== 'general_chat');
+    // Separate chat/clarification from actionable intents
+    const actionIntents = intents.filter(i => i.intent !== 'general_chat' && i.intent !== 'request_clarification');
     const chatIntents = intents.filter(i => i.intent === 'general_chat');
+    const clarificationIntents = intents.filter(i => i.intent === 'request_clarification');
 
     // Execute all actionable intents sequentially
     if (actionIntents.length > 0) {
@@ -311,11 +330,16 @@ async function executeIntents(intents, context) {
         }
     }
 
-    return { actionResults: results, hasChat: chatIntents.length > 0, chatIntents };
+    return { 
+        actionResults: results, 
+        hasChat: chatIntents.length > 0 || clarificationIntents.length > 0, 
+        chatIntents,
+        clarificationIntents
+    };
 }
 
 // ==================== FORMAT RESPONSE ====================
-async function formatResponse(message, actionResults, hasChat, context) {
+async function formatResponse(message, actionResults, hasChat, context, clarificationIntents) {
     const toasts = [];
 
     // Generate toasts from action results
@@ -352,6 +376,22 @@ async function formatResponse(message, actionResults, hasChat, context) {
             response: `${header}\n\n${summary}`,
             toasts,
             actions: actionResults
+        };
+    }
+
+    // If there's a clarification intent, just return the question directly without an LLM wrapper
+    if (clarificationIntents && clarificationIntents.length > 0) {
+        return {
+            response: clarificationIntents[0].params.question || "Could you provide a bit more detail?",
+            toasts,
+            actions: [
+                ...actionResults,
+                { 
+                    intent: 'request_clarification', 
+                    success: true, 
+                    data: clarificationIntents[0].params 
+                }
+            ]
         };
     }
 
@@ -448,6 +488,7 @@ function formatIntentTitle(intent) {
         'remove_custom_instruction': 'Custom Rule Removed',
         'clear_custom_instructions': 'Custom Rules Cleared',
         'get_morning_briefing': 'Morning Briefing',
+        'request_clarification': 'Clarification',
         'general_chat': 'Chat'
     };
 
@@ -460,16 +501,26 @@ async function processMessage(userId, message, token) {
 
     console.log(`\n[ChatService] ====== Processing: "${message}" (user: ${userId}) ======`);
 
+    // Step 0: Fetch recent chat history to give the AI memory context
+    try {
+        const historyRes = await getChatHistory(userId, 6); // fetch last 6 messages
+        if (historyRes.success && historyRes.messages) {
+            context.recentHistory = historyRes.messages;
+        }
+    } catch (e) {
+        console.error('[ChatService] Failed to fetch history for context:', e.message);
+    }
+
     // Step 1: Parse intents from the message
     const intents = await parseIntents(message, context);
     console.log(`[ChatService] Intents:`, JSON.stringify(intents));
 
     // Step 2: Execute all intents
-    const { actionResults, hasChat, chatIntents } = await executeIntents(intents, context);
+    const { actionResults, hasChat, chatIntents, clarificationIntents } = await executeIntents(intents, context);
     console.log(`[ChatService] Actions: ${actionResults.length}, HasChat: ${hasChat}`);
 
     // Step 3: Format the response
-    const { response, toasts, actions } = await formatResponse(message, actionResults, hasChat, context);
+    const { response, toasts, actions } = await formatResponse(message, actionResults, hasChat, context, clarificationIntents);
 
     // Step 4: Save to chat history
     try {
