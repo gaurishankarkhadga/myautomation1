@@ -12,8 +12,12 @@ module.exports = {
 
         try {
             if (intent === 'enable_dm_autoreply') {
-                const mode = params.mode || 'ai_with_assets';
-                const delay = params.delay || 10;
+                const rawMode = (params.mode || 'ai_with_assets').toLowerCase();
+                const allowedModes = ['static', 'ai_smart', 'ai_with_assets'];
+                const mode = allowedModes.includes(rawMode) ? rawMode : 'ai_with_assets'; // Fallback
+
+                const parsedDelay = parseInt(params.delay);
+                const delay = (!isNaN(parsedDelay) && parsedDelay > 0) ? parsedDelay : 10;
                 const message = params.message || '';
 
                 await DmAutoReplySetting.findOneAndUpdate(
@@ -60,7 +64,11 @@ module.exports = {
 
             if (intent === 'configure_dm_autoreply') {
                 const update = {};
-                if (params.mode) update.replyMode = params.mode;
+                if (params.mode) {
+                    const rawMode = params.mode.toLowerCase();
+                    const allowedModes = ['static', 'ai_smart', 'ai_with_assets'];
+                    update.replyMode = allowedModes.includes(rawMode) ? rawMode : 'ai_with_assets';
+                }
                 if (params.delay) {
                     const parsedDelay = parseInt(params.delay);
                     if (!isNaN(parsedDelay)) {
@@ -109,7 +117,8 @@ module.exports = {
             return { success: false, message: 'Unknown DM auto-reply action.' };
         } catch (error) {
             console.error('[Handler:dmAutoReply] Error:', error.message);
-            return { success: false, message: `Failed to update DM auto-reply: ${error.message}` };
+            // Sanitized user-friendly error
+            return { success: false, message: `I encountered a minor issue updating your DM settings. Let's try rephrasing that!` };
         }
     }
 };

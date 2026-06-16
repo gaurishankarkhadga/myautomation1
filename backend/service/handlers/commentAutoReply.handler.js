@@ -12,8 +12,12 @@ module.exports = {
 
         try {
             if (intent === 'enable_comment_autoreply') {
-                const mode = params.mode || 'ai_smart';
-                const delay = params.delay || 15;
+                const rawMode = (params.mode || 'ai_smart').toLowerCase();
+                const allowedModes = ['reply_only', 'reply_and_hide', 'ai_smart'];
+                const mode = allowedModes.includes(rawMode) ? rawMode : 'ai_smart'; // Fallback
+
+                const parsedDelay = parseInt(params.delay);
+                const delay = (!isNaN(parsedDelay) && parsedDelay > 0) ? parsedDelay : 15;
                 const message = params.message || '';
 
                 await AutoReplySetting.findOneAndUpdate(
@@ -60,7 +64,11 @@ module.exports = {
 
             if (intent === 'configure_comment_autoreply') {
                 const update = {};
-                if (params.mode) update.replyMode = params.mode;
+                if (params.mode) {
+                    const rawMode = params.mode.toLowerCase();
+                    const allowedModes = ['reply_only', 'reply_and_hide', 'ai_smart'];
+                    update.replyMode = allowedModes.includes(rawMode) ? rawMode : 'ai_smart';
+                }
                 if (params.delay) {
                     const parsedDelay = parseInt(params.delay);
                     if (!isNaN(parsedDelay)) {
@@ -86,7 +94,8 @@ module.exports = {
             return { success: false, message: 'Unknown comment auto-reply action.' };
         } catch (error) {
             console.error('[Handler:commentAutoReply] Error:', error.message);
-            return { success: false, message: `Failed to update comment auto-reply: ${error.message}` };
+            // Sanitized user-friendly error
+            return { success: false, message: `I encountered a minor issue updating your comment settings. Let's try rephrasing that!` };
         }
     }
 };

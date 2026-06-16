@@ -13,7 +13,9 @@ module.exports = {
         try {
             // ==================== ADD ASSET ====================
             if (intent === 'add_asset') {
-                const type = params.type || 'product';
+                const rawType = (params.type || 'product').toLowerCase();
+                const allowedTypes = ['product', 'link', 'course', 'image', 'service', 'ebook', 'merch', 'affiliate_link', 'text_template'];
+                const type = allowedTypes.includes(rawType) ? rawType : 'link'; // Fallback to 'link' if AI hallucinates an invalid type
                 const title = params.title;
 
                 if (!title) {

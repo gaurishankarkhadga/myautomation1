@@ -21,7 +21,10 @@ module.exports = {
         try {
             // ==================== SET CONTENT TARGET ====================
             if (intent === 'set_content_target') {
-                const target = params.target || 'all';  // all, recent, first, previous, specific
+                const rawTarget = (params.target || 'all').toLowerCase();
+                const allowedTargets = ['all', 'recent', 'specific', 'first', 'previous'];
+                const target = allowedTargets.includes(rawTarget) ? rawTarget : 'all'; // Fallback
+
                 const maxPosts = params.maxPosts || 0;
                 const postTitle = params.postTitle || params.title || '';
                 
@@ -113,15 +116,20 @@ module.exports = {
 
             // ==================== SET COMMENT LIMIT ====================
             if (intent === 'set_comment_limit') {
-                const maxReplies = params.maxReplies || params.count || params.limit || 100;
-                const scope = params.scope || 'total'; // 'per_post' or 'total'
+                const maxReplies = parseInt(params.maxReplies || params.count || params.limit);
+                const validatedMaxReplies = (!isNaN(maxReplies) && maxReplies > 0) ? maxReplies : 100;
+                
+                const rawScope = (params.scope || 'total').toLowerCase();
+                const allowedScopes = ['per_post', 'total'];
+                const scope = allowedScopes.includes(rawScope) ? rawScope : 'total'; // Fallback
+
 
                 await CreatorPreference.findOneAndUpdate(
                     { userId },
                     {
                         userId,
                         'commentLimit.enabled': true,
-                        'commentLimit.maxReplies': maxReplies,
+                        'commentLimit.maxReplies': validatedMaxReplies,
                         'commentLimit.repliedCount': 0,
                         'commentLimit.scope': scope
                     },
@@ -132,8 +140,8 @@ module.exports = {
 
                 return {
                     success: true,
-                    message: `🔢 Comment limit set! I'll reply to a maximum of **${maxReplies}** comments (${scopeLabel}). After that, I'll stop auto-replying.`,
-                    data: { maxReplies, scope }
+                    message: `🔢 Comment limit set! I'll reply to a maximum of **${validatedMaxReplies}** comments (${scopeLabel}). After that, I'll stop auto-replying.`,
+                    data: { maxReplies: validatedMaxReplies, scope }
                 };
             }
 
@@ -215,7 +223,8 @@ module.exports = {
             return { success: false, message: 'Unknown preference action.' };
         } catch (error) {
             console.error('[Handler:preferences] Error:', error.message);
-            return { success: false, message: `Preference update failed: ${error.message}` };
+            // Sanitized user-friendly error
+            return { success: false, message: `I hit a small glitch while updating your preferences. Could you please specify that again?` };
         }
     }
 };

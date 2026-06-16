@@ -314,7 +314,8 @@ module.exports = {
             return { success: false, message: 'Unknown biolink action.' };
         } catch (error) {
             console.error('[Handler:biolink] Error:', error.message);
-            return { success: false, message: `BioLink operation failed: ${error.message}` };
+            // Sanitized user-friendly error
+            return { success: false, message: `I encountered a minor formatting issue while building the BioLink. Could you provide those details again?` };
         }
     }
 };
