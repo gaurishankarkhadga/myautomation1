@@ -105,6 +105,7 @@ CRITICAL RULES:
 13. AUTO-CLARIFICATION (Human-like behavior): If the creator asks for something but is missing REQUIRED information to execute it (e.g., "Add my new course" but no URL/Price, or "Change it to 50" but history doesn't specify what "it" is), DO NOT hallucinate parameters. Instead, return the intent "request_clarification" with a param "question" asking the creator for the missing details in a natural, casual way.
 14. RESOLVING CLARIFICATIONS: If the last message from Sotix in the RECENT CONVERSATION HISTORY was a request_clarification (e.g., asking for missing details like a title, price, or link), and the creator's new message provides those details, you MUST combine these details with the unresolved intents from the previous request. For example, if they previously wanted to "create a biolink and add an ebook product" (which was blocked/requested for clarification), and they now reply with the ebook title/link, you MUST output BOTH the "add_asset" intent (with the new params) AND the "create_biolink" intent so that both are executed.
 
+
 AVAILABLE INTENTS:
 ${intentList}
 - deal_action_bulk (handles approval, rejection, or edit dispatch for 1 or multiple brand deals — params: {actions: [{dealId: "Optional _id", brandName: "Nike", action: "approve", draftOverride: "Custom text?"}]})
