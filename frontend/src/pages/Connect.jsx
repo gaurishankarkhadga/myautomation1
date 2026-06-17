@@ -12,6 +12,7 @@ function Connect() {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [faqOpenIndex, setFaqOpenIndex] = useState(null);
     const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' or 'yearly'
+    const [visibleElements, setVisibleElements] = useState({});
 
     useEffect(() => {
         const handleMouseMove = (e) => {
@@ -21,17 +22,22 @@ function Connect() {
 
         const observerOptions = {
             root: null,
-            rootMargin: '0px',
-            threshold: 0.1,
+            rootMargin: '0px 0px -20px 0px',
+            threshold: 0.02,
         };
 
         const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('in-view');
-                } else {
-                    entry.target.classList.remove('in-view');
-                }
+            setVisibleElements((prev) => {
+                const next = { ...prev };
+                let changed = false;
+                entries.forEach((entry) => {
+                    const id = entry.target.id;
+                    if (id && next[id] !== entry.isIntersecting) {
+                        next[id] = entry.isIntersecting;
+                        changed = true;
+                    }
+                });
+                return changed ? next : prev;
             });
         }, observerOptions);
 
@@ -221,7 +227,7 @@ function Connect() {
 
             {/* About Section */}
             <section className="connect-about-section">
-                <div className="section-header-centered scroll-reveal">
+                <div id="about-header" className={`section-header-centered scroll-reveal ${visibleElements['about-header'] ? 'in-view' : ''}`}>
                     <div className="section-badge">
                         <Sparkles size={14} className="badge-sparkle" />
                         <span>Platform Overview</span>
@@ -233,7 +239,7 @@ function Connect() {
                 </div>
 
                 <div className="about-grid">
-                    <div className="about-card scroll-reveal stagger-1">
+                    <div id="about-card-1" className={`about-card scroll-reveal stagger-1 ${visibleElements['about-card-1'] ? 'in-view' : ''}`}>
                         <div className="about-icon-wrapper api-glow">
                             <Globe size={24} />
                         </div>
@@ -241,7 +247,7 @@ function Connect() {
                         <p>Powered by the official Meta Graph API and YouTube v3 API. Fully authorized, compliant, and 100% safe for your accounts.</p>
                     </div>
 
-                    <div className="about-card scroll-reveal stagger-2">
+                    <div id="about-card-2" className={`about-card scroll-reveal stagger-2 ${visibleElements['about-card-2'] ? 'in-view' : ''}`}>
                         <div className="about-icon-wrapper ai-glow">
                             <Cpu size={24} />
                         </div>
@@ -249,7 +255,7 @@ function Connect() {
                         <p>Recognizes emojis, sentiments, and intent keywords inside comments and DMs to trigger highly personalized auto-responses.</p>
                     </div>
 
-                    <div className="about-card scroll-reveal stagger-3">
+                    <div id="about-card-3" className={`about-card scroll-reveal stagger-3 ${visibleElements['about-card-3'] ? 'in-view' : ''}`}>
                         <div className="about-icon-wrapper speed-glow">
                             <Activity size={24} />
                         </div>
@@ -257,7 +263,7 @@ function Connect() {
                         <p>Replies and direct messages are processed in under 500ms, maintaining active engagement while algorithms push your content.</p>
                     </div>
 
-                    <div className="about-card scroll-reveal stagger-4">
+                    <div id="about-card-4" className={`about-card scroll-reveal stagger-4 ${visibleElements['about-card-4'] ? 'in-view' : ''}`}>
                         <div className="about-icon-wrapper trust-glow">
                             <Shield size={24} />
                         </div>
@@ -269,7 +275,7 @@ function Connect() {
 
             {/* How It Works Section */}
             <section className="how-it-works-section">
-                <div className="section-header-centered scroll-reveal">
+                <div id="how-header" className={`section-header-centered scroll-reveal ${visibleElements['how-header'] ? 'in-view' : ''}`}>
                     <div className="section-badge">
                         <Zap size={14} />
                         <span>Simple Integration</span>
@@ -278,27 +284,27 @@ function Connect() {
                 </div>
 
                 <div className="process-flow">
-                    <div className="process-step scroll-reveal stagger-1">
+                    <div id="step-1" className={`process-step scroll-reveal stagger-1 ${visibleElements['step-1'] ? 'in-view' : ''}`}>
                         <div className="step-number">01</div>
                         <h3>Link Channels</h3>
                         <p>Connect your Instagram page or YouTube channel in seconds via our secure Meta & Google OAuth connections.</p>
                     </div>
                     
-                    <div className="process-arrow-divider scroll-reveal">
+                    <div id="arrow-1" className={`process-arrow-divider scroll-reveal ${visibleElements['arrow-1'] ? 'in-view' : ''}`}>
                         <ArrowRight size={24} className="arrow-icon" />
                     </div>
 
-                    <div className="process-step scroll-reveal stagger-2">
+                    <div id="step-2" className={`process-step scroll-reveal stagger-2 ${visibleElements['step-2'] ? 'in-view' : ''}`}>
                         <div className="step-number">02</div>
                         <h3>Set Triggers</h3>
                         <p>Define rules for comments, mentions, and DMs. Set static keyword triggers or enable our AI to compose responses.</p>
                     </div>
 
-                    <div className="process-arrow-divider scroll-reveal">
+                    <div id="arrow-2" className={`process-arrow-divider scroll-reveal ${visibleElements['arrow-2'] ? 'in-view' : ''}`}>
                         <ArrowRight size={24} className="arrow-icon" />
                     </div>
 
-                    <div className="process-step scroll-reveal stagger-3">
+                    <div id="step-3" className={`process-step scroll-reveal stagger-3 ${visibleElements['step-3'] ? 'in-view' : ''}`}>
                         <div className="step-number">03</div>
                         <h3>Watch It Scale</h3>
                         <p>Sit back as Sotix automatically responds to comments, follows up via direct message, and tracks growth.</p>
@@ -308,7 +314,7 @@ function Connect() {
 
             {/* Pricing Section */}
             <section className="pricing-section">
-                <div className="section-header-centered scroll-reveal">
+                <div id="pricing-header" className={`section-header-centered scroll-reveal ${visibleElements['pricing-header'] ? 'in-view' : ''}`}>
                     <div className="section-badge">
                         <Zap size={14} />
                         <span>Pricing Plans</span>
@@ -336,7 +342,7 @@ function Connect() {
 
                 <div className="pricing-grid">
                     {/* Starter Tier */}
-                    <div className="pricing-card scroll-reveal stagger-1">
+                    <div id="price-card-1" className={`pricing-card scroll-reveal stagger-1 ${visibleElements['price-card-1'] ? 'in-view' : ''}`}>
                         <div className="tier-header">
                             <h3>Starter</h3>
                             <p className="tier-desc">Perfect for hobbyists and creators starting out.</p>
@@ -358,7 +364,7 @@ function Connect() {
                     </div>
 
                     {/* Pro Tier (Featured) */}
-                    <div className="pricing-card featured scroll-reveal stagger-2">
+                    <div id="price-card-2" className={`pricing-card featured scroll-reveal stagger-2 ${visibleElements['price-card-2'] ? 'in-view' : ''}`}>
                         <div className="featured-badge">Most Popular</div>
                         <div className="tier-header">
                             <h3>Creator Pro</h3>
@@ -383,7 +389,7 @@ function Connect() {
                     </div>
 
                     {/* Scale Tier */}
-                    <div className="pricing-card scroll-reveal stagger-3">
+                    <div id="price-card-3" className={`pricing-card scroll-reveal stagger-3 ${visibleElements['price-card-3'] ? 'in-view' : ''}`}>
                         <div className="tier-header">
                             <h3>Agency & Scale</h3>
                             <p className="tier-desc">For high-volume creators, agencies, and businesses.</p>
@@ -409,7 +415,7 @@ function Connect() {
                 </div>
 
                 {/* Pricing Bottom Bar / Trust Banner */}
-                <div className="pricing-bottom-bar scroll-reveal">
+                <div id="pricing-trust-bar" className={`pricing-bottom-bar scroll-reveal ${visibleElements['pricing-trust-bar'] ? 'in-view' : ''}`}>
                     <div className="trust-content">
                         <ShieldCheck size={20} className="trust-icon" />
                         <span className="trust-main-text">Risk-Free • No Credit Card Required for Starter Plan • 14-day Money Back Guarantee on Paid Plans</span>
@@ -425,7 +431,7 @@ function Connect() {
 
             {/* FAQ Section */}
             <section className="faq-section">
-                <div className="section-header-centered scroll-reveal">
+                <div id="faq-header" className={`section-header-centered scroll-reveal ${visibleElements['faq-header'] ? 'in-view' : ''}`}>
                     <div className="section-badge">
                         <HelpCircle size={14} />
                         <span>Faq</span>
@@ -454,7 +460,8 @@ function Connect() {
                     ].map((item, index) => (
                         <div 
                             key={index} 
-                            className={`faq-item scroll-reveal stagger-${(index % 3) + 1} ${faqOpenIndex === index ? 'active' : ''}`}
+                            id={`faq-item-${index}`}
+                            className={`faq-item scroll-reveal stagger-${(index % 3) + 1} ${visibleElements[`faq-item-${index}`] ? 'in-view' : ''} ${faqOpenIndex === index ? 'active' : ''}`}
                             onClick={() => setFaqOpenIndex(faqOpenIndex === index ? null : index)}
                         >
                             <div className="faq-question">
