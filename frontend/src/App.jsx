@@ -59,6 +59,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<ConnectOrChat />} />
+          <Route path="/connect" element={<Connect />} />
           
           {/* Dashboard Shell layout using ChatHub */}
           <Route element={<ChatHub />}>

@@ -76,7 +76,7 @@ function Connect() {
             <nav className="premium-navbar">
                 <div className="navbar-left">
                     <img src="/assets/logo-icon-transparent.png" alt="Sotix Logo" className="nav-logo" />
-                    <span className="nav-brand">Sotix OS</span>
+                    <span className="nav-brand">Sotix AI</span>
                 </div>
                 <div className="navbar-center hidden-mobile">
                     <a href="#features" className="nav-link">Platform</a>
@@ -93,44 +93,50 @@ function Connect() {
                 
                 {/* Left Side: Value Proposition */}
                 <div className="connect-info-side">
-                    <div className="info-badge">
-                        <Zap size={16} className="badge-icon" />
-                        <span>Next-Gen Automation</span>
+                    {/* Header Text Group */}
+                    <div className="connect-header-group">
+                        <div className="info-badge reveal-fade-in reveal-stagger-1">
+                            <Zap size={16} className="badge-icon" />
+                            <span>Next-Gen Automation</span>
+                        </div>
+                        <h1 className="info-title reveal-fade-in reveal-stagger-2">
+                            Scale Your Audience <span className="neon-text-gradient">on Autopilot.</span>
+                        </h1>
+                        <p className="info-description reveal-fade-in reveal-stagger-3">
+                            The easiest way to automate your Instagram and YouTube. Connect your accounts to set up auto-replies, track analytics, and manage your messages automatically.
+                        </p>
                     </div>
-                    <h1 className="info-title">
-                        Command Your<br />Digital Empire.
-                    </h1>
-                    <p className="info-description">
-                        Connect your platforms to Sotix OS and unlock enterprise-grade AI analytics, automated workflows, and unified audience intelligence in one seamless interface.
-                    </p>
 
-                    <div className="feature-list">
-                        <div className="feature-item">
-                            <div className="feature-icon-wrapper"><BarChart2 size={20} /></div>
-                            <div className="feature-text">
-                                <h3>Real-time Analytics</h3>
-                                <p>Instantly aggregate data across all channels.</p>
+                    {/* Features List Group */}
+                    <div className="connect-features-group">
+                        <div className="feature-list">
+                            <div className="feature-item reveal-fade-in reveal-stagger-4">
+                                <div className="feature-icon-wrapper analytics-glow"><BarChart2 size={20} /></div>
+                                <div className="feature-text">
+                                    <h3>Comment Auto-Reply</h3>
+                                    <p>Instantly reply to comments and send automated links to your viewers.</p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="feature-item">
-                            <div className="feature-icon-wrapper"><Cpu size={20} /></div>
-                            <div className="feature-text">
-                                <h3>AI-Powered Insights</h3>
-                                <p>Predict trends and automate engagement.</p>
+                            <div className="feature-item reveal-fade-in reveal-stagger-5">
+                                <div className="feature-icon-wrapper ai-glow"><Cpu size={20} /></div>
+                                <div className="feature-text">
+                                    <h3>DM Automation</h3>
+                                    <p>Engage with your audience and handle leads directly in their direct messages.</p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="feature-item">
-                            <div className="feature-icon-wrapper"><Lock size={20} /></div>
-                            <div className="feature-text">
-                                <h3>Bank-grade Security</h3>
-                                <p>Your data is encrypted and completely isolated.</p>
+                            <div className="feature-item reveal-fade-in reveal-stagger-6">
+                                <div className="feature-icon-wrapper security-glow"><Lock size={20} /></div>
+                                <div className="feature-text">
+                                    <h3>Growth Analytics</h3>
+                                    <p>Track conversion rates, message counts, and overall channel growth.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Right Side: Connection Card */}
-                <div className="connect-card-side">
+                <div className="connect-card-side reveal-fade-in reveal-stagger-7">
                     <div className="connect-glass-panel-premium expansive-card">
                         <div className="panel-glow-border"></div>
                         <div className="panel-content">
@@ -160,7 +166,7 @@ function Connect() {
                                         <span>{loadingInsta ? 'Connecting...' : 'Connect Instagram'}</span>
                                     </div>
                                     <ChevronRight size={20} className="btn-arrow" />
-                                    <div className="btn-hover-effect"></div>
+                                    <span className="premium-shine-sweep"></span>
                                 </button>
 
                                 <button
@@ -173,7 +179,7 @@ function Connect() {
                                         <span>{loadingYT ? 'Connecting...' : 'Connect YouTube'}</span>
                                     </div>
                                     <ChevronRight size={20} className="btn-arrow" />
-                                    <div className="btn-hover-effect"></div>
+                                    <span className="premium-shine-sweep"></span>
                                 </button>
                             </div>
                             
