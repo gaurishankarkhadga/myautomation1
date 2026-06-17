@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Instagram, Youtube, ChevronRight, ShieldCheck, Zap, BarChart2, Lock, Cpu, Globe } from 'lucide-react';
+import { Instagram, Youtube, ChevronRight, ShieldCheck, Zap, BarChart2, Lock, Cpu, Globe, HelpCircle, CheckCircle2, ArrowRight, Shield, Activity, Sparkles, ChevronDown } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import '../styles/Connect.css';
 
@@ -10,13 +10,39 @@ function Connect() {
     const [loadingYT, setLoadingYT] = useState(false);
     const [error, setError] = useState('');
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const [faqOpenIndex, setFaqOpenIndex] = useState(null);
+    const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' or 'yearly'
 
     useEffect(() => {
         const handleMouseMove = (e) => {
             setMousePos({ x: e.clientX, y: e.clientY });
         };
         window.addEventListener('mousemove', handleMouseMove);
-        return () => window.removeEventListener('mousemove', handleMouseMove);
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1,
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view');
+                } else {
+                    entry.target.classList.remove('in-view');
+                }
+            });
+        }, observerOptions);
+
+        const scrollElements = document.querySelectorAll('.scroll-reveal');
+        scrollElements.forEach((el) => observer.observe(el));
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            scrollElements.forEach((el) => observer.unobserve(el));
+            observer.disconnect();
+        };
     }, []);
 
     const handleConnectInstagram = async () => {
@@ -192,6 +218,258 @@ function Connect() {
                 </div>
 
             </main>
+
+            {/* About Section */}
+            <section className="connect-about-section">
+                <div className="section-header-centered scroll-reveal">
+                    <div className="section-badge">
+                        <Sparkles size={14} className="badge-sparkle" />
+                        <span>Platform Overview</span>
+                    </div>
+                    <h2 className="section-title-premium">The Next Generation of Social Automation.</h2>
+                    <p className="section-subtitle-premium">
+                        Streamline your digital presence with tools engineered to grow your channel without the friction of manual message management.
+                    </p>
+                </div>
+
+                <div className="about-grid">
+                    <div className="about-card scroll-reveal stagger-1">
+                        <div className="about-icon-wrapper api-glow">
+                            <Globe size={24} />
+                        </div>
+                        <h3>Official API Integrations</h3>
+                        <p>Powered by the official Meta Graph API and YouTube v3 API. Fully authorized, compliant, and 100% safe for your accounts.</p>
+                    </div>
+
+                    <div className="about-card scroll-reveal stagger-2">
+                        <div className="about-icon-wrapper ai-glow">
+                            <Cpu size={24} />
+                        </div>
+                        <h3>Intelligent Intent Engine</h3>
+                        <p>Recognizes emojis, sentiments, and intent keywords inside comments and DMs to trigger highly personalized auto-responses.</p>
+                    </div>
+
+                    <div className="about-card scroll-reveal stagger-3">
+                        <div className="about-icon-wrapper speed-glow">
+                            <Activity size={24} />
+                        </div>
+                        <h3>Real-time Delivery</h3>
+                        <p>Replies and direct messages are processed in under 500ms, maintaining active engagement while algorithms push your content.</p>
+                    </div>
+
+                    <div className="about-card scroll-reveal stagger-4">
+                        <div className="about-icon-wrapper trust-glow">
+                            <Shield size={24} />
+                        </div>
+                        <h3>Authorized & Secure</h3>
+                        <p>Enterprise-grade infrastructure featuring SOC2 compliant protocols and fully encrypted token storage handshakes.</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* How It Works Section */}
+            <section className="how-it-works-section">
+                <div className="section-header-centered scroll-reveal">
+                    <div className="section-badge">
+                        <Zap size={14} />
+                        <span>Simple Integration</span>
+                    </div>
+                    <h2 className="section-title-premium">Three Steps to Autopilot.</h2>
+                </div>
+
+                <div className="process-flow">
+                    <div className="process-step scroll-reveal stagger-1">
+                        <div className="step-number">01</div>
+                        <h3>Link Channels</h3>
+                        <p>Connect your Instagram page or YouTube channel in seconds via our secure Meta & Google OAuth connections.</p>
+                    </div>
+                    
+                    <div className="process-arrow-divider scroll-reveal">
+                        <ArrowRight size={24} className="arrow-icon" />
+                    </div>
+
+                    <div className="process-step scroll-reveal stagger-2">
+                        <div className="step-number">02</div>
+                        <h3>Set Triggers</h3>
+                        <p>Define rules for comments, mentions, and DMs. Set static keyword triggers or enable our AI to compose responses.</p>
+                    </div>
+
+                    <div className="process-arrow-divider scroll-reveal">
+                        <ArrowRight size={24} className="arrow-icon" />
+                    </div>
+
+                    <div className="process-step scroll-reveal stagger-3">
+                        <div className="step-number">03</div>
+                        <h3>Watch It Scale</h3>
+                        <p>Sit back as Sotix automatically responds to comments, follows up via direct message, and tracks growth.</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Pricing Section */}
+            <section className="pricing-section">
+                <div className="section-header-centered scroll-reveal">
+                    <div className="section-badge">
+                        <Zap size={14} />
+                        <span>Pricing Plans</span>
+                    </div>
+                    <h2 className="section-title-premium">Flexible Pricing for Creators.</h2>
+                    <p className="section-subtitle-premium">Choose the plan that matches your current growth stage. Cancel or change plans anytime.</p>
+                    
+                    {/* Billing Toggle */}
+                    <div className="billing-toggle-container">
+                        <button 
+                            className={`billing-toggle-btn ${billingCycle === 'monthly' ? 'active' : ''}`}
+                            onClick={() => setBillingCycle('monthly')}
+                        >
+                            Monthly
+                        </button>
+                        <button 
+                            className={`billing-toggle-btn ${billingCycle === 'yearly' ? 'active' : ''}`}
+                            onClick={() => setBillingCycle('yearly')}
+                        >
+                            Yearly
+                            <span className="save-badge">Save 20%</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="pricing-grid">
+                    {/* Starter Tier */}
+                    <div className="pricing-card scroll-reveal stagger-1">
+                        <div className="tier-header">
+                            <h3>Starter</h3>
+                            <p className="tier-desc">Perfect for hobbyists and creators starting out.</p>
+                            <div className="tier-price">
+                                <span className="currency">$</span>
+                                <span className="price">0</span>
+                                <span className="duration">/mo</span>
+                            </div>
+                        </div>
+                        <div className="tier-features">
+                            <ul>
+                                <li><CheckCircle2 size={16} className="check-icon" /> <span>1 Active Channel</span></li>
+                                <li><CheckCircle2 size={16} className="check-icon" /> <span>100 Auto-Replies / mo</span></li>
+                                <li><CheckCircle2 size={16} className="check-icon" /> <span>Basic Comment Triggers</span></li>
+                                <li><CheckCircle2 size={16} className="check-icon" /> <span>Community Support</span></li>
+                            </ul>
+                        </div>
+                        <button className="pricing-btn starter-btn">Get Started</button>
+                    </div>
+
+                    {/* Pro Tier (Featured) */}
+                    <div className="pricing-card featured scroll-reveal stagger-2">
+                        <div className="featured-badge">Most Popular</div>
+                        <div className="tier-header">
+                            <h3>Creator Pro</h3>
+                            <p className="tier-desc">For active creators looking to maximize engagement.</p>
+                            <div className="tier-price">
+                                <span className="currency">$</span>
+                                <span className="price">{billingCycle === 'monthly' ? '19' : '15'}</span>
+                                <span className="duration">/mo</span>
+                            </div>
+                            {billingCycle === 'yearly' && <p className="billed-annually">Billed annually ($180/yr)</p>}
+                        </div>
+                        <div className="tier-features">
+                            <ul>
+                                <li><CheckCircle2 size={16} className="check-icon pro-check" /> <span>3 Active Channels</span></li>
+                                <li><CheckCircle2 size={16} className="check-icon pro-check" /> <span>Unlimited Auto-Replies</span></li>
+                                <li><CheckCircle2 size={16} className="check-icon pro-check" /> <span>AI Intent Recognition</span></li>
+                                <li><CheckCircle2 size={16} className="check-icon pro-check" /> <span>Advanced DM Sequences</span></li>
+                                <li><CheckCircle2 size={16} className="check-icon pro-check" /> <span>Priority Email Support</span></li>
+                            </ul>
+                        </div>
+                        <button className="pricing-btn featured-btn">Upgrade to Pro</button>
+                    </div>
+
+                    {/* Scale Tier */}
+                    <div className="pricing-card scroll-reveal stagger-3">
+                        <div className="tier-header">
+                            <h3>Agency & Scale</h3>
+                            <p className="tier-desc">For high-volume creators, agencies, and businesses.</p>
+                            <div className="tier-price">
+                                <span className="currency">$</span>
+                                <span className="price">{billingCycle === 'monthly' ? '49' : '39'}</span>
+                                <span className="duration">/mo</span>
+                            </div>
+                            {billingCycle === 'yearly' && <p className="billed-annually">Billed annually ($468/yr)</p>}
+                        </div>
+                        <div className="tier-features">
+                            <ul>
+                                <li><CheckCircle2 size={16} className="check-icon" /> <span>Unlimited Channels</span></li>
+                                <li><CheckCircle2 size={16} className="check-icon" /> <span>Unlimited Auto-Replies</span></li>
+                                <li><CheckCircle2 size={16} className="check-icon" /> <span>Dedicated Account Manager</span></li>
+                                <li><CheckCircle2 size={16} className="check-icon" /> <span>Custom AI Response Tone</span></li>
+                                <li><CheckCircle2 size={16} className="check-icon" /> <span>Advanced Webhook Integrations</span></li>
+                                <li><CheckCircle2 size={16} className="check-icon" /> <span>24/7 Priority Support</span></li>
+                            </ul>
+                        </div>
+                        <button className="pricing-btn scale-btn">Upgrade to Scale</button>
+                    </div>
+                </div>
+
+                {/* Pricing Bottom Bar / Trust Banner */}
+                <div className="pricing-bottom-bar scroll-reveal">
+                    <div className="trust-content">
+                        <ShieldCheck size={20} className="trust-icon" />
+                        <span className="trust-main-text">Risk-Free • No Credit Card Required for Starter Plan • 14-day Money Back Guarantee on Paid Plans</span>
+                    </div>
+                    <div className="trust-separator"></div>
+                    <div className="trust-features-inline">
+                        <span>✓ Cancel Anytime</span>
+                        <span>✓ Change Plans Instantly</span>
+                        <span>✓ Secure 256-bit Checkout</span>
+                    </div>
+                </div>
+            </section>
+
+            {/* FAQ Section */}
+            <section className="faq-section">
+                <div className="section-header-centered scroll-reveal">
+                    <div className="section-badge">
+                        <HelpCircle size={14} />
+                        <span>Faq</span>
+                    </div>
+                    <h2 className="section-title-premium">Frequently Asked Questions.</h2>
+                </div>
+
+                <div className="faq-container">
+                    {[
+                        {
+                            q: "How does the Instagram integration work?",
+                            a: "It uses Meta's official Graph API. Once you authorize through Facebook OAuth, Sotix receives comment and DM webhooks in real-time, executing your automations instantly."
+                        },
+                        {
+                            q: "Is my account safe from suspension?",
+                            a: "Yes. Since we rely 100% on official APIs and do not use scraping or simulated browsers, your account is fully compliant with Instagram and Google Developer Policies."
+                        },
+                        {
+                            q: "Can I cancel my subscription at any time?",
+                            a: "Absolutely. You can cancel, upgrade, or downgrade your plan at any time directly from your account settings page."
+                        },
+                        {
+                            q: "Does it support custom replies based on keywords?",
+                            a: "Yes. You can trigger different automations based on exact keywords, partial matches, or let our AI analyze comment intent to reply dynamically."
+                        }
+                    ].map((item, index) => (
+                        <div 
+                            key={index} 
+                            className={`faq-item scroll-reveal stagger-${(index % 3) + 1} ${faqOpenIndex === index ? 'active' : ''}`}
+                            onClick={() => setFaqOpenIndex(faqOpenIndex === index ? null : index)}
+                        >
+                            <div className="faq-question">
+                                <h3>{item.q}</h3>
+                                <div className="faq-icon-toggle">
+                                    <ChevronDown size={18} className="chevron-toggle" />
+                                </div>
+                            </div>
+                            <div className="faq-answer">
+                                <p>{item.a}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
 
             <footer className="connect-footer-premium expansive-footer">
                 <div className="footer-links">
