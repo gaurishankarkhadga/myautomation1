@@ -15,6 +15,7 @@ function loadHandlers() {
         return;
     }
 
+    
     const files = fs.readdirSync(handlersDir).filter(f => f.endsWith('.handler.js'));
 
     for (const file of files) {
@@ -102,7 +103,7 @@ CRITICAL RULES:
    - IMPORTANT: If the creator mentions a TIME DURATION with comment-to-dm, include "hours" DIRECTLY in the params. Do NOT create a separate set_time_limit intent. Example: "dm commenters for 30 hours" → hours: 30 inside enable_comment_to_dm params
    - IMPORTANT: If the creator mentions a MAX COMMENT COUNT with comment-to-dm, include "maxComments" DIRECTLY in the params. Do NOT create a separate set_comment_limit intent.
    - If the creator mentions a specific post/reel (recent, latest, first), include "targetMedia" in the params
-13. AUTO-CLARIFICATION (Human-like behavior): If the creator asks for something but is missing REQUIRED information to execute it (e.g., "Add my new course" but no URL/Price, or "Change it to 50" but history doesn't specify what "it" is), DO NOT hallucinate parameters. Instead, return the intent "request_clarification" with a param "question" asking the creator for the missing details in a natural, casual way.
+13. AUTO-CLARIFICATION (Human-like behavior): If the creator asks for something but is missing REQUIRED information to execute it (e.g., "Add my new course" but no URL/Price, or "Change it to 50" but history doesn't specify what "it" is), DO NOT hallucinate parameters. Instead, return the intent "request_clarification" with params: "question" (asking the creator for the missing details in a natural, casual way), "contextIntent" (the intent they wanted to run, e.g. "add_asset"), and "assetType" (if adding an asset, e.g. "course", "ebook", "product", "link", etc.).
 14. RESOLVING CLARIFICATIONS: If the last message from Sotix in the RECENT CONVERSATION HISTORY was a request_clarification (e.g., asking for missing details like a title, price, or link), and the creator's new message provides those details, you MUST combine these details with the unresolved intents from the previous request. For example, if they previously wanted to "create a biolink and add an ebook product" (which was blocked/requested for clarification), and they now reply with the ebook title/link, you MUST output BOTH the "add_asset" intent (with the new params) AND the "create_biolink" intent so that both are executed.
 
 
@@ -122,7 +123,7 @@ ${intentList}
 - remove_custom_instruction (remove a rule by number — params: {index: 1})
 - clear_custom_instructions (remove all custom rules)
 - get_morning_briefing (24h activity summary, morning update, "what happened")
-- request_clarification (when missing REQUIRED info to execute a command — params: {question: "What's the link for the course?"})
+- request_clarification (when missing REQUIRED info to execute a command — params: {question: "What's the link for the course?", contextIntent?: "add_asset", assetType?: "course" | "ebook" | "product" | "link" | "service"})
 - general_chat (for general questions, greetings, help, feedback, or anything not matching above)
 
 CONTEXT:
@@ -149,7 +150,7 @@ User: "bhai sab chalu kr de 2 ghante ke liye" → [{"intent": "enable_all_automa
 User: "meri latest reel pe comments ka reply kr" → [{"intent": "enable_comment_autoreply", "params": {"mode": "ai_smart"}, "confidence": 0.85}, {"intent": "set_content_target", "params": {"target": "recent"}, "confidence": 0.85}]
 User: "just do 50 and stop" → [{"intent": "set_comment_limit", "params": {"maxReplies": 50}, "confidence": 0.8}]
 User: "i want auto reply on my dm and comments both for 6 hrs" → [{"intent": "enable_comment_autoreply", "params": {"mode": "ai_smart"}, "confidence": 0.9}, {"intent": "enable_dm_autoreply", "params": {"mode": "ai_smart"}, "confidence": 0.9}, {"intent": "set_time_limit", "params": {"hours": 6}, "confidence": 0.9}]
-User: "Add a new course" → [{"intent": "request_clarification", "params": {"question": "Got it! What's the link and price for the new course?"}, "confidence": 0.95}]
+User: "Add a new course" → [{"intent": "request_clarification", "params": {"question": "Got it! What's the link and price for the new course?", "contextIntent": "add_asset", "assetType": "course"}, "confidence": 0.95}]
 User: "Change it to 10 hours" (assuming history shows comment replies) → [{"intent": "set_time_limit", "params": {"hours": 10}, "confidence": 0.9}]
 User: "pause for now" → [{"intent": "disable_all_automation", "params": {}, "confidence": 0.8}]
 User: "kl se band kr dena" → [{"intent": "set_time_limit", "params": {"hours": 24}, "confidence": 0.7}]
@@ -384,15 +385,41 @@ async function formatResponse(message, actionResults, hasChat, context, clarific
 
     // If there's a clarification intent, just return the question directly without an LLM wrapper
     if (clarificationIntents && clarificationIntents.length > 0) {
+        const params = { ...clarificationIntents[0].params };
+        
+        // Auto-enrich clarification parameters if missing
+        if (!params.contextIntent) {
+            const textToSearch = ((params.question || '') + ' ' + (message || '')).toLowerCase();
+            const isAdding = textToSearch.includes('add') || textToSearch.includes('create') || textToSearch.includes('new') || textToSearch.includes('put');
+            if (isAdding) {
+                if (textToSearch.includes('course')) {
+                    params.contextIntent = 'add_asset';
+                    params.assetType = 'course';
+                } else if (textToSearch.includes('ebook')) {
+                    params.contextIntent = 'add_asset';
+                    params.assetType = 'ebook';
+                } else if (textToSearch.includes('link')) {
+                    params.contextIntent = 'add_asset';
+                    params.assetType = 'link';
+                } else if (textToSearch.includes('service')) {
+                    params.contextIntent = 'add_asset';
+                    params.assetType = 'service';
+                } else if (textToSearch.includes('product')) {
+                    params.contextIntent = 'add_asset';
+                    params.assetType = 'product';
+                }
+            }
+        }
+
         return {
-            response: clarificationIntents[0].params.question || "Could you provide a bit more detail?",
+            response: params.question || "Could you provide a bit more detail?",
             toasts,
             actions: [
                 ...actionResults,
                 { 
                     intent: 'request_clarification', 
                     success: true, 
-                    data: clarificationIntents[0].params 
+                    data: params 
                 }
             ]
         };

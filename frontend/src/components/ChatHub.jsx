@@ -1064,6 +1064,8 @@ function ChatHub() {
                                     {msg.actions?.some(a => a.intent === 'request_clarification' && a.data) && (
                                         <ClarificationWidget
                                             question={msg.actions.find(a => a.intent === 'request_clarification').data.question}
+                                            contextIntent={msg.actions.find(a => a.intent === 'request_clarification').data.contextIntent}
+                                            assetType={msg.actions.find(a => a.intent === 'request_clarification').data.assetType}
                                             onReply={(text) => sendMessage(text)}
                                         />
                                     )}
