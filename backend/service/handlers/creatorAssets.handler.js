@@ -1,4 +1,5 @@
 const CreatorAsset = require('../../model/CreatorAsset');
+const biolinkHandler = require('./biolink.handler');
 
 // ==================== CREATOR ASSETS HANDLER ====================
 // Handles: add/list/delete/toggle creator assets (products, links, courses, etc.)
@@ -40,6 +41,9 @@ module.exports = {
 
                 const typeIcons = { product: '📦', link: '🔗', course: '📚', image: '🖼️', service: '⚙️', ebook: '📖', merch: '👕', affiliate_link: '💰', text_template: '📝' };
                 const icon = typeIcons[type] || '📎';
+
+                // Automatically sync the creator's live BioLink
+                await biolinkHandler.syncBiolinkWithAssets(userId);
 
                 return {
                     success: true,
@@ -99,6 +103,9 @@ module.exports = {
 
                 await CreatorAsset.findByIdAndDelete(asset._id);
 
+                // Automatically sync the creator's live BioLink
+                await biolinkHandler.syncBiolinkWithAssets(userId);
+
                 return {
                     success: true,
                     message: `Deleted asset "${asset.title}" (${asset.type}).`,
@@ -124,6 +131,9 @@ module.exports = {
 
                 const newState = !asset.isActive;
                 await CreatorAsset.findByIdAndUpdate(asset._id, { isActive: newState });
+
+                // Automatically sync the creator's live BioLink
+                await biolinkHandler.syncBiolinkWithAssets(userId);
 
                 return {
                     success: true,

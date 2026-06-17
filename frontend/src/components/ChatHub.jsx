@@ -291,7 +291,7 @@ function ChatHub() {
 
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                content: data.response || 'Something went wrong.',
+                content: data.response !== undefined ? data.response : 'Something went wrong.',
                 actions: data.actions || [],
                 toasts: data.toasts || [],
                 timestamp: new Date().toISOString()

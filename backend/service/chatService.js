@@ -103,6 +103,7 @@ CRITICAL RULES:
    - IMPORTANT: If the creator mentions a MAX COMMENT COUNT with comment-to-dm, include "maxComments" DIRECTLY in the params. Do NOT create a separate set_comment_limit intent.
    - If the creator mentions a specific post/reel (recent, latest, first), include "targetMedia" in the params
 13. AUTO-CLARIFICATION (Human-like behavior): If the creator asks for something but is missing REQUIRED information to execute it (e.g., "Add my new course" but no URL/Price, or "Change it to 50" but history doesn't specify what "it" is), DO NOT hallucinate parameters. Instead, return the intent "request_clarification" with a param "question" asking the creator for the missing details in a natural, casual way.
+14. RESOLVING CLARIFICATIONS: If the last message from Sotix in the RECENT CONVERSATION HISTORY was a request_clarification (e.g., asking for missing details like a title, price, or link), and the creator's new message provides those details, you MUST combine these details with the unresolved intents from the previous request. For example, if they previously wanted to "create a biolink and add an ebook product" (which was blocked/requested for clarification), and they now reply with the ebook title/link, you MUST output BOTH the "add_asset" intent (with the new params) AND the "create_biolink" intent so that both are executed.
 
 AVAILABLE INTENTS:
 ${intentList}
@@ -224,6 +225,12 @@ User: "kya hua raat mein?" → [{"intent": "get_morning_briefing", "params": {},
 User: "any updates?" → [{"intent": "get_morning_briefing", "params": {}, "confidence": 0.85}]
 User: "morning briefing" → [{"intent": "get_morning_briefing", "params": {}, "confidence": 0.95}]
 
+MULTI-INTENT & CLARIFICATION EXAMPLES:
+User: "create a biolink and add one ebook product on mu bio with all my socila link ok" → [{"intent": "add_asset", "params": {"type": "ebook", "title": "Ebook Product"}, "confidence": 0.9}, {"intent": "create_biolink", "params": {}, "confidence": 0.9}]
+User: "add a course named 'AI Coding' to my bio and update theme to glass" → [{"intent": "add_asset", "params": {"type": "course", "title": "AI Coding"}, "confidence": 0.95}, {"intent": "update_biolink", "params": {"theme": "glass"}, "confidence": 0.95}]
+User: "make a biolink with modern layout style and also add link for my website mysite.com" → [{"intent": "add_asset", "params": {"type": "link", "title": "Website", "url": "mysite.com"}, "confidence": 0.9}, {"intent": "create_biolink", "params": {"style": "modern"}, "confidence": 0.9}]
+User: "title is 'My Ebook' and link is 'https://myebook.com'" (assuming history shows they wanted to "create a biolink and add one ebook product" but got asked for details) → [{"intent": "add_asset", "params": {"type": "ebook", "title": "My Ebook", "url": "https://myebook.com"}, "confidence": 0.95}, {"intent": "create_biolink", "params": {}, "confidence": 0.95}]
+
 USER MESSAGE: "${message}"
 
 Return ONLY a valid JSON array. No markdown, no explanation, no extra text. Just the JSON array.`;
@@ -297,9 +304,22 @@ async function executeIntents(intents, context) {
     const chatIntents = intents.filter(i => i.intent === 'general_chat');
     const clarificationIntents = intents.filter(i => i.intent === 'request_clarification');
 
+    // Execute all actionable intents sequentially, sorting dependencies first:
+    // 1. Asset modifications (add_asset, delete_asset, toggle_asset)
+    // 2. Biolink modifications (create_biolink, update_biolink)
+    // 3. Other actions
+    const sortedActionIntents = [...actionIntents].sort((a, b) => {
+        const getPriority = (intent) => {
+            if (['add_asset', 'delete_asset', 'toggle_asset'].includes(intent)) return 1;
+            if (['create_biolink', 'update_biolink'].includes(intent)) return 2;
+            return 3;
+        };
+        return getPriority(a.intent) - getPriority(b.intent);
+    });
+
     // Execute all actionable intents sequentially
-    if (actionIntents.length > 0) {
-        for (const intentObj of actionIntents) {
+    if (sortedActionIntents.length > 0) {
+        for (const intentObj of sortedActionIntents) {
             const handler = handlerRegistry.get(intentObj.intent);
 
             if (!handler) {

@@ -110,7 +110,7 @@ async function gatherAssets(userId) {
     const products = [];
 
     for (const asset of assets) {
-        if (['product', 'merch'].includes(asset.type)) {
+        if (['product', 'merch', 'course', 'ebook', 'service'].includes(asset.type)) {
             products.push({
                 id: `prod_${asset._id}`,
                 name: asset.title,
@@ -120,12 +120,13 @@ async function gatherAssets(userId) {
                 url: asset.url || '',
                 category: asset.type
             });
-        } else if (['link', 'course', 'ebook', 'service', 'affiliate_link'].includes(asset.type)) {
-            const typeIcons = { link: 'link', course: 'book', ebook: 'book', service: 'briefcase', affiliate_link: 'tag' };
+        } else if (['link', 'affiliate_link'].includes(asset.type)) {
+            if (!asset.url) continue; // skip links without a URL since it's required by linkSchema
+            const typeIcons = { link: 'link', affiliate_link: 'tag' };
             links.push({
                 id: `asset_${asset._id}`,
                 title: asset.title,
-                url: asset.url || '',
+                url: asset.url,
                 platform: 'website',
                 icon: typeIcons[asset.type] || 'link',
                 isActive: true,
@@ -160,9 +161,40 @@ async function getProfileInfo(userId) {
     return profile;
 }
 
+// ── Helper: sync active BioLink with latest CreatorAssets ────────────
+async function syncBiolinkWithAssets(userId) {
+    try {
+        const biolinkUserId = await resolveBiolinkUserId(userId);
+        const biolink = await BioLink.findOne({ userId: biolinkUserId }).sort({ lastModified: -1, updatedAt: -1 });
+        
+        if (!biolink) {
+            return { success: false, message: 'No active BioLink found to sync.' };
+        }
+
+        const { links: assetLinks, products } = await gatherAssets(userId);
+
+        // Keep only social/custom links (non-asset links) in biolink.links
+        const existingSocialAndCustomLinks = (biolink.links || []).filter(link => !link.id || !link.id.startsWith('asset_'));
+
+        // Combine them
+        const updatedLinks = [...existingSocialAndCustomLinks, ...assetLinks];
+
+        biolink.links = updatedLinks;
+        biolink.products = products;
+        biolink.lastModified = new Date();
+
+        await biolink.save();
+        return { success: true, biolink };
+    } catch (err) {
+        console.error('[syncBiolinkWithAssets] Failed:', err.message);
+        return { success: false, message: err.message };
+    }
+}
+
 module.exports = {
     name: 'biolink',
     intents: ['create_biolink', 'update_biolink', 'list_biolinks'],
+    syncBiolinkWithAssets,
 
     async execute(intent, params, context) {
         const { userId } = context;
@@ -172,6 +204,22 @@ module.exports = {
 
             // ==================== CREATE BIOLINK ====================
             if (intent === 'create_biolink') {
+                // Check if they already have an active BioLink
+                const existing = await BioLink.findOne({ userId: biolinkUserId }).sort({ lastModified: -1 });
+                if (existing) {
+                    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+                    const publicUrl = `${frontendUrl}/p/${existing.username}`;
+                    await syncBiolinkWithAssets(userId);
+                    return {
+                        success: true,
+                        message: `🎨 **You already have an active BioLink!** I've synchronized it with your latest assets.\n\n🔗 **View it here:**\n${publicUrl}`,
+                        data: {
+                            biolinkId: existing._id,
+                            url: publicUrl
+                        }
+                    };
+                }
+
                 // 1. Resolve theme
                 const themeId = resolveTheme(params.style || params.theme || params.look || '');
                 const themeSettings = DEFAULT_THEMES[themeId] || DEFAULT_THEMES.modern;
