@@ -1016,19 +1016,7 @@ function ChatHub() {
                                         <ActionStatusWidget actions={msg.actions} />
                                     )}
 
-                                    {msg.actions?.length > 0 && (
-                                        <div className="msg-badges">
-                                            {msg.actions.map((a, j) => (
-                                                <span key={j} className={`action-badge ${a.success ? 'ok' : 'err'}`}>
-                                                    {a.success
-                                                        ? <CheckCircle size={11} />
-                                                        : <Circle size={11} />
-                                                    }
-                                                    {a.intent?.replace(/_/g, ' ')}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    )}
+
 
                                     {msg.actions?.some(a => a.intent === 'get_status' && a.data?.inboxTriage) && (
                                         <div className="triage-badges-container">

@@ -5,9 +5,26 @@ import '../../styles/ActionStatusWidget.css';
 const ActionStatusWidget = ({ actions }) => {
     // Filter out actions that already have their own dedicated preview widgets 
     // to prevent double-rendering data (like Clarification, BioLink preview, Viral Carousel).
-    const filteredActions = actions.filter(action => 
-        !['request_clarification', 'create_biolink', 'generate_viral_script'].includes(action.intent)
-    );
+    const excludedIntents = [
+        'request_clarification', 
+        'create_biolink', 
+        'generate_viral_script',
+        'enable_comment_autoreply', 
+        'enable_dm_autoreply', 
+        'enable_all_automation', 
+        'disable_comment_autoreply', 
+        'disable_dm_autoreply', 
+        'disable_all_automation', 
+        'set_content_target', 
+        'set_time_limit', 
+        'set_comment_limit', 
+        'find_brand_deals', 
+        'list_brand_deals', 
+        'enable_comment_to_dm', 
+        'enable_gamify_funnel'
+    ];
+
+    const filteredActions = actions.filter(action => !excludedIntents.includes(action.intent));
 
     if (filteredActions.length === 0) return null;
 
