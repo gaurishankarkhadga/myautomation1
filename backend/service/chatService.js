@@ -560,6 +560,9 @@ async function processMessage(userId, message, token) {
             chatHistory.messages = chatHistory.messages.slice(-100);
         }
 
+
+
+        
         await chatHistory.save();
     } catch (err) {
         console.error('[ChatService] Failed to save chat history:', err.message);
