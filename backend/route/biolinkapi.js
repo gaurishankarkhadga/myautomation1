@@ -46,6 +46,72 @@ async function downloadProfileImage(url, userId) {
   }
 }
 
+// Helper: Ensure the biolink's avatar is saved and hosted locally (automatically repair and refresh external CDN URLs)
+async function ensureLocalAvatar(biolink) {
+  if (!biolink || !biolink.profile) return;
+  const currentAvatar = biolink.profile.avatar;
+  
+  if (!currentAvatar || !currentAvatar.startsWith('http')) return;
+  
+  if (currentAvatar.includes('cdninstagram.com') || currentAvatar.includes('instagram.com') || currentAvatar.includes('googleusercontent.com')) {
+    try {
+      console.log(`[Avatar Self-Repair] Found external avatar on biolink ${biolink._id}: ${currentAvatar}`);
+      
+      // 1. Try to download directly in case it is still valid
+      let localPath = await downloadProfileImage(currentAvatar, biolink.userId || 'anonymous');
+      
+      // 2. If direct download failed/fallback, fetch fresh URL via platform APIs using stored access tokens
+      if (!localPath || localPath.startsWith('http')) {
+        const userId = biolink.userId;
+        if (userId && userId.startsWith('insta_')) {
+          const instaUserId = userId.replace('insta_', '');
+          const { Token } = require('../model/Instaautomation');
+          const tokenData = await Token.findOne({ userId: instaUserId });
+          if (tokenData && tokenData.accessToken) {
+            const axios = require('axios');
+            const response = await axios.get('https://graph.instagram.com/me', {
+              params: {
+                fields: 'profile_picture_url',
+                access_token: tokenData.accessToken
+              }
+            });
+            if (response.data && response.data.profile_picture_url) {
+              console.log(`[Avatar Self-Repair] Fetched fresh Instagram profile picture URL`);
+              localPath = await downloadProfileImage(response.data.profile_picture_url, userId);
+            }
+          }
+        } else if (userId && userId.startsWith('yt_')) {
+          const ytChannelId = userId.replace('yt_', '');
+          const { YTToken } = require('../model/YoutubeAutomation');
+          const tokenData = await YTToken.findOne({ channelId: ytChannelId });
+          if (tokenData && tokenData.accessToken) {
+            const youtubeService = require('../service/youtubeService');
+            const authClient = youtubeService.createAuthClient(
+              tokenData.accessToken,
+              tokenData.refreshToken,
+              tokenData.expiresAt
+            );
+            const channelInfo = await youtubeService.getChannelInfo(authClient);
+            if (channelInfo && channelInfo.thumbnailUrl) {
+              console.log(`[Avatar Self-Repair] Fetched fresh YouTube channel thumbnail URL`);
+              localPath = await downloadProfileImage(channelInfo.thumbnailUrl, userId);
+            }
+          }
+        }
+      }
+      
+      // 3. Update database if we successfully retrieved a local path
+      if (localPath && !localPath.startsWith('http')) {
+        biolink.profile.avatar = localPath;
+        await BioLink.updateOne({ _id: biolink._id }, { $set: { 'profile.avatar': localPath } });
+        console.log(`[Avatar Self-Repair] Successfully saved local avatar for ${biolink._id}: ${localPath}`);
+      }
+    } catch (err) {
+      console.error('[Avatar Self-Repair] Error repairing avatar:', err.message);
+    }
+  }
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadsDir),
   filename: (req, file, cb) => {
@@ -203,21 +269,7 @@ router.get('/data', authenticateToken, async (req, res) => {
       }
     }
 
-    if (biolink && biolink.profile && biolink.profile.avatar) {
-      const currentAvatar = biolink.profile.avatar;
-      if (currentAvatar.includes('cdninstagram.com') || currentAvatar.includes('instagram.com') || currentAvatar.includes('googleusercontent.com')) {
-        try {
-          const localPath = await downloadProfileImage(currentAvatar, req.userId || 'anonymous');
-          if (localPath && localPath !== currentAvatar) {
-            biolink.profile.avatar = localPath;
-            await BioLink.updateOne({ _id: biolink._id }, { $set: { 'profile.avatar': localPath } });
-            console.log(`[Avatar Sanitization] Updated biolink ${biolink._id} avatar to local path: ${localPath}`);
-          }
-        } catch (err) {
-          console.error('[Avatar Sanitization] Failed to sanitize existing avatar:', err.message);
-        }
-      }
-    }
+    await ensureLocalAvatar(biolink);
 
     const listQuery = req.userId ? { userId: req.userId } : {};
     const biolinks = await BioLink.find(listQuery).sort({ lastModified: -1, updatedAt: -1 });
@@ -261,6 +313,8 @@ router.get('/public/:username', async (req, res) => {
       isPublished: true
     });
     if (!biolink) return res.status(404).json({ error: 'BioLink not found' });
+
+    await ensureLocalAvatar(biolink);
 
     biolink.analytics.views += 1;
     biolink.analytics.lastViewed = new Date();
@@ -533,6 +587,8 @@ router.post('/view', async (req, res) => {
       isPublished: true
     });
     if (!biolink) return res.status(404).json({ error: 'BioLink not found' });
+
+    await ensureLocalAvatar(biolink);
 
     biolink.analytics.views += 1;
     biolink.analytics.lastViewed = new Date();
