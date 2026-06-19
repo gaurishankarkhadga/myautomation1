@@ -76,6 +76,64 @@ router.get('/data', authenticateToken, async (req, res) => {
   try {
     const { id } = req.query || {};
 
+    let platformUsername = null;
+    let platformDisplayName = null;
+    let platformAvatar = null;
+
+    if (req.userId) {
+      if (req.userId.startsWith('insta_')) {
+        const instaUserId = req.userId.replace('insta_', '');
+        try {
+          const { Token } = require('../model/Instaautomation');
+          const tokenData = await Token.findOne({ userId: instaUserId });
+          if (tokenData && tokenData.accessToken) {
+            const axios = require('axios');
+            const response = await axios.get('https://graph.instagram.com/me', {
+              params: {
+                fields: 'username,profile_picture_url',
+                access_token: tokenData.accessToken
+              }
+            });
+            if (response.data) {
+              platformUsername = response.data.username;
+              platformDisplayName = response.data.username;
+              platformAvatar = response.data.profile_picture_url;
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching Instagram details in biolink backend:', err.message);
+        }
+      } else if (req.userId.startsWith('yt_')) {
+        const ytChannelId = req.userId.replace('yt_', '');
+        try {
+          const { YTToken } = require('../model/YoutubeAutomation');
+          const tokenData = await YTToken.findOne({ channelId: ytChannelId });
+          if (tokenData) {
+            platformUsername = tokenData.channelTitle ? tokenData.channelTitle.replace(/\s+/g, '').toLowerCase() : null;
+            platformDisplayName = tokenData.channelTitle;
+            if (tokenData.accessToken) {
+              try {
+                const youtubeService = require('../service/youtubeService');
+                const authClient = youtubeService.createAuthClient(
+                  tokenData.accessToken,
+                  tokenData.refreshToken,
+                  tokenData.expiresAt
+                );
+                const channelInfo = await youtubeService.getChannelInfo(authClient);
+                if (channelInfo && channelInfo.thumbnailUrl) {
+                  platformAvatar = channelInfo.thumbnailUrl;
+                }
+              } catch (ytErr) {
+                console.error('Error fetching YouTube thumbnail in biolink backend:', ytErr.message);
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching YouTube details in biolink backend:', err.message);
+        }
+      }
+    }
+
     let biolink = null;
     if (id) {
       biolink = await BioLink.findOne({ _id: id });
@@ -85,10 +143,24 @@ router.get('/data', authenticateToken, async (req, res) => {
       biolink = await BioLink.findOne(query).sort({ lastModified: -1, updatedAt: -1 });
       if (!biolink) {
         const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+        let initialUsername = platformUsername || `user_${uniqueSuffix}`;
+        if (platformUsername) {
+          const existingUsername = await BioLink.findOne({ username: { $regex: new RegExp(`^${platformUsername}$`, 'i') } });
+          if (existingUsername) {
+            initialUsername = `${platformUsername}_${uniqueSuffix}`;
+          }
+        }
+        const initialDisplayName = platformDisplayName || 'My BioLink';
+
         biolink = new BioLink({
           userId: req.userId || 'anonymous',
-          username: `user_${uniqueSuffix}`,
-          profile: { displayName: 'My BioLink', tagline: 'Your tagline here', bio: '' },
+          username: initialUsername,
+          profile: {
+            displayName: initialDisplayName,
+            tagline: 'Your tagline here',
+            bio: '',
+            avatar: platformAvatar || ''
+          },
           links: [], products: [], theme: 'minimal', elements: [],
           settings: { backgroundColor: '#ffffff', textColor: '#1e1b4b', accentColor: '#8b5cf6', borderRadius: '12px', spacing: '16px' },
           analytics: { views: 0, clicks: 0 }
@@ -99,8 +171,12 @@ router.get('/data', authenticateToken, async (req, res) => {
 
     const listQuery = req.userId ? { userId: req.userId } : {};
     const biolinks = await BioLink.find(listQuery).sort({ lastModified: -1, updatedAt: -1 });
-    const dummyUser = { username: biolink.username, displayName: biolink.profile.displayName };
-    res.json({ biolink, biolinks, user: dummyUser });
+    const user = {
+      username: platformUsername || biolink.username,
+      displayName: platformDisplayName || biolink.profile.displayName,
+      avatar: platformAvatar || biolink.profile?.avatar || ''
+    };
+    res.json({ biolink, biolinks, user });
   } catch (error) {
     console.error('Error fetching biolink data:', error);
     res.status(500).json({ error: 'Failed to fetch biolink data' });
@@ -130,7 +206,10 @@ router.get('/stats', authenticateToken, async (req, res) => {
 router.get('/public/:username', async (req, res) => {
   try {
     const { username } = req.params;
-    const biolink = await BioLink.findOne({ username, isPublished: true });
+    const biolink = await BioLink.findOne({
+      username: { $regex: new RegExp(`^${username}$`, 'i') },
+      isPublished: true
+    });
     if (!biolink) return res.status(404).json({ error: 'BioLink not found' });
 
     biolink.analytics.views += 1;
@@ -212,7 +291,7 @@ router.post('/save', authenticateToken, async (req, res) => {
     // Case 3: No _id and no _new — legacy fallback (find by username or create)
     else {
       if (biolinkData.username && biolinkData.username !== 'user' && biolinkData.username !== '') {
-        const existing = await BioLink.findOne({ username: biolinkData.username });
+        const existing = await BioLink.findOne({ username: { $regex: new RegExp(`^${biolinkData.username}$`, 'i') } });
         if (existing && (!existing.userId || existing.userId === 'anonymous' || existing.userId === req.userId)) {
           const updatePayload = buildUpdatePayload(biolinkData);
           biolink = await BioLink.findOneAndUpdate(
@@ -262,7 +341,7 @@ router.post('/publish', authenticateToken, async (req, res) => {
     // Check if username is taken by a DIFFERENT biolink
     const excludeId = new mongoose.Types.ObjectId(id);
     const existing = await BioLink.findOne({
-      username,
+      username: { $regex: new RegExp(`^${username}$`, 'i') },
       _id: { $ne: excludeId }
     });
     if (existing) return res.status(400).json({ error: 'Username already taken' });
@@ -359,7 +438,10 @@ router.post('/click', async (req, res) => {
     const { username } = req.body;
     if (!username) return res.status(400).json({ error: 'Username is required' });
 
-    const biolink = await BioLink.findOne({ username, isPublished: true });
+    const biolink = await BioLink.findOne({
+      username: { $regex: new RegExp(`^${username}$`, 'i') },
+      isPublished: true
+    });
     if (!biolink) return res.status(404).json({ error: 'BioLink not found' });
 
     biolink.analytics.clicks += 1;
@@ -377,7 +459,7 @@ router.post('/check', async (req, res) => {
     const { username, excludeId } = req.body;
     if (!username) return res.status(400).json({ error: 'Username is required' });
 
-    const query = { username };
+    const query = { username: { $regex: new RegExp(`^${username}$`, 'i') } };
     // Exclude the current biolink so its own username doesn't show as "taken"
     if (excludeId) {
       query._id = { $ne: new mongoose.Types.ObjectId(excludeId) };
@@ -396,7 +478,10 @@ router.post('/view', async (req, res) => {
     const { username } = req.body;
     if (!username) return res.status(400).json({ error: 'Username is required' });
 
-    const biolink = await BioLink.findOne({ username, isPublished: true });
+    const biolink = await BioLink.findOne({
+      username: { $regex: new RegExp(`^${username}$`, 'i') },
+      isPublished: true
+    });
     if (!biolink) return res.status(404).json({ error: 'BioLink not found' });
 
     biolink.analytics.views += 1;

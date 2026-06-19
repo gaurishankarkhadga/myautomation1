@@ -505,15 +505,22 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         const data = await response.json();
         if (data.user) {
           setUser(data.user);
-          setBiolinkData(prev => ({
-            ...prev,
-            profile: {
-              ...prev.profile,
-              displayName: prev.profile?.displayName || data.user.displayName || data.user.username,
-              tagline: prev.profile?.tagline || 'Your tagline here'
-            },
-            username: prev.username || data.user.username
-          }));
+          setBiolinkData(prev => {
+            const currentDisplayName = prev.profile?.displayName;
+            const hasDummyName = !currentDisplayName || currentDisplayName === 'My BioLink' || currentDisplayName === 'Unnamed BioLink';
+            const currentUsername = prev.username;
+            const hasDummyUsername = !currentUsername || currentUsername.startsWith('user_');
+            return {
+              ...prev,
+              profile: {
+                ...prev.profile,
+                displayName: hasDummyName ? (data.user.displayName || data.user.username) : currentDisplayName,
+                tagline: prev.profile?.tagline || 'Your tagline here',
+                avatar: prev.profile?.avatar || data.user.avatar || ''
+              },
+              username: hasDummyUsername ? (data.user.username || prev.username) : currentUsername
+            };
+          });
         }
       } else {
         console.log('Profile fetch failed:', response.status);
@@ -545,6 +552,24 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         if (data.biolink) {
           const normalized = normalizeBiolink(data.biolink);
           editIdRef.current = data.biolink._id;
+
+          if (data.user) {
+            const currentDisplayName = normalized.profile?.displayName;
+            const hasDummyName = !currentDisplayName || currentDisplayName === 'My BioLink' || currentDisplayName === 'Unnamed BioLink';
+            const currentUsername = normalized.username;
+            const hasDummyUsername = !currentUsername || currentUsername.startsWith('user_');
+
+            if (hasDummyName && (data.user.displayName || data.user.username)) {
+              normalized.profile.displayName = data.user.displayName || data.user.username;
+            }
+            if (hasDummyUsername && data.user.username) {
+              normalized.username = data.user.username;
+            }
+            if (!normalized.profile.avatar && data.user.avatar) {
+              normalized.profile.avatar = data.user.avatar;
+            }
+          }
+
           setBiolinkData(normalized);
         }
       } else {
@@ -571,6 +596,24 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         if (data.biolink) {
           const normalized = normalizeBiolink(data.biolink);
           editIdRef.current = data.biolink._id;
+
+          if (data.user) {
+            const currentDisplayName = normalized.profile?.displayName;
+            const hasDummyName = !currentDisplayName || currentDisplayName === 'My BioLink' || currentDisplayName === 'Unnamed BioLink';
+            const currentUsername = normalized.username;
+            const hasDummyUsername = !currentUsername || currentUsername.startsWith('user_');
+
+            if (hasDummyName && (data.user.displayName || data.user.username)) {
+              normalized.profile.displayName = data.user.displayName || data.user.username;
+            }
+            if (hasDummyUsername && data.user.username) {
+              normalized.username = data.user.username;
+            }
+            if (!normalized.profile.avatar && data.user.avatar) {
+              normalized.profile.avatar = data.user.avatar;
+            }
+          }
+
           setBiolinkData({ ...normalized, _id: data.biolink._id });
           setIsNew(false);
         }
@@ -662,7 +705,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         if (response.ok) {
           const data = await response.json();
           const publishedUsername = data?.biolink?.username || username;
-          const publishedUrl = (data?.url || `${window.location.origin}/p/${publishedUsername}`);
+          const publishedUrl = `${window.location.origin}/p/${publishedUsername}`;
           // Update local state with the published username
           setBiolinkData(prev => ({ ...prev, username: publishedUsername }));
           alert(`BioLink published successfully! Your BioLink: ${publishedUrl}`);
