@@ -5,7 +5,7 @@ import {
   Plus, Eye, Share2, User, FileText, Link, MousePointer,
   GripHorizontal, X, Palette, Upload, Camera, Video, Minus,
   Smartphone, ChevronLeft, ChevronRight, ArrowLeft,
-  ChevronUp, ChevronDown, Edit2, Trash2
+  ChevronUp, ChevronDown, Edit2, Trash2, Calendar, Mail
 } from 'lucide-react';
 import BioLinkElement from './BioLinkElement';
 import './BioLinkEditPanel.css';
@@ -29,6 +29,146 @@ const getMediaUrl = (url) => {
   if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
   return `${import.meta.env.VITE_API_BASE_URL || ''}${url}`;
 };
+
+const formatPrice = (price) => {
+  if (!price) return '';
+  const str = String(price).trim();
+  if (/^[\d.]+$/.test(str)) {
+    return `$${str}`;
+  }
+  return str;
+};
+
+const detectPlatformFromUrl = (url) => {
+  if (!url) return null;
+  const lowercaseUrl = url.toLowerCase();
+  if (lowercaseUrl.includes('instagram.com')) return 'instagram';
+  if (lowercaseUrl.includes('youtube.com') || lowercaseUrl.includes('youtu.be')) return 'youtube';
+  if (lowercaseUrl.includes('tiktok.com')) return 'tiktok';
+  if (lowercaseUrl.includes('twitter.com') || lowercaseUrl.includes('x.com')) return 'twitter';
+  if (lowercaseUrl.includes('facebook.com') || lowercaseUrl.includes('fb.com')) return 'facebook';
+  if (lowercaseUrl.includes('linkedin.com')) return 'linkedin';
+  if (lowercaseUrl.includes('spotify.com')) return 'spotify';
+  if (lowercaseUrl.includes('discord.gg') || lowercaseUrl.includes('discord.com')) return 'discord';
+  if (lowercaseUrl.includes('twitch.tv') || lowercaseUrl.includes('twitch.com')) return 'twitch';
+  if (lowercaseUrl.includes('github.com')) return 'github';
+  if (lowercaseUrl.includes('pinterest.com') || lowercaseUrl.includes('pin.it')) return 'pinterest';
+  if (lowercaseUrl.includes('snapchat.com') || lowercaseUrl.includes('snap.com')) return 'snapchat';
+  if (lowercaseUrl.includes('t.me') || lowercaseUrl.includes('telegram.me') || lowercaseUrl.includes('telegram.org')) return 'telegram';
+  return null;
+};
+
+const LinkRow = ({ link, socialPlatforms, handlePlatformChange, updateLink, removeLink, className = "simple-link-row" }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
+  const activePlatform = socialPlatforms.find(p => p.id === link.platform);
+
+  return (
+    <div className={className}>
+      <div className="creative-platform-selector" ref={containerRef}>
+        <button
+          type="button"
+          className="creative-platform-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(!isOpen);
+          }}
+        >
+          <div className="platform-display">
+            <div className="platform-icon-circle">
+              {link.platform ? (
+                activePlatform?.icon
+              ) : (
+                <span className="default-icon">+</span>
+              )}
+            </div>
+            <span className="platform-name">
+              {link.platform ? activePlatform?.name : 'Add Platform'}
+            </span>
+          </div>
+          <div className="creative-arrow">
+            <svg width="14" height="8" viewBox="0 0 14 8" fill="none">
+              <path d="M1 1L7 7L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        </button>
+
+        {isOpen && (
+          <div className="creative-dropdown show">
+            {socialPlatforms.map(platform => (
+              <button
+                key={platform.id}
+                type="button"
+                className="platform-option"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePlatformChange(link.id, platform.id);
+                  setIsOpen(false);
+                }}
+              >
+                <span className="option-icon">{platform.icon}</span>
+                <span className="option-name">{platform.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <input
+        type="text"
+        value={link.title}
+        onChange={(e) => updateLink(link.id, { title: e.target.value })}
+        placeholder="Url Name"
+        className="simple-input title-field"
+      />
+
+      <input
+        type="url"
+        value={link.url}
+        onChange={(e) => {
+          const newUrl = e.target.value;
+          const updates = { url: newUrl };
+          const detected = detectPlatformFromUrl(newUrl);
+          if (detected && detected !== link.platform) {
+            const platform = socialPlatforms.find(p => p.id === detected);
+            if (platform) {
+              updates.platform = detected;
+              updates.icon = 'platform';
+              if (!link.title || link.title === 'New Link' || link.title === 'Website') {
+                updates.title = platform.name;
+              }
+            }
+          }
+          updateLink(link.id, updates);
+        }}
+        placeholder="https://"
+        className="simple-input url-field"
+      />
+
+      <button
+        className="remove-btn-simple"
+        onClick={() => removeLink(link.id)}
+        title="Remove link"
+      >
+        <X size={14} />
+      </button>
+    </div>
+  );
+};
+
 
 const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, onUpdate }) => {
   const navigate = useNavigate();
@@ -435,7 +575,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     localStorage.removeItem('selectedTemplate');
     appliedTemplateRef.current = true;
     setAutoSaveStatus('saving');
-    setTimeout(autoSave, 2000);
+    debouncedAutoSave();
   }, [isLoading]);
 
   // Apply template passed via navigation state (from template picker)
@@ -488,7 +628,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       }
     }
     setAutoSaveStatus('saving');
-    setTimeout(autoSave, 2000);
+    debouncedAutoSave();
   }, [location]);
 
   // Auto-save interval
@@ -775,7 +915,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       return next;
     });
     setAutoSaveStatus('saving');
-    setTimeout(autoSave, 2000); // Changed from 1000 to 2000ms
+    debouncedAutoSave(); // Changed from 1000 to 2000ms
   };
 
   const handleGalleryUpload = async (elementId, files) => {
@@ -844,7 +984,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
           }
         });
         setAutoSaveStatus('saving');
-        setTimeout(autoSave, 2000);
+        debouncedAutoSave();
       } else {
         const errorData = await response.text();
         console.error('Video upload failed:', response.status, errorData);
@@ -933,7 +1073,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       return next;
     });
     setAutoSaveStatus('saving');
-    setTimeout(autoSave, 2000);
+    debouncedAutoSave();
   };
 
   const handlePlatformChange = useCallback((linkId, platformId) => {
@@ -976,11 +1116,13 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     debouncedAutoSave();
   };
 
-  const removeLink = (index) => {
+  const removeLink = (linkId) => {
     setBiolinkData(prev => ({
       ...prev,
-      links: prev.links.filter((_, i) => i !== index)
+      links: (prev.links || []).filter(link => link.id !== linkId)
     }));
+    setAutoSaveStatus('saving');
+    debouncedAutoSave();
   };
 
   const addProduct = () => {
@@ -1093,7 +1235,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         return next;
       });
       setAutoSaveStatus('saving');
-      setTimeout(autoSave, 2000);
+      debouncedAutoSave();
     }
   };
 
@@ -1111,17 +1253,21 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     });
     setShowElementPopup(false);
     setAutoSaveStatus('saving');
-    setTimeout(autoSave, 2000);
+    debouncedAutoSave();
   };
 
   const getDefaultElementContent = (type) => {
     switch (type) {
       case 'gallery': return { images: [], captions: [] };
+      case 'image': return { images: [], captions: [] };
       case 'video': return { url: '', caption: '', source: 'upload', displayMode: 'single' };
       case 'separator': return { style: 'line', color: '#8b5cf6', height: '2px' };
       case 'cta': return { text: 'Click Here', url: 'https://', style: 'button' };
+      case 'button': return { text: 'Click Here', url: 'https://', style: 'button' };
       case 'text': return { content: 'Add your text here', alignment: 'left' };
-
+      case 'ticket': return { title: '', description: '', event_date: '', event_time: '', location: '', price: '' };
+      case 'form': return { title: 'Contact Me', buttonText: 'Submit', fields: ['Name', 'Email'] };
+      case 'social': return { links: [] };
       default: return {};
     }
   };
@@ -1135,7 +1281,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       return next;
     });
     setAutoSaveStatus('saving');
-    setTimeout(autoSave, 2000);
+    debouncedAutoSave();
   };
 
   const removeElement = (elementId) => {
@@ -1144,7 +1290,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       return next;
     });
     setAutoSaveStatus('saving');
-    setTimeout(autoSave, 2000);
+    debouncedAutoSave();
   };
 
   const handleDragStart = (e, elementId, index) => {
@@ -1173,7 +1319,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         return next;
       });
       setAutoSaveStatus('saving');
-      setTimeout(autoSave, 2000);
+      debouncedAutoSave();
     }
   };
 
@@ -1202,7 +1348,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         return next;
       });
       setAutoSaveStatus('saving');
-      setTimeout(autoSave, 2000);
+      debouncedAutoSave();
     }
   };
 
@@ -1273,94 +1419,15 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         {renderLinksSection.__links ? renderLinksSection.__links() : (
           <div className="links-list">
             {(biolinkData.links || []).map((link) => (
-              <div key={link.id} className="simple-link-row swipeable-row">
-                <div className="creative-platform-selector" ref={el => {
-                  if (el && !el.hasClickOutsideListener) {
-                    el.hasClickOutsideListener = true;
-                    const handleClickOutside = (event) => {
-                      if (!el.contains(event.target)) {
-                        const dropdown = el.querySelector('.creative-dropdown');
-                        if (dropdown) dropdown.classList.remove('show');
-                      }
-                    };
-                    document.addEventListener('click', handleClickOutside);
-                    el.cleanupClickOutside = () => document.removeEventListener('click', handleClickOutside);
-                  }
-                }}>
-                  <button
-                    type="button"
-                    className="creative-platform-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const dropdown = document.getElementById(`dropdown-${link.id}`);
-                      dropdown.classList.toggle('show');
-                    }}
-                  >
-                    <div className="platform-display">
-                      <div className="platform-icon-circle">
-                        {link.platform ? (
-                          socialPlatforms.find(p => p.id === link.platform)?.icon
-                        ) : (
-                          <span className="default-icon">+</span>
-                        )}
-                      </div>
-                      <span className="platform-name">
-                        {link.platform ?
-                          socialPlatforms.find(p => p.id === link.platform)?.name :
-                          'Add Platform'
-                        }
-                      </span>
-                    </div>
-                    <div className="creative-arrow">
-                      <svg width="14" height="8" viewBox="0 0 14 8" fill="none">
-                        <path d="M1 1L7 7L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  </button>
-
-                  <div className="creative-dropdown" id={`dropdown-${link.id}`}>
-                    {socialPlatforms.map(platform => (
-                      <button
-                        key={platform.id}
-                        type="button"
-                        className="platform-option"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePlatformChange(link.id, platform.id);
-                          document.getElementById(`dropdown-${link.id}`).classList.remove('show');
-                        }}
-                      >
-                        <span className="option-icon">{platform.icon}</span>
-                        <span className="option-name">{platform.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <input
-                  type="text"
-                  value={link.title}
-                  onChange={(e) => updateLink(link.id, { title: e.target.value })}
-                  placeholder="Url Name"
-                  className="simple-input title-field"
-                />
-
-                <input
-                  type="url"
-                  value={link.url}
-                  onChange={(e) => updateLink(link.id, { url: e.target.value })}
-                  placeholder="https://"
-                  className="simple-input url-field"
-                />
-
-                <button
-                  className="remove-btn-simple"
-                  onClick={() => removeLink(link.id)}
-                  title="Remove link"
-                >
-                  <X size={14} />
-                </button>
-              </div>
+              <LinkRow
+                key={link.id}
+                link={link}
+                socialPlatforms={socialPlatforms}
+                handlePlatformChange={handlePlatformChange}
+                updateLink={updateLink}
+                removeLink={removeLink}
+                className="simple-link-row swipeable-row"
+              />
             ))}
 
             {(biolinkData.links || []).length === 0 && (
@@ -1492,100 +1559,15 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
       <div className="links-list">
         {(biolinkData.links || []).map((link) => (
-          <div key={link.id} className="simple-link-row">
-            <div className="creative-platform-selector" ref={el => {
-              if (el && !el.hasClickOutsideListener) {
-                el.hasClickOutsideListener = true;
-                const handleClickOutside = (event) => {
-                  if (!el.contains(event.target)) {
-                    const dropdown = el.querySelector('.creative-dropdown');
-                    if (dropdown) {
-                      dropdown.classList.remove('show');
-                    }
-                  }
-                };
-                document.addEventListener('click', handleClickOutside);
-                // Store cleanup function
-                el.cleanupClickOutside = () => {
-                  document.removeEventListener('click', handleClickOutside);
-                };
-              }
-            }}>
-              <button
-                type="button"
-                className="creative-platform-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Toggle dropdown visibility
-                  const dropdown = document.getElementById(`dropdown-${link.id}`);
-                  dropdown.classList.toggle('show');
-                }}
-              >
-                <div className="platform-display">
-                  <div className="platform-icon-circle">
-                    {link.platform ? (
-                      socialPlatforms.find(p => p.id === link.platform)?.icon
-                    ) : (
-                      <span className="default-icon">+</span>
-                    )}
-                  </div>
-                  <span className="platform-name">
-                    {link.platform ?
-                      socialPlatforms.find(p => p.id === link.platform)?.name :
-                      'Add Platform'
-                    }
-                  </span>
-                </div>
-                <div className="creative-arrow">
-                  <svg width="14" height="8" viewBox="0 0 14 8" fill="none">
-                    <path d="M1 1L7 7L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-              </button>
-
-              <div className="creative-dropdown" id={`dropdown-${link.id}`}>
-                {socialPlatforms.map(platform => (
-                  <button
-                    key={platform.id}
-                    type="button"
-                    className="platform-option"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePlatformChange(link.id, platform.id);
-                      document.getElementById(`dropdown-${link.id}`).classList.remove('show');
-                    }}
-                  >
-                    <span className="option-icon">{platform.icon}</span>
-                    <span className="option-name">{platform.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <input
-              type="text"
-              value={link.title}
-              onChange={(e) => updateLink(link.id, { title: e.target.value })}
-              placeholder="Url Name"
-              className="simple-input title-field"
-            />
-
-            <input
-              type="url"
-              value={link.url}
-              onChange={(e) => updateLink(link.id, { url: e.target.value })}
-              placeholder="https://"
-              className="simple-input url-field"
-            />
-
-            <button
-              className="remove-btn-simple"
-              onClick={() => removeLink(link.id)}
-              title="Remove link"
-            >
-              <X size={14} />
-            </button>
-          </div>
+          <LinkRow
+            key={link.id}
+            link={link}
+            socialPlatforms={socialPlatforms}
+            handlePlatformChange={handlePlatformChange}
+            updateLink={updateLink}
+            removeLink={removeLink}
+            className="simple-link-row"
+          />
         ))}
 
         {/* Redundant 'First Link' button removed as the header button is now always visible and sticky */}
@@ -1599,7 +1581,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             onClick={() => {
               setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'default' } }));
               setAutoSaveStatus('saving');
-              setTimeout(autoSave, 2000);
+              debouncedAutoSave();
             }}
             style={{ 
               flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'default' || !biolinkData.settings.layoutStyle ? 'var(--primary-color)' : 'transparent'}`, 
@@ -1621,7 +1603,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             onClick={() => {
               setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'socialsTop' } }));
               setAutoSaveStatus('saving');
-              setTimeout(autoSave, 2000);
+              debouncedAutoSave();
             }}
             style={{ 
               flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsTop' ? 'var(--primary-color)' : 'transparent'}`, 
@@ -1647,7 +1629,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             onClick={() => {
               setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'socialsBottom' } }));
               setAutoSaveStatus('saving');
-              setTimeout(autoSave, 2000);
+              debouncedAutoSave();
             }}
             style={{ 
               flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsBottom' ? 'var(--primary-color)' : 'transparent'}`, 
@@ -1673,7 +1655,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             onClick={() => {
               setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'socialsTopBottom' } }));
               setAutoSaveStatus('saving');
-              setTimeout(autoSave, 2000);
+              debouncedAutoSave();
             }}
             style={{ 
               flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsTopBottom' ? 'var(--primary-color)' : 'transparent'}`, 
@@ -1802,7 +1784,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                     setBiolinkData(prev => ({
                       ...prev,
                       products: [...prev.products, {
-                        id: Date.now(),
+                        id: String(Date.now()),
                         ...productFormData
                       }]
                     }));
@@ -1834,7 +1816,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                     {product.description && (
                       <span className="asset-item-desc">{product.description}</span>
                     )}
-                    {product.price && <span className="asset-item-price">${product.price}</span>}
+                    {product.price && <span className="asset-item-price">{formatPrice(product.price)}</span>}
                   </div>
                   <div className="asset-item-actions-bar">
                     {product.url ? (
@@ -1903,10 +1885,10 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                   try {
                     const formData = new FormData();
                     formData.append('backgroundImage', file);
-                    const token = localStorage.getItem('token');
+                    const authHeaders = getBioLinkAuthHeaders();
                     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/biolinks/background-image`, {
                       method: 'POST',
-                      headers: { 'Authorization': `Bearer ${token}` },
+                      headers: { ...authHeaders },
                       body: formData
                     });
                     if (response.ok) {
@@ -1914,7 +1896,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                       const imageUrl = data.imageUrl;
                       setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundImage: imageUrl } }));
                       setAutoSaveStatus('saving');
-                      setTimeout(autoSave, 2000);
+                      debouncedAutoSave();
                     } else {
                       alert('Failed to upload background image');
                     }
@@ -1936,7 +1918,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                   onClick={() => {
                      setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundImage: '' } }));
                      setAutoSaveStatus('saving');
-                     setTimeout(autoSave, 2000);
+                     debouncedAutoSave();
                   }}
                 >
                   <X size={16} /> Remove
@@ -1972,7 +1954,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                       const value = e.target.value;
                       setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, accentColor: value } }));
                       setAutoSaveStatus('saving');
-                      setTimeout(autoSave, 2000);
+                      debouncedAutoSave();
                     }}
                   />
                 </div>
@@ -1991,7 +1973,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                       const value = e.target.value;
                       setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, textColor: value } }));
                       setAutoSaveStatus('saving');
-                      setTimeout(autoSave, 2000);
+                      debouncedAutoSave();
                     }}
                   />
                 </div>
@@ -2010,7 +1992,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                       const value = e.target.value;
                       setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundColor: value } }));
                       setAutoSaveStatus('saving');
-                      setTimeout(autoSave, 2000);
+                      debouncedAutoSave();
                     }}
                   />
                 </div>
@@ -2086,7 +2068,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         }));
 
         setAutoSaveStatus('saving');
-        setTimeout(autoSave, 2000);
+        debouncedAutoSave();
       } else {
         const errorData = await response.text();
         console.error('Gallery upload failed:', response.status, errorData);
@@ -2274,18 +2256,26 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     <div className="section-content">
       <div className="content-elements-header">
         <h3>Content Elements</h3>
-        <div className="content-action-buttons">
+        <div className="content-action-buttons" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
           <button className="content-action-btn separator-btn" onClick={() => addElement('separator')}>
-            <Minus size={20} />
-            <span>Add Separator</span>
+            <Minus size={16} />
+            <span>Separator</span>
           </button>
           <button className="content-action-btn cta-btn" onClick={() => addElement('cta')}>
-            <MousePointer size={20} />
-            <span>Add CTA</span>
+            <MousePointer size={16} />
+            <span>CTA</span>
           </button>
           <button className="content-action-btn text-btn" onClick={() => addElement('text')}>
-            <FileText size={20} />
-            <span>Add Text</span>
+            <FileText size={16} />
+            <span>Text</span>
+          </button>
+          <button className="content-action-btn ticket-btn" onClick={() => addElement('ticket')} style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', border: '1px solid #8b5cf6' }}>
+            <Calendar size={16} />
+            <span>Ticket</span>
+          </button>
+          <button className="content-action-btn form-btn" onClick={() => addElement('form')} style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid #3b82f6' }}>
+            <Mail size={16} />
+            <span>Form</span>
           </button>
         </div>
       </div>
@@ -2380,16 +2370,81 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                 <X size={16} />
               </button>
             </div>
-            <div className="ticket-content">
-              <div className="ticket-summary">
-                <h5>{element.content.title || 'Untitled Ticket'}</h5>
-                <p>{element.content.description || 'No description'}</p>
-                <div className="ticket-details">
-                  <span>📅 {element.content.event_date}</span>
-                  <span>🕐 {element.content.event_time}</span>
-                  <span>📍 {element.content.location}</span>
-                  <span>💰 ₹{element.content.price}</span>
-                </div>
+            <div className="ticket-content" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+              <input
+                type="text"
+                placeholder="Event Title"
+                value={element.content.title || ''}
+                onChange={(e) => updateElement(element.id, { content: { ...element.content, title: e.target.value } })}
+                className="asset-input"
+              />
+              <textarea
+                placeholder="Event Description"
+                value={element.content.description || ''}
+                onChange={(e) => updateElement(element.id, { content: { ...element.content, description: e.target.value } })}
+                className="asset-input"
+                rows={2}
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <input
+                  type="date"
+                  value={element.content.event_date || ''}
+                  onChange={(e) => updateElement(element.id, { content: { ...element.content, event_date: e.target.value } })}
+                  className="asset-input"
+                />
+                <input
+                  type="time"
+                  value={element.content.event_time || ''}
+                  onChange={(e) => updateElement(element.id, { content: { ...element.content, event_time: e.target.value } })}
+                  className="asset-input"
+                />
+              </div>
+              <input
+                type="text"
+                placeholder="Location (e.g. Zoom, New York)"
+                value={element.content.location || ''}
+                onChange={(e) => updateElement(element.id, { content: { ...element.content, location: e.target.value } })}
+                className="asset-input"
+              />
+              <input
+                type="number"
+                placeholder="Price (leave empty for Free)"
+                value={element.content.price || ''}
+                onChange={(e) => updateElement(element.id, { content: { ...element.content, price: e.target.value } })}
+                className="asset-input"
+              />
+            </div>
+          </div>
+        ))}
+        {/* Form Elements */}
+        {biolinkData.elements.filter(el => el.type === 'form').map((element) => (
+          <div key={element.id} className="element-item">
+            <div className="element-header">
+              <h4>Contact Form</h4>
+              <button
+                className="remove-btn"
+                onClick={() => removeElement(element.id)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="form-content" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+              <input
+                type="text"
+                placeholder="Form Title"
+                value={element.content.title || ''}
+                onChange={(e) => updateElement(element.id, { content: { ...element.content, title: e.target.value } })}
+                className="asset-input"
+              />
+              <input
+                type="text"
+                placeholder="Button Text"
+                value={element.content.buttonText || ''}
+                onChange={(e) => updateElement(element.id, { content: { ...element.content, buttonText: e.target.value } })}
+                className="asset-input"
+              />
+              <div className="form-fields-hint" style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                Default fields: Name, Email. (Custom fields coming soon)
               </div>
             </div>
           </div>
@@ -2586,7 +2641,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                     </div>
                     <div className="preview-shop-info">
                       <div className="preview-shop-name">{product.name}</div>
-                      {product.price && <div className="preview-shop-price">{product.price}</div>}
+                      {product.price && <div className="preview-shop-price">{formatPrice(product.price)}</div>}
                     </div>
                   </div>
                 ))}

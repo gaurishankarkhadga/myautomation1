@@ -25,6 +25,16 @@ const getMediaUrl = (url) => {
   return `${import.meta.env.VITE_API_BASE_URL || ''}${url}`;
 };
 
+const formatPrice = (price) => {
+  if (!price) return '';
+  const str = String(price).trim();
+  if (/^[\d.]+$/.test(str)) {
+    return `$${str}`;
+  }
+  return str;
+};
+
+
 // ─── Platform brand colours ───────────────────────────────
 const PLATFORM_COLORS = {
   instagram:  '#e1306c',
@@ -209,7 +219,7 @@ const ProductCard = React.memo(function ProductCard({ product, apiBase, themeSty
       </div>
       <div className={styles['pbl-product-info']}>
         <p className={styles['pbl-product-name']}>{product.name || 'Product'}</p>
-        {product.price && <p className={styles['pbl-product-price']}>{product.price}</p>}
+        {product.price && <p className={styles['pbl-product-price']}>{formatPrice(product.price)}</p>}
       </div>
     </motion.a>
   );

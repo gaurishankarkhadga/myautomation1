@@ -12,6 +12,16 @@ import './BioLinkChatPreview.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
+const formatPrice = (price) => {
+  if (!price) return '';
+  const str = String(price).trim();
+  if (/^[\d.]+$/.test(str)) {
+    return `$${str}`;
+  }
+  return str;
+};
+
+
 // ─── Platform brand colours ───────────────────────────────
 const PLATFORM_COLORS = {
   instagram:  '#e1306c',
@@ -395,7 +405,7 @@ function BioLinkChatPreview({ biolinkId, url }) {
                                             )}
                                         </div>
                                         <div className="bcp-product-name">{product.name}</div>
-                                        {product.price && <div className="bcp-product-price">{product.price}</div>}
+                                        {product.price && <div className="bcp-product-price">{formatPrice(product.price)}</div>}
                                     </a>
                                 );
                             })}

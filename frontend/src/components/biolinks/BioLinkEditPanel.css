@@ -1095,6 +1095,15 @@
   transform: translateY(0);
 }
 
+.simple-link-row:has(.creative-dropdown.show) {
+  position: relative;
+  z-index: 50 !important;
+}
+
+.creative-platform-selector:has(.creative-dropdown.show) {
+  z-index: 100 !important;
+}
+
 .platform-option {
   width: 100%;
   display: flex;

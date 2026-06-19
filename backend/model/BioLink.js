@@ -13,10 +13,11 @@ const linkSchema = new mongoose.Schema({
   },
   url: {
     type: String,
-    required: true,
+    required: false,
+    default: '',
     validate: {
       validator: function(v) {
-        return !v || /^https?:\/\/.*/.test(v);
+        return !v || v === '' || /^https?:\/\/.*/.test(v);
       },
       message: 'URL must start with http:// or https://'
     }
@@ -237,6 +238,11 @@ const biolinkSchema = new mongoose.Schema({
       type: String,
       default: 'default',
       enum: ['default', 'socialsTop', 'socialsBottom', 'socialsTopBottom']
+    },
+    styleType: {
+      type: String,
+      default: 'default',
+      enum: ['default', 'glass', 'timeline', 'perspective']
     }
   },
   analytics: {

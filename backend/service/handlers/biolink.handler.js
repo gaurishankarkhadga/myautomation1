@@ -276,21 +276,7 @@ module.exports = {
 
             // ==================== CREATE BIOLINK ====================
             if (intent === 'create_biolink') {
-                // Check if they already have an active BioLink
-                const existing = await BioLink.findOne({ userId: biolinkUserId }).sort({ lastModified: -1 });
-                if (existing) {
-                    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-                    const publicUrl = `${frontendUrl}/p/${existing.username}`;
-                    await syncBiolinkWithAssets(userId);
-                    return {
-                        success: true,
-                        message: `🎨 **You already have an active BioLink!** I've synchronized it with your latest assets.\n\n🔗 **View it here:**\n${publicUrl}`,
-                        data: {
-                            biolinkId: existing._id,
-                            url: publicUrl
-                        }
-                    };
-                }
+                // Always create a new biolink — one creator can have unlimited biolinks
 
                 // 1. Resolve theme
                 const themeId = resolveTheme(params.style || params.theme || params.look || '');
@@ -332,6 +318,7 @@ module.exports = {
                         backgroundColor: themeSettings.backgroundColor,
                         textColor: themeSettings.textColor,
                         accentColor: themeSettings.accentColor,
+                        styleType: themeSettings.styleType || 'default',
                         borderRadius: '12px',
                         spacing: '16px',
                         layoutStyle: ['default', 'socialsTop', 'socialsBottom', 'socialsTopBottom'].includes(params.layoutStyle) ? params.layoutStyle : (params.layoutStyle ? 'socialsTop' : 'default')

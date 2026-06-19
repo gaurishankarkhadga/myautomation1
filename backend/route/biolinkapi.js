@@ -10,6 +10,11 @@ const router = express.Router();
 const BioLink = require('../model/BioLink');
 const { organizeBiolinkWithAI } = require('../service/aiBiolinkService');
 
+// Utility: escape special regex characters to prevent injection
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // ─── Multer setup ───────────────────────────────────────────
 const uploadsDir = path.join(__dirname, '..', 'public', 'uploads', 'biolinks');
 if (!fs.existsSync(uploadsDir)) {
@@ -245,7 +250,7 @@ router.get('/data', authenticateToken, async (req, res) => {
         const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
         let initialUsername = platformUsername || `user_${uniqueSuffix}`;
         if (platformUsername) {
-          const existingUsername = await BioLink.findOne({ username: { $regex: new RegExp(`^${platformUsername}$`, 'i') } });
+          const existingUsername = await BioLink.findOne({ username: { $regex: new RegExp(`^${escapeRegex(platformUsername)}$`, 'i') } });
           if (existingUsername) {
             initialUsername = `${platformUsername}_${uniqueSuffix}`;
           }
@@ -288,7 +293,8 @@ router.get('/data', authenticateToken, async (req, res) => {
 // Get analytics
 router.get('/stats', authenticateToken, async (req, res) => {
   try {
-    const biolink = await BioLink.findOne().sort({ lastModified: -1 });
+    if (!req.userId) return res.status(401).json({ error: 'Authentication required' });
+    const biolink = await BioLink.findOne({ userId: req.userId }).sort({ lastModified: -1 });
     if (!biolink) return res.status(404).json({ error: 'BioLink not found' });
 
     res.json({
@@ -309,7 +315,7 @@ router.get('/public/:username', async (req, res) => {
   try {
     const { username } = req.params;
     const biolink = await BioLink.findOne({
-      username: { $regex: new RegExp(`^${username}$`, 'i') },
+      username: { $regex: new RegExp(`^${escapeRegex(username)}$`, 'i') },
       isPublished: true
     });
     if (!biolink) return res.status(404).json({ error: 'BioLink not found' });
@@ -395,7 +401,7 @@ router.post('/save', authenticateToken, async (req, res) => {
     // Case 3: No _id and no _new — legacy fallback (find by username or create)
     else {
       if (biolinkData.username && biolinkData.username !== 'user' && biolinkData.username !== '') {
-        const existing = await BioLink.findOne({ username: { $regex: new RegExp(`^${biolinkData.username}$`, 'i') } });
+        const existing = await BioLink.findOne({ username: { $regex: new RegExp(`^${escapeRegex(biolinkData.username)}$`, 'i') } });
         if (existing && (!existing.userId || existing.userId === 'anonymous' || existing.userId === req.userId)) {
           const updatePayload = buildUpdatePayload(biolinkData);
           biolink = await BioLink.findOneAndUpdate(
@@ -445,7 +451,7 @@ router.post('/publish', authenticateToken, async (req, res) => {
     // Check if username is taken by a DIFFERENT biolink
     const excludeId = new mongoose.Types.ObjectId(id);
     const existing = await BioLink.findOne({
-      username: { $regex: new RegExp(`^${username}$`, 'i') },
+      username: { $regex: new RegExp(`^${escapeRegex(username)}$`, 'i') },
       _id: { $ne: excludeId }
     });
     if (existing) return res.status(400).json({ error: 'Username already taken' });
@@ -477,7 +483,7 @@ router.post('/avatar', authenticateToken, upload.single('avatar'), async (req, r
 
     const { id } = req.body || {};
     let biolink = id ? await BioLink.findById(id) : null;
-    if (!biolink) biolink = await BioLink.findOne().sort({ lastModified: -1 });
+    if (!biolink && req.userId) biolink = await BioLink.findOne({ userId: req.userId }).sort({ lastModified: -1 });
     if (!biolink) return res.status(404).json({ error: 'BioLink not found' });
 
     biolink.profile.avatar = `/uploads/biolinks/${req.file.filename}`;
@@ -543,7 +549,7 @@ router.post('/click', async (req, res) => {
     if (!username) return res.status(400).json({ error: 'Username is required' });
 
     const biolink = await BioLink.findOne({
-      username: { $regex: new RegExp(`^${username}$`, 'i') },
+      username: { $regex: new RegExp(`^${escapeRegex(username)}$`, 'i') },
       isPublished: true
     });
     if (!biolink) return res.status(404).json({ error: 'BioLink not found' });
@@ -563,7 +569,7 @@ router.post('/check', async (req, res) => {
     const { username, excludeId } = req.body;
     if (!username) return res.status(400).json({ error: 'Username is required' });
 
-    const query = { username: { $regex: new RegExp(`^${username}$`, 'i') } };
+    const query = { username: { $regex: new RegExp(`^${escapeRegex(username)}$`, 'i') } };
     // Exclude the current biolink so its own username doesn't show as "taken"
     if (excludeId) {
       query._id = { $ne: new mongoose.Types.ObjectId(excludeId) };
@@ -583,7 +589,7 @@ router.post('/view', async (req, res) => {
     if (!username) return res.status(400).json({ error: 'Username is required' });
 
     const biolink = await BioLink.findOne({
-      username: { $regex: new RegExp(`^${username}$`, 'i') },
+      username: { $regex: new RegExp(`^${escapeRegex(username)}$`, 'i') },
       isPublished: true
     });
     if (!biolink) return res.status(404).json({ error: 'BioLink not found' });

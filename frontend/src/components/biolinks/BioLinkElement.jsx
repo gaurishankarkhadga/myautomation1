@@ -12,16 +12,25 @@ const BioLinkElement = ({ element, isPreview = false, settings = {} }) => {
     switch (element.type) {
       case 'gallery':
         return renderGallery();
+      case 'image':
+        return renderGallery(); // Map single image to gallery logic
       case 'video':
         return renderVideo();
       case 'separator':
         return renderSeparator();
       case 'cta':
+      case 'button':
         return renderCTA();
       case 'text':
         return renderText();
+      case 'ticket':
+        return renderTicket();
+      case 'form':
+        return renderForm();
+      case 'social':
+        return renderSocial();
       default:
-        return <div>Unknown element type</div>;
+        return <div>Unknown element type: {element.type}</div>;
     }
   };
 
@@ -380,6 +389,101 @@ const BioLinkElement = ({ element, isPreview = false, settings = {} }) => {
     return (
       <div className="biolink-element-text" style={textStyles}>
         <p style={{ margin: 0 }}>{content}</p>
+      </div>
+    );
+  };
+
+  const renderTicket = () => {
+    const { title, description, event_date, event_time, location, price } = element.content || {};
+    return (
+      <div className="biolink-element-ticket" style={{
+        background: 'rgba(255,255,255,0.05)',
+        border: `1px solid ${settings.accentColor || '#8b5cf6'}`,
+        borderRadius: '12px',
+        padding: '16px',
+        color: settings.textColor || '#fff',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px'
+      }}>
+        <h4 style={{ margin: 0, fontSize: '18px' }}>{title || 'Event Ticket'}</h4>
+        <p style={{ margin: 0, fontSize: '14px', opacity: 0.8 }}>{description || 'Join us for this special event.'}</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '8px', fontSize: '13px' }}>
+          {event_date && <span>📅 {event_date}</span>}
+          {event_time && <span>🕐 {event_time}</span>}
+          {location && <span>📍 {location}</span>}
+        </div>
+        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontWeight: 'bold', fontSize: '16px' }}>{price ? `₹${price}` : 'Free'}</span>
+          <button style={{
+            background: settings.accentColor || '#8b5cf6',
+            color: '#fff',
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: '20px',
+            cursor: 'pointer'
+          }}>Get Ticket</button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderForm = () => {
+    const { title, buttonText, fields } = element.content || {};
+    return (
+      <div className="biolink-element-form" style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '12px',
+        padding: '20px',
+        color: settings.textColor || '#fff'
+      }}>
+        <h4 style={{ margin: '0 0 16px 0', textAlign: 'center' }}>{title || 'Contact Me'}</h4>
+        <form style={{ display: 'flex', flexDirection: 'column', gap: '12px' }} onSubmit={(e) => e.preventDefault()}>
+          {(fields || ['Name', 'Email']).map((field, idx) => (
+            <input 
+              key={idx} 
+              type={field.toLowerCase() === 'email' ? 'email' : 'text'} 
+              placeholder={field} 
+              style={{
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: '1px solid rgba(255,255,255,0.2)',
+                background: 'rgba(0,0,0,0.2)',
+                color: '#fff'
+              }} 
+            />
+          ))}
+          <button type="submit" style={{
+            background: settings.accentColor || '#8b5cf6',
+            color: '#fff',
+            border: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            marginTop: '8px',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }}>{buttonText || 'Submit'}</button>
+        </form>
+      </div>
+    );
+  };
+
+  const renderSocial = () => {
+    const { links } = element.content || {};
+    if (!links || links.length === 0) return null;
+    return (
+      <div className="biolink-element-social" style={{ display: 'flex', justifyContent: 'center', gap: '12px', padding: '16px 0' }}>
+        {links.map((link, idx) => (
+          <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" style={{
+            width: '40px', height: '40px', borderRadius: '50%',
+            background: 'rgba(255,255,255,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: settings.textColor || '#fff'
+          }}>
+            {link.icon || '🌐'}
+          </a>
+        ))}
       </div>
     );
   };
