@@ -316,10 +316,22 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   useEffect(() => {
     if (userProp) {
       setUser(userProp);
-      setBiolinkData(prev => ({
-        ...prev,
-        username: userProp.username || prev.username
-      }));
+      setBiolinkData(prev => {
+        const currentDisplayName = prev.profile?.displayName;
+        const hasDummyName = !currentDisplayName || currentDisplayName === 'My BioLink' || currentDisplayName === 'Unnamed BioLink' || currentDisplayName === '';
+        const currentUsername = prev.username;
+        const hasDummyUsername = !currentUsername || currentUsername.startsWith('user_') || currentUsername === '';
+        return {
+          ...prev,
+          profile: {
+            ...prev.profile,
+            displayName: hasDummyName ? (userProp.displayName || userProp.username || prev.profile.displayName) : currentDisplayName,
+            tagline: prev.profile?.tagline || 'Your tagline here',
+            avatar: prev.profile?.avatar || userProp.avatar || ''
+          },
+          username: hasDummyUsername ? (userProp.username || prev.username) : currentUsername
+        };
+      });
     }
   }, [userProp]);
 
@@ -336,8 +348,15 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     if (location?.state?.new || location?.state?.reset) {
       editIdRef.current = null;
       setIsNew(true);
-      setBiolinkData(normalizeBiolink(null));
-      setIsLoading(false);
+      const fresh = normalizeBiolink(null);
+      if (userProp) {
+        fresh.profile.displayName = userProp.displayName || userProp.username || 'My BioLink';
+        fresh.profile.avatar = userProp.avatar || '';
+        fresh.username = userProp.username || '';
+      }
+      setBiolinkData(fresh);
+      setIsLoading(true);
+      fetchUserProfile();
       return;
     }
     if (biolinkProp) {
@@ -355,6 +374,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       setIsLoading(false);
     }
   }, [biolinkProp, userProp, location?.state?.id]);
+
 
   // Apply template from localStorage (from template picker)
   useEffect(() => {

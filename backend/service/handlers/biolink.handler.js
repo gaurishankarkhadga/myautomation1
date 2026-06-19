@@ -42,8 +42,8 @@ async function resolveBiolinkUserId(userId) {
         const instaToken = await Token.findOne({ userId }).lean();
         if (instaToken) return `insta_${userId}`;
 
-        const YoutubeAutomation = require('../../model/YoutubeAutomation');
-        const ytData = await YoutubeAutomation.findOne({ channelId: userId }).lean();
+        const { YTToken } = require('../../model/YoutubeAutomation');
+        const ytData = await YTToken.findOne({ channelId: userId }).lean();
         if (ytData) return `yt_${userId}`;
     } catch {}
     return userId; // fallback
@@ -62,7 +62,7 @@ async function gatherSocialLinks(userId) {
             let igUsername = instaToken.userId;
             try {
                 const axios = require('axios');
-                const profileRes = await axios.get(`https://graph.instagram.com/v24.0/me`, {
+                const profileRes = await axios.get(`https://graph.instagram.com/me`, {
                     params: { fields: 'username', access_token: instaToken.accessToken }
                 });
                 if (profileRes.data?.username) igUsername = profileRes.data.username;
@@ -82,8 +82,8 @@ async function gatherSocialLinks(userId) {
 
     try {
         // Check YouTube connection
-        const YoutubeAutomation = require('../../model/YoutubeAutomation');
-        const ytData = await YoutubeAutomation.findOne({ channelId: userId }).lean();
+        const { YTToken } = require('../../model/YoutubeAutomation');
+        const ytData = await YTToken.findOne({ channelId: userId }).lean();
         if (ytData && ytData.channelId) {
             links.push({
                 id: `social_yt_${Date.now()}`,
@@ -99,6 +99,7 @@ async function gatherSocialLinks(userId) {
 
     return links;
 }
+
 
 // ── Helper: gather creator's existing assets as biolink content ──────
 async function gatherAssets(userId) {
@@ -143,11 +144,12 @@ async function getProfileInfo(userId) {
     const profile = { displayName: 'Creator', tagline: '', avatar: '' };
 
     try {
+        // 1. Check Instagram connection
         const { Token } = require('../../model/Instaautomation');
         const instaToken = await Token.findOne({ userId }).lean();
         if (instaToken) {
             const axios = require('axios');
-            const profileRes = await axios.get(`https://graph.instagram.com/v24.0/me`, {
+            const profileRes = await axios.get(`https://graph.instagram.com/me`, {
                 params: { fields: 'username,name,profile_picture_url', access_token: instaToken.accessToken }
             });
             if (profileRes.data) {
@@ -155,11 +157,40 @@ async function getProfileInfo(userId) {
                 profile.avatar = profileRes.data.profile_picture_url || '';
                 profile.tagline = `@${profileRes.data.username || ''}`;
             }
+            return profile;
         }
-    } catch { /* fallback to defaults */ }
+
+        // 2. Check YouTube connection
+        const { YTToken } = require('../../model/YoutubeAutomation');
+        const ytToken = await YTToken.findOne({ channelId: userId }).lean();
+        if (ytToken) {
+            profile.displayName = ytToken.channelTitle || profile.displayName;
+            profile.tagline = ytToken.channelTitle ? `@${ytToken.channelTitle.replace(/\s+/g, '')}` : '';
+            if (ytToken.accessToken) {
+                try {
+                    const youtubeService = require('../youtubeService');
+                    const authClient = youtubeService.createAuthClient(
+                        ytToken.accessToken,
+                        ytToken.refreshToken,
+                        ytToken.expiresAt
+                    );
+                    const channelInfo = await youtubeService.getChannelInfo(authClient);
+                    if (channelInfo && channelInfo.thumbnailUrl) {
+                        profile.avatar = channelInfo.thumbnailUrl;
+                    }
+                } catch (err) {
+                    console.error('Error fetching YouTube channel avatar in getProfileInfo:', err.message);
+                }
+            }
+            return profile;
+        }
+    } catch (err) {
+        console.error('Error in getProfileInfo helper:', err.message);
+    }
 
     return profile;
 }
+
 
 // ── Helper: sync active BioLink with latest CreatorAssets ────────────
 async function syncBiolinkWithAssets(userId) {
