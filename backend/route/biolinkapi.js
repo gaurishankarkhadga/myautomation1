@@ -16,6 +16,36 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+// Helper: Download platform profile image to local uploads directory to prevent CDN expiration (403 errors)
+async function downloadProfileImage(url, userId) {
+  if (!url || !url.startsWith('http')) return url;
+  try {
+    const axios = require('axios');
+    const response = await axios({
+      url,
+      method: 'GET',
+      responseType: 'stream'
+    });
+    
+    const cleanUserId = userId.replace(/[^a-zA-Z0-9_]/g, '');
+    const filename = `avatar-platform-${cleanUserId}.jpg`;
+    const destPath = path.join(uploadsDir, filename);
+    
+    const writer = fs.createWriteStream(destPath);
+    response.data.pipe(writer);
+    
+    await new Promise((resolve, reject) => {
+      writer.on('finish', resolve);
+      writer.on('error', reject);
+    });
+    
+    return `/uploads/biolinks/${filename}`;
+  } catch (error) {
+    console.error('[Avatar Sync] Failed to download profile image:', error.message);
+    return url; // fallback to original URL on failure
+  }
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadsDir),
   filename: (req, file, cb) => {
@@ -132,6 +162,10 @@ router.get('/data', authenticateToken, async (req, res) => {
           console.error('Error fetching YouTube details in biolink backend:', err.message);
         }
       }
+    }
+
+    if (platformAvatar) {
+      platformAvatar = await downloadProfileImage(platformAvatar, req.userId);
     }
 
     let biolink = null;

@@ -139,6 +139,43 @@ async function gatherAssets(userId) {
     return { links, products };
 }
 
+// Helper: Download platform profile image to local uploads directory to prevent CDN expiration
+async function downloadProfileImage(url, userId) {
+    if (!url || !url.startsWith('http')) return url;
+    try {
+        const axios = require('axios');
+        const path = require('path');
+        const fs = require('fs');
+        const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'biolinks');
+        if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        
+        const cleanUserId = userId.replace(/[^a-zA-Z0-9_]/g, '');
+        const filename = `avatar-platform-${cleanUserId}.jpg`;
+        const destPath = path.join(uploadsDir, filename);
+        
+        const response = await axios({
+            url,
+            method: 'GET',
+            responseType: 'stream'
+        });
+        
+        const writer = fs.createWriteStream(destPath);
+        response.data.pipe(writer);
+        
+        await new Promise((resolve, reject) => {
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+        });
+        
+        return `/uploads/biolinks/${filename}`;
+    } catch (error) {
+        console.error('[Avatar Sync] Failed to download profile image in handler:', error.message);
+        return url; // fallback to original URL on failure
+    }
+}
+
 // ── Helper: get profile info ────────────────────────────────────────
 async function getProfileInfo(userId) {
     const profile = { displayName: 'Creator', tagline: '', avatar: '' };
@@ -154,7 +191,7 @@ async function getProfileInfo(userId) {
             });
             if (profileRes.data) {
                 profile.displayName = profileRes.data.name || profileRes.data.username || profile.displayName;
-                profile.avatar = profileRes.data.profile_picture_url || '';
+                profile.avatar = await downloadProfileImage(profileRes.data.profile_picture_url || '', `insta_${userId}`);
                 profile.tagline = `@${profileRes.data.username || ''}`;
             }
             return profile;
@@ -176,7 +213,7 @@ async function getProfileInfo(userId) {
                     );
                     const channelInfo = await youtubeService.getChannelInfo(authClient);
                     if (channelInfo && channelInfo.thumbnailUrl) {
-                        profile.avatar = channelInfo.thumbnailUrl;
+                        profile.avatar = await downloadProfileImage(channelInfo.thumbnailUrl, `yt_${userId}`);
                     }
                 } catch (err) {
                     console.error('Error fetching YouTube channel avatar in getProfileInfo:', err.message);
