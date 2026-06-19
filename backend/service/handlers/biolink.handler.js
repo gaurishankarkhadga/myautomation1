@@ -112,22 +112,26 @@ async function gatherAssets(userId) {
 
     for (const asset of assets) {
         if (['product', 'merch', 'course', 'ebook', 'service'].includes(asset.type)) {
+            const rawUrl = (asset.url || '').trim();
+            const normalizedUrl = rawUrl && !/^https?:\/\//i.test(rawUrl) ? `https://${rawUrl}` : rawUrl;
             products.push({
                 id: `prod_${asset._id}`,
                 name: asset.title,
                 description: asset.description || '',
                 price: asset.price || '',
                 image: asset.imageUrl || '',
-                url: asset.url || '',
+                url: normalizedUrl,
                 category: asset.type
             });
         } else if (['link', 'affiliate_link'].includes(asset.type)) {
             if (!asset.url) continue; // skip links without a URL since it's required by linkSchema
+            const rawUrl = asset.url.trim();
+            const normalizedUrl = !/^https?:\/\//i.test(rawUrl) ? `https://${rawUrl}` : rawUrl;
             const typeIcons = { link: 'link', affiliate_link: 'tag' };
             links.push({
                 id: `asset_${asset._id}`,
                 title: asset.title,
-                url: asset.url,
+                url: normalizedUrl,
                 platform: 'website',
                 icon: typeIcons[asset.type] || 'link',
                 isActive: true,

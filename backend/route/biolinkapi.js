@@ -200,6 +200,21 @@ router.get('/data', authenticateToken, async (req, res) => {
           analytics: { views: 0, clicks: 0 }
         });
         await biolink.save();
+    }
+
+    if (biolink && biolink.profile && biolink.profile.avatar) {
+      const currentAvatar = biolink.profile.avatar;
+      if (currentAvatar.includes('cdninstagram.com') || currentAvatar.includes('instagram.com') || currentAvatar.includes('googleusercontent.com')) {
+        try {
+          const localPath = await downloadProfileImage(currentAvatar, req.userId || 'anonymous');
+          if (localPath && localPath !== currentAvatar) {
+            biolink.profile.avatar = localPath;
+            await BioLink.updateOne({ _id: biolink._id }, { $set: { 'profile.avatar': localPath } });
+            console.log(`[Avatar Sanitization] Updated biolink ${biolink._id} avatar to local path: ${localPath}`);
+          }
+        } catch (err) {
+          console.error('[Avatar Sanitization] Failed to sanitize existing avatar:', err.message);
+        }
       }
     }
 

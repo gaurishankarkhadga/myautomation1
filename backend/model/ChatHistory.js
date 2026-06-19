@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 // ==================== CHAT MESSAGE SCHEMA ====================
 const chatMessageSchema = new mongoose.Schema({
     role: { type: String, enum: ['user', 'assistant'], required: true },
-    content: { type: String, required: true },
+    content: { type: String, default: '' },
 
     // What actions were taken (for assistant messages)
     actions: [{

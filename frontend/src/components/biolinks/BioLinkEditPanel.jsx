@@ -321,13 +321,15 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         const hasDummyName = !currentDisplayName || currentDisplayName === 'My BioLink' || currentDisplayName === 'Unnamed BioLink' || currentDisplayName === '';
         const currentUsername = prev.username;
         const hasDummyUsername = !currentUsername || currentUsername.startsWith('user_') || currentUsername === '';
+        const currentAvatar = prev.profile?.avatar;
+        const isStaleAvatar = !currentAvatar || currentAvatar.includes('cdninstagram.com') || currentAvatar.includes('instagram.com') || currentAvatar.includes('googleusercontent.com');
         return {
           ...prev,
           profile: {
             ...prev.profile,
             displayName: hasDummyName ? (userProp.displayName || userProp.username || prev.profile.displayName) : currentDisplayName,
             tagline: prev.profile?.tagline || 'Your tagline here',
-            avatar: prev.profile?.avatar || userProp.avatar || ''
+            avatar: isStaleAvatar ? (userProp.avatar || currentAvatar || '') : currentAvatar
           },
           username: hasDummyUsername ? (userProp.username || prev.username) : currentUsername
         };
