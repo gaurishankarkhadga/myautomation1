@@ -344,7 +344,7 @@ const PublicBioLink = () => {
   );
 
   // Filter out social links from the main list if they are displayed as icons top and bottom
-  const displayLinks = ['socialsTop', 'socialsBottom'].includes(layoutStyle) 
+  const displayLinks = ['socialsTop', 'socialsBottom', 'socialsTopBottom'].includes(layoutStyle) 
     ? allLinks.filter(l => !socialPills.includes(l)) 
     : allLinks;
 
@@ -444,8 +444,8 @@ const PublicBioLink = () => {
           )}
         </motion.div>
 
-        {/* ── Top Social Icons (if layout is socialsTop) ── */}
-        {layoutStyle === 'socialsTop' && socialPills.length > 0 && renderIconOnlySocials()}
+        {/* ── Top Social Icons (if layout is socialsTop or socialsTopBottom) ── */}
+        {['socialsTop', 'socialsTopBottom'].includes(layoutStyle) && socialPills.length > 0 && renderIconOnlySocials()}
 
 
         {/* ── Tab switcher ─────────────────────────────────── */}
@@ -543,8 +543,8 @@ const PublicBioLink = () => {
           </motion.div>
         )}
 
-        {/* ── Bottom Social Icons (if layout is socialsBottom) ── */}
-        {layoutStyle === 'socialsBottom' && socialPills.length > 0 && (
+        {/* ── Bottom Social Icons (if layout is socialsBottom or socialsTopBottom) ── */}
+        {['socialsBottom', 'socialsTopBottom'].includes(layoutStyle) && socialPills.length > 0 && (
           <div style={{ marginTop: '32px', marginBottom: '8px' }}>
             {renderIconOnlySocials()}
           </div>

@@ -231,7 +231,7 @@ function BioLinkChatPreview({ biolinkId, url }) {
       (l.icon === 'platform' || SOCIAL_IDS.includes(l.icon?.toLowerCase?.())) && 
       SOCIAL_IDS.includes(l.platform?.toLowerCase?.())
     );
-    const regularLinks = ['socialsTop', 'socialsBottom'].includes(layoutStyle)
+    const regularLinks = ['socialsTop', 'socialsBottom', 'socialsTopBottom'].includes(layoutStyle)
       ? links.filter(l => !socialPills.includes(l))
       : links;
 
@@ -298,7 +298,7 @@ function BioLinkChatPreview({ biolinkId, url }) {
                     )}
 
                     {/* Social pills (Top) */}
-                    {layoutStyle === 'socialsTop' && socialPills.length > 0 && (
+                    {['socialsTop', 'socialsTopBottom'].includes(layoutStyle) && socialPills.length > 0 && (
                         <div className="bcp-social-icons-compact">
                             {socialPills.map(link => {
                                 const { icon, color } = resolveLinkMeta(link);
@@ -412,7 +412,7 @@ function BioLinkChatPreview({ biolinkId, url }) {
                     )}
 
                     {/* Social pills (Bottom) */}
-                    {layoutStyle === 'socialsBottom' && socialPills.length > 0 && (
+                    {['socialsBottom', 'socialsTopBottom'].includes(layoutStyle) && socialPills.length > 0 && (
                         <div className="bcp-social-icons-compact" style={{ marginTop: 16, marginBottom: 8 }}>
                             {socialPills.map(link => {
                                 const { icon, color } = resolveLinkMeta(link);

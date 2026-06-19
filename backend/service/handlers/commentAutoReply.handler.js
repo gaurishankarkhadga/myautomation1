@@ -16,7 +16,7 @@ module.exports = {
                 const allowedModes = ['reply_only', 'reply_and_hide', 'ai_smart'];
                 const mode = allowedModes.includes(rawMode) ? rawMode : 'ai_smart'; // Fallback
 
-                const parsedDelay = parseInt(params.delay);
+                const parsedDelay = parseInt(params.delay !== undefined ? params.delay : params.delaySeconds);
                 const delay = (!isNaN(parsedDelay) && parsedDelay > 0) ? parsedDelay : 15;
                 const message = params.message || '';
 
@@ -69,8 +69,9 @@ module.exports = {
                     const allowedModes = ['reply_only', 'reply_and_hide', 'ai_smart'];
                     update.replyMode = allowedModes.includes(rawMode) ? rawMode : 'ai_smart';
                 }
-                if (params.delay) {
-                    const parsedDelay = parseInt(params.delay);
+                const inputDelay = params.delay !== undefined ? params.delay : params.delaySeconds;
+                if (inputDelay !== undefined) {
+                    const parsedDelay = parseInt(inputDelay);
                     if (!isNaN(parsedDelay)) {
                         update.delaySeconds = Math.min(Math.max(parsedDelay, 5), 300);
                     }

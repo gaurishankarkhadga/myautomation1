@@ -16,7 +16,7 @@ module.exports = {
                 const allowedModes = ['static', 'ai_smart', 'ai_with_assets'];
                 const mode = allowedModes.includes(rawMode) ? rawMode : 'ai_with_assets'; // Fallback
 
-                const parsedDelay = parseInt(params.delay);
+                const parsedDelay = parseInt(params.delay !== undefined ? params.delay : params.delaySeconds);
                 const delay = (!isNaN(parsedDelay) && parsedDelay > 0) ? parsedDelay : 10;
                 const message = params.message || '';
 
@@ -69,8 +69,9 @@ module.exports = {
                     const allowedModes = ['static', 'ai_smart', 'ai_with_assets'];
                     update.replyMode = allowedModes.includes(rawMode) ? rawMode : 'ai_with_assets';
                 }
-                if (params.delay) {
-                    const parsedDelay = parseInt(params.delay);
+                const inputDelay = params.delay !== undefined ? params.delay : params.delaySeconds;
+                if (inputDelay !== undefined) {
+                    const parsedDelay = parseInt(inputDelay);
                     if (!isNaN(parsedDelay)) {
                         update.delaySeconds = Math.min(Math.max(parsedDelay, 5), 300);
                     }

@@ -334,7 +334,7 @@ module.exports = {
                         accentColor: themeSettings.accentColor,
                         borderRadius: '12px',
                         spacing: '16px',
-                        layoutStyle: ['default', 'socialsTop', 'socialsBottom'].includes(params.layoutStyle) ? params.layoutStyle : (params.layoutStyle ? 'socialsTop' : 'default')
+                        layoutStyle: ['default', 'socialsTop', 'socialsBottom', 'socialsTopBottom'].includes(params.layoutStyle) ? params.layoutStyle : (params.layoutStyle ? 'socialsTop' : 'default')
                     },
                     
                     analytics: { views: 0, clicks: 0 },
@@ -374,16 +374,25 @@ module.exports = {
                 }
 
                 const updates = {};
+                let settingsObj = biolink.settings ? (biolink.settings.toObject?.() || biolink.settings) : {};
+                let settingsModified = false;
+
                 if (params.style || params.theme) {
                     const themeId = resolveTheme(params.style || params.theme);
                     updates.theme = themeId;
-                    updates.settings = { ...biolink.settings.toObject?.() || biolink.settings, ...DEFAULT_THEMES[themeId] };
-                }
-                if (params.name || params.displayName) {
-                    updates['profile.displayName'] = params.name || params.displayName;
+                    settingsObj = { ...settingsObj, ...DEFAULT_THEMES[themeId] };
+                    settingsModified = true;
                 }
                 if (params.layoutStyle) {
-                    updates['settings.layoutStyle'] = ['default', 'socialsTop', 'socialsBottom'].includes(params.layoutStyle) ? params.layoutStyle : 'socialsTop';
+                    settingsObj.layoutStyle = ['default', 'socialsTop', 'socialsBottom', 'socialsTopBottom'].includes(params.layoutStyle) ? params.layoutStyle : 'socialsTop';
+                    settingsModified = true;
+                }
+                if (settingsModified) {
+                    updates.settings = settingsObj;
+                }
+
+                if (params.name || params.displayName) {
+                    updates['profile.displayName'] = params.name || params.displayName;
                 }
                 if (params.tagline) updates['profile.tagline'] = params.tagline;
                 if (params.bio) updates['profile.bio'] = params.bio;

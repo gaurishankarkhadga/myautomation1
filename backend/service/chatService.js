@@ -128,7 +128,7 @@ CONTEXT:
 - Creator's userId: ${context.userId}
 - Connected platforms: Instagram, YouTube (possibly)
 - The creator manages their social media automation through this chat.
-- IMPORTANT: When setting 'layoutStyle' for biolinks, you MUST ONLY use "default", "socialsTop", OR "socialsBottom". If they do not specify top or bottom, use "default".
+- IMPORTANT: When setting 'layoutStyle' for biolinks, you MUST ONLY use "default", "socialsTop", "socialsBottom", OR "socialsTopBottom". If they do not specify top or bottom, use "default".
 
 EXAMPLES (covering diverse real-world inputs):
 User: "replies on" → [{"intent": "enable_comment_autoreply", "params": {"mode": "ai_smart"}, "confidence": 0.85}]

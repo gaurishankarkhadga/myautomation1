@@ -120,7 +120,7 @@ const BioLinkTemplate = ({ isPreview = false, biolink = null, user = null }) => 
       (l.icon === 'platform' || SOCIAL_IDS.includes(l.icon?.toLowerCase?.())) && 
       SOCIAL_IDS.includes(l.platform?.toLowerCase?.())
     );
-    const renderLinks = ['socialsTop', 'socialsBottom'].includes(layoutStyle) ? activeLinks.filter(l => !socialLinks.includes(l)) : activeLinks;
+    const renderLinks = ['socialsTop', 'socialsBottom', 'socialsTopBottom'].includes(layoutStyle) ? activeLinks.filter(l => !socialLinks.includes(l)) : activeLinks;
 
     const renderMockSocials = () => (
       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 20, flexWrap: 'wrap' }}>
@@ -176,7 +176,7 @@ const BioLinkTemplate = ({ isPreview = false, biolink = null, user = null }) => 
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {layoutStyle === 'socialsTop' && socialLinks.length > 0 && renderMockSocials()}
+            {['socialsTop', 'socialsTopBottom'].includes(layoutStyle) && socialLinks.length > 0 && renderMockSocials()}
             
             {renderLinks.map((link) => (
               <div key={link.id} style={{ 
@@ -201,7 +201,7 @@ const BioLinkTemplate = ({ isPreview = false, biolink = null, user = null }) => 
             </div>
           )}
 
-          {layoutStyle === 'socialsBottom' && socialLinks.length > 0 && (
+          {['socialsBottom', 'socialsTopBottom'].includes(layoutStyle) && socialLinks.length > 0 && (
             <div style={{ marginTop: 32 }}>
               {renderMockSocials()}
             </div>

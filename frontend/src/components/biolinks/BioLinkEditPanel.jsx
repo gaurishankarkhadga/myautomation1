@@ -1667,6 +1667,36 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             </div>
             <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>Bottom Socials</div>
           </div>
+
+          <div 
+            className={`layout-option ${biolinkData.settings.layoutStyle === 'socialsTopBottom' ? 'active' : ''}`}
+            onClick={() => {
+              setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'socialsTopBottom' } }));
+              setAutoSaveStatus('saving');
+              setTimeout(autoSave, 2000);
+            }}
+            style={{ 
+              flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsTopBottom' ? 'var(--primary-color)' : 'transparent'}`, 
+              background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
+              display: 'flex', flexDirection: 'column', alignItems: 'center'
+            }}
+          >
+            <div style={{width: '60px', height: '80px', background: 'var(--bg-secondary)', borderRadius: '8px', margin: '0 auto 12px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', border: '1px solid var(--border-color)', justifyContent: 'space-between'}}>
+              <div style={{display: 'flex', gap: '3px', marginBottom: '2px'}}>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+              </div>
+              <div style={{width: '24px', height: '24px', borderRadius: '50%', background: 'var(--text-secondary)', opacity: 0.5}}></div>
+              <div style={{width: '100%', height: '6px', borderRadius: '4px', background: 'var(--text-secondary)', opacity: 0.3}}></div>
+              <div style={{display: 'flex', gap: '3px', marginTop: '2px'}}>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+                <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-color)', opacity: 0.8}}></div>
+              </div>
+            </div>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>Top & Bottom</div>
+          </div>
         </div>
       </div>
     </div>
@@ -2377,6 +2407,43 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     );
   }
 
+  const SOCIAL_IDS = ['instagram','youtube','twitter','tiktok','facebook','linkedin','twitch','spotify','discord','github','snapchat','pinterest','telegram'];
+  const activeLinksForPreview = (biolinkData?.links || []).filter(l => l.isActive !== false);
+  const socialPillsForPreview = activeLinksForPreview.filter(l => 
+    (l.icon === 'platform' || SOCIAL_IDS.includes(l.icon?.toLowerCase?.())) && 
+    SOCIAL_IDS.includes(l.platform?.toLowerCase?.())
+  );
+  const layoutStyleForPreview = biolinkData?.settings?.layoutStyle || 'default';
+
+  const renderPreviewSocials = () => {
+    return (
+      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '20px', flexWrap: 'wrap', width: '100%' }}>
+        {socialPillsForPreview.map(link => {
+          const platform = socialPlatforms.find(p => p.id === link.platform);
+          return (
+            <div
+              key={link.id}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: biolinkData.settings?.textColor || '#ffffff',
+                fontSize: '14px'
+              }}
+            >
+              {platform?.icon || '🌐'}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const livePreviewContent = (
     <div className="mobile-preview" style={{
       background: biolinkData.settings.backgroundImage 
@@ -2406,6 +2473,9 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
           {biolinkData.profile.tagline || 'Your tagline here'}
         </p>
       </div>
+
+      {/* Top Social Icons */}
+      {['socialsTop', 'socialsTopBottom'].includes(layoutStyleForPreview) && socialPillsForPreview.length > 0 && renderPreviewSocials()}
 
       {(biolinkData.products || []).length > 0 && (
         <div style={{
@@ -2442,6 +2512,11 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
       <div className="mobile-links" style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
         {previewActiveView === 'links' && (biolinkData.links || []).map((link, index) => {
+          const isSocial = (link.icon === 'platform' || SOCIAL_IDS.includes(link.icon?.toLowerCase?.())) && SOCIAL_IDS.includes(link.platform?.toLowerCase?.());
+          if (['socialsTop', 'socialsBottom', 'socialsTopBottom'].includes(layoutStyleForPreview) && isSocial) {
+            return null;
+          }
+
           const styleType = biolinkData.settings.styleType || 'glass';
           let linkStyle = {};
           if (styleType === 'glass') {
@@ -2488,6 +2563,9 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             </div>
           );
         })}
+
+        {/* Bottom Social Icons */}
+        {['socialsBottom', 'socialsTopBottom'].includes(layoutStyleForPreview) && socialPillsForPreview.length > 0 && renderPreviewSocials()}
 
         {previewActiveView === 'shop' && (
           <div className="preview-shop-rows">
