@@ -200,6 +200,7 @@ router.get('/data', authenticateToken, async (req, res) => {
           analytics: { views: 0, clicks: 0 }
         });
         await biolink.save();
+      }
     }
 
     if (biolink && biolink.profile && biolink.profile.avatar) {
