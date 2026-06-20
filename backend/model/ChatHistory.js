@@ -20,6 +20,9 @@ const chatMessageSchema = new mongoose.Schema({
         message: { type: String }
     }],
 
+    // Follow-up suggestions
+    suggestions: [{ type: String }],
+
     timestamp: { type: Date, default: Date.now }
 });
 

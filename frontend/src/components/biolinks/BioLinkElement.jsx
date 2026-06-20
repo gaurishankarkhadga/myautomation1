@@ -13,7 +13,7 @@ const BioLinkElement = ({ element, isPreview = false, settings = {} }) => {
       case 'gallery':
         return renderGallery();
       case 'image':
-        return renderGallery(); // Map single image to gallery logic
+        return renderGallery(); 
       case 'video':
         return renderVideo();
       case 'separator':

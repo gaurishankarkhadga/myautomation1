@@ -21,7 +21,7 @@ import '../styles/ChatHub.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
-const SUGGESTED_PROMPTS = [
+const INITIAL_PROMPTS = [
     { icon: Sunrise, text: 'Good morning! Catch me up', label: 'Morning Briefing' },
     { icon: MessageSquare, text: 'Turn on auto-reply for comments', label: 'Enable Replies' },
     { icon: Mail, text: 'Enable smart DM auto-reply', label: 'Smart DMs' },
@@ -59,6 +59,31 @@ function ChatHub() {
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
     const { toasts, addToasts, removeToast } = useToasts();
+    
+    const [dynamicPrompts, setDynamicPrompts] = useState(INITIAL_PROMPTS);
+
+    useEffect(() => {
+        const prompts = [];
+        if (activeAutomations.count === 0) {
+            prompts.push({ icon: MessageSquare, text: 'Turn on auto-reply for comments', label: 'Enable Replies' });
+            prompts.push({ icon: Mail, text: 'Enable smart DM auto-reply', label: 'Smart DMs' });
+        } else {
+            prompts.push({ icon: Activity, text: 'Show me my active automations', label: 'Check Status' });
+        }
+
+        if (crmData && crmData.drafted && crmData.drafted.length > 0) {
+            prompts.push({ icon: Handshake, text: 'Show me my pending brand deals', label: 'Pending Deals' });
+        } else {
+            prompts.push({ icon: Handshake, text: 'Find brand deals for me', label: 'Brand Deals' });
+        }
+
+        prompts.push({ icon: Link2, text: 'Create a biolink with modern look with my social media and courses', label: 'Create BioLink' });
+        prompts.push({ icon: Sunrise, text: 'Good morning! Catch me up', label: 'Morning Briefing' });
+        prompts.push({ icon: Sparkles, text: 'Never mention prices in DMs', label: 'Custom Rule' });
+        prompts.push({ icon: Settings, text: 'Show my advanced settings', label: 'Settings' });
+
+        setDynamicPrompts(prompts.slice(0, 6));
+    }, [activeAutomations, crmData]);
 
     // ── Auth & connection check ──────────────────────────────────────
     useEffect(() => {
@@ -294,6 +319,7 @@ function ChatHub() {
                 content: data.response !== undefined ? data.response : 'Something went wrong.',
                 actions: data.actions || [],
                 toasts: data.toasts || [],
+                suggestions: data.suggestions || [],
                 timestamp: new Date().toISOString()
             }]);
 
@@ -959,8 +985,11 @@ function ChatHub() {
                                 <h2 className="welcome-title">Welcome to Sotix AI</h2>
                                 {/* <p className="welcome-sub">Tell me what you need — I'll handle everything behind the scenes.</p> */}
                                 <div className="suggested-grid" id="suggested-prompts">
-                                    {SUGGESTED_PROMPTS.map(({ icon: Icon, text, label }, i) => (
-                                        <button key={i} className="suggest-btn" onClick={() => sendMessage(text)}
+                                    {dynamicPrompts.map(({ icon: Icon, text, label }, i) => (
+                                        <button key={i} className="suggest-btn anim-scale-in" style={{ animationDelay: `${i * 0.05}s` }} onClick={() => {
+                                            setInputValue(text);
+                                            inputRef.current?.focus();
+                                        }}
                                             id={`sp-${i}`}>
                                             <Icon size={16} strokeWidth={1.8} />
                                             <span>{label}</span>
@@ -986,115 +1015,133 @@ function ChatHub() {
 
                         {/* Message bubbles */}
                         {(activeTab === 'current' ? messages : historyMessages).map((msg, i) => (
-                            <div key={i} className={`msg-row ${msg.role}`} id={`msg-${i}`}>
-                                {msg.role === 'assistant' && (
-                                    <div className="msg-avatar">
-                                        <img src="/assets/logo-icon-transparent.png" alt="Sotix Logo" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-                                    </div>
-                                )}
-                                {msg.role === 'user' && (
-                                    <div className="msg-avatar">
-                                        {profile && profile.profile_picture_url ? (
-                                            <img 
-                                                src={profile.profile_picture_url} 
-                                                alt={profile.username || 'User'} 
-                                                style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
-                                            />
-                                        ) : (
-                                            <User size={14} strokeWidth={2} style={{ color: 'var(--text-muted)' }} />
-                                        )}
-                                    </div>
-                                )}
-                                <div className="msg-bubble">
-                                    {msg.content && msg.content.trim() !== '' && (
-                                        <div className="msg-text"
-                                            dangerouslySetInnerHTML={{ __html: formatContent(msg.content) }} />
-                                    )}
-
-                                    {/* Universal Action Status Widget */}
-                                    {msg.actions?.length > 0 && (
-                                        <ActionStatusWidget actions={msg.actions} />
-                                    )}
-
-
-
-                                    {msg.actions?.some(a => a.intent === 'get_status' && a.data?.inboxTriage) && (
-                                        <div className="triage-badges-container">
-                                            {Object.entries(msg.actions.find(a => a.intent === 'get_status').data.inboxTriage).map(([tag, count], k) => (
-                                                <span key={k} className={`triage-badge ${tag.toLowerCase().replace(/\s/g, '-')}`}>
-                                                    {tag}: {count}
-                                                </span>
-                                            ))}
+                            <div key={i} style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                <div className={`msg-row ${msg.role}`} id={`msg-${i}`}>
+                                    {msg.role === 'assistant' && (
+                                        <div className="msg-avatar">
+                                            <img src="/assets/logo-icon-transparent.png" alt="Sotix Logo" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
                                         </div>
                                     )}
-
-                                    {/* BioLink Preview Card */}
-                                    {msg.actions?.some(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId) && (
-                                        <BioLinkChatPreview
-                                            biolinkId={msg.actions.find(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId).data.biolinkId}
-                                            url={msg.actions.find(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId).data.url}
-                                        />
+                                    {msg.role === 'user' && (
+                                        <div className="msg-avatar">
+                                            {profile && profile.profile_picture_url ? (
+                                                <img 
+                                                    src={profile.profile_picture_url} 
+                                                    alt={profile.username || 'User'} 
+                                                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+                                                />
+                                            ) : (
+                                                <User size={14} strokeWidth={2} style={{ color: 'var(--text-muted)' }} />
+                                            )}
+                                        </div>
                                     )}
+                                    <div className="msg-bubble">
+                                        {msg.content && msg.content.trim() !== '' && (
+                                            <div className="msg-text"
+                                                dangerouslySetInnerHTML={{ __html: formatContent(msg.content) }} />
+                                        )}
 
-                                    {/* Automation Preview Card */}
-                                    {msg.actions?.some(a =>
-                                        ['enable_comment_autoreply', 'enable_dm_autoreply', 'enable_all_automation',
-                                            'disable_comment_autoreply', 'disable_dm_autoreply', 'disable_all_automation',
-                                            'get_active_automations', 'set_content_target',
-                                            'find_brand_deals', 'list_brand_deals', 'enable_comment_to_dm', 'enable_gamify_funnel'].includes(a.intent) && a.data
-                                    ) && (
-                                            <AutomationChatPreview
-                                                actionData={msg.actions.find(a =>
-                                                    ['enable_comment_autoreply', 'enable_dm_autoreply', 'enable_all_automation',
-                                                        'disable_comment_autoreply', 'disable_dm_autoreply', 'disable_all_automation',
-                                                        'get_active_automations', 'set_content_target',
-                                                        'find_brand_deals', 'list_brand_deals', 'enable_comment_to_dm', 'enable_gamify_funnel'].includes(a.intent) && a.data
-                                                ).data}
+                                        {/* Universal Action Status Widget */}
+                                        {msg.actions?.length > 0 && (
+                                            <ActionStatusWidget actions={msg.actions} />
+                                        )}
+
+
+
+                                        {msg.actions?.some(a => a.intent === 'get_status' && a.data?.inboxTriage) && (
+                                            <div className="triage-badges-container">
+                                                {Object.entries(msg.actions.find(a => a.intent === 'get_status').data.inboxTriage).map(([tag, count], k) => (
+                                                    <span key={k} className={`triage-badge ${tag.toLowerCase().replace(/\s/g, '-')}`}>
+                                                        {tag}: {count}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* BioLink Preview Card */}
+                                        {msg.actions?.some(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId) && (
+                                            <BioLinkChatPreview
+                                                biolinkId={msg.actions.find(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId).data.biolinkId}
+                                                url={msg.actions.find(a => ['create_biolink', 'update_biolink', 'list_biolinks'].includes(a.intent) && a.data?.biolinkId).data.url}
                                             />
                                         )}
 
-                                    {/* Viral Carousel Preview Card */}
-                                    {msg.actions?.some(a => a.intent === 'generate_viral_script' && a.data?.carousel?.length > 0) && (
-                                        <ViralCarouselPreview
-                                            items={msg.actions.find(a => a.intent === 'generate_viral_script').data.carousel}
-                                        />
-                                    )}
+                                        {/* Automation Preview Card */}
+                                        {msg.actions?.some(a =>
+                                            ['enable_comment_autoreply', 'enable_dm_autoreply', 'enable_all_automation',
+                                                'disable_comment_autoreply', 'disable_dm_autoreply', 'disable_all_automation',
+                                                'get_active_automations', 'set_content_target',
+                                                'find_brand_deals', 'list_brand_deals', 'enable_comment_to_dm', 'enable_gamify_funnel'].includes(a.intent) && a.data
+                                        ) && (
+                                                <AutomationChatPreview
+                                                    actionData={msg.actions.find(a =>
+                                                        ['enable_comment_autoreply', 'enable_dm_autoreply', 'enable_all_automation',
+                                                            'disable_comment_autoreply', 'disable_dm_autoreply', 'disable_all_automation',
+                                                            'get_active_automations', 'set_content_target',
+                                                            'find_brand_deals', 'list_brand_deals', 'enable_comment_to_dm', 'enable_gamify_funnel'].includes(a.intent) && a.data
+                                                    ).data}
+                                                />
+                                            )}
 
-                                    {/* Dynamic Clarification Widget */}
-                                    {msg.actions?.some(a => a.intent === 'request_clarification' && a.data) && (
-                                        <ClarificationWidget
-                                            question={msg.actions.find(a => a.intent === 'request_clarification').data.question}
-                                            onReply={(text) => sendMessage(text)}
-                                        />
-                                    )}
+                                        {/* Viral Carousel Preview Card */}
+                                        {msg.actions?.some(a => a.intent === 'generate_viral_script' && a.data?.carousel?.length > 0) && (
+                                            <ViralCarouselPreview
+                                                items={msg.actions.find(a => a.intent === 'generate_viral_script').data.carousel}
+                                            />
+                                        )}
 
-                                    {/* ====== DEAL NOTIFICATION (points to CRM tab) ====== */}
-                                    {msg.actions?.some(a => a.intent === 'get_morning_briefing' && a.data?.hasPendingDeals) && (
-                                        <button
-                                            className="deal-alert-card"
-                                            onClick={() => { loadDealsData(); setActiveTab('deals'); }}
-                                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '10px', background: 'rgba(59,130,246,0.08)', width: '100%', textAlign: 'left' }}
-                                        >
-                                            <Handshake size={18} style={{ color: 'var(--primary-color)', flexShrink: 0 }} />
-                                            <div style={{ flex: 1 }}>
-                                                <strong style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>
-                                                    {msg.actions.find(a => a.intent === 'get_morning_briefing').data.pendingCount || 0} Brand Deal{(msg.actions.find(a => a.intent === 'get_morning_briefing').data.pendingCount || 0) !== 1 ? 's' : ''} Waiting
-                                                </strong>
-                                                <p style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', margin: '2px 0 0 0' }}>Tap to open the Deals CRM →</p>
-                                            </div>
-                                            <ChevronRight size={16} style={{ color: 'var(--text-tertiary)' }} />
-                                        </button>
-                                    )}
+                                        {/* Dynamic Clarification Widget */}
+                                        {msg.actions?.some(a => a.intent === 'request_clarification' && a.data) && (
+                                            <ClarificationWidget
+                                                question={msg.actions.find(a => a.intent === 'request_clarification').data.question}
+                                                onReply={(text) => sendMessage(text)}
+                                            />
+                                        )}
 
-                                    <span className="msg-time">
-                                        {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                                    </span>
-                                    {msg._id && (
-                                        <button className="msg-delete-btn" onClick={() => handleDeleteMessage(msg._id)} title="Delete message">
-                                            <Trash2 size={14} />
-                                        </button>
-                                    )}
+                                        {/* ====== DEAL NOTIFICATION (points to CRM tab) ====== */}
+                                        {msg.actions?.some(a => a.intent === 'get_morning_briefing' && a.data?.hasPendingDeals) && (
+                                            <button
+                                                className="deal-alert-card"
+                                                onClick={() => { loadDealsData(); setActiveTab('deals'); }}
+                                                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '10px', background: 'rgba(59,130,246,0.08)', width: '100%', textAlign: 'left' }}
+                                            >
+                                                <Handshake size={18} style={{ color: 'var(--primary-color)', flexShrink: 0 }} />
+                                                <div style={{ flex: 1 }}>
+                                                    <strong style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                                                        {msg.actions.find(a => a.intent === 'get_morning_briefing').data.pendingCount || 0} Brand Deal{(msg.actions.find(a => a.intent === 'get_morning_briefing').data.pendingCount || 0) !== 1 ? 's' : ''} Waiting
+                                                    </strong>
+                                                    <p style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', margin: '2px 0 0 0' }}>Tap to open the Deals CRM →</p>
+                                                </div>
+                                                <ChevronRight size={16} style={{ color: 'var(--text-tertiary)' }} />
+                                            </button>
+                                        )}
+
+                                        <span className="msg-time">
+                                            {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                        </span>
+                                        {msg._id && (
+                                            <button className="msg-delete-btn" onClick={() => handleDeleteMessage(msg._id)} title="Delete message">
+                                                <Trash2 size={14} />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
+                                
+                                {msg.role === 'assistant' && msg.suggestions && msg.suggestions.length > 0 && i === (activeTab === 'current' ? messages : historyMessages).length - 1 && activeTab === 'current' && !isTyping && (
+                                    <div className="followup-suggestions-wrap">
+                                        {msg.suggestions.map((sug, idx) => (
+                                            <button 
+                                                key={idx} 
+                                                className="followup-suggestion-btn anim-scale-in" 
+                                                style={{ animationDelay: `${idx * 0.1}s` }}
+                                                onClick={() => sendMessage(sug)}
+                                            >
+                                                <Sparkles size={12} style={{ color: 'var(--primary-color)' }} />
+                                                <span>{sug}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         ))}
 

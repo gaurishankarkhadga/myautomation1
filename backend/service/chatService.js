@@ -399,6 +399,7 @@ async function formatResponse(message, actionResults, hasChat, context, clarific
 
     // General chat (with or without actions)
     let chatResponse = '';
+    let suggestions = [];
 
     try {
         const contextInfo = actionResults.length > 0
@@ -415,6 +416,7 @@ HARD RULES:
 - NEVER start with "Great question!" or "Absolutely!" or "I'd be happy to help"
 - Talk like texting — casual, direct, helpful
 - If they ask "how" to do something → give the exact command they should type
+- IMPORTANT: Provide 2 or 3 short follow-up suggestion prompts for the user to execute next. Put them at the very end of your response, strictly in this format: <SUGGESTIONS>["prompt 1", "prompt 2"]</SUGGESTIONS>
 
 Your capabilities: comment auto-reply, DM auto-reply, asset management, brand deal finding, persona analysis, content targeting, time/comment limits, custom AI instructions, morning briefings, biolinks, cross-platform automation.
 
@@ -424,6 +426,15 @@ Reply SHORT and helpful.`;
 
         const result = await generateContentWithFallback(chatPrompt);
         chatResponse = result.response.text().trim();
+        
+        // Extract suggestions
+        const suggestionMatch = chatResponse.match(/<SUGGESTIONS>([\s\S]*?)<\/SUGGESTIONS>/);
+        if (suggestionMatch) {
+            try {
+                suggestions = JSON.parse(suggestionMatch[1]);
+                chatResponse = chatResponse.replace(suggestionMatch[0], '').trim();
+            } catch(e) { }
+        }
     } catch (error) {
         console.error('[ChatService] Chat response generation failed:', error.message);
         chatResponse = "Hey! I had a small hiccup processing that. Could you try rephrasing? 😊";
@@ -442,7 +453,8 @@ Reply SHORT and helpful.`;
     return {
         response: chatResponse,
         toasts,
-        actions: actionResults
+        actions: actionResults,
+        suggestions
     };
 }
 
@@ -522,7 +534,7 @@ async function processMessage(userId, message, token) {
     console.log(`[ChatService] Actions: ${actionResults.length}, HasChat: ${hasChat}`);
 
     // Step 3: Format the response
-    const { response, toasts, actions } = await formatResponse(message, actionResults, hasChat, context, clarificationIntents);
+    const { response, toasts, actions, suggestions } = await formatResponse(message, actionResults, hasChat, context, clarificationIntents);
 
     // Step 4: Save to chat history
     try {
@@ -552,6 +564,7 @@ async function processMessage(userId, message, token) {
                 data: a.data
             })),
             toasts,
+            suggestions: suggestions || [],
             timestamp: new Date()
         });
 
@@ -574,7 +587,8 @@ async function processMessage(userId, message, token) {
         success: true,
         response,
         actions,
-        toasts
+        toasts,
+        suggestions: suggestions || []
     };
 }
 
