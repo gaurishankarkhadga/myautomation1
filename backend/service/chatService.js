@@ -431,9 +431,15 @@ Reply SHORT and helpful.`;
         const suggestionMatch = chatResponse.match(/<SUGGESTIONS>([\s\S]*?)<\/SUGGESTIONS>/);
         if (suggestionMatch) {
             try {
-                suggestions = JSON.parse(suggestionMatch[1]);
+                let jsonStr = suggestionMatch[1].trim();
+                if (jsonStr.startsWith('```json')) jsonStr = jsonStr.replace(/^```json/, '').replace(/```$/, '').trim();
+                if (jsonStr.startsWith('```')) jsonStr = jsonStr.replace(/^```/, '').replace(/```$/, '').trim();
+                
+                suggestions = JSON.parse(jsonStr);
                 chatResponse = chatResponse.replace(suggestionMatch[0], '').trim();
-            } catch(e) { }
+            } catch(e) { 
+                console.error('[ChatService] Failed to parse suggestions:', e.message);
+            }
         }
     } catch (error) {
         console.error('[ChatService] Chat response generation failed:', error.message);
