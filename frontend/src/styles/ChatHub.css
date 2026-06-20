@@ -1160,7 +1160,7 @@ body {
 /* ── Input bar — ALWAYS visible, always at bottom ──────────── */
 .chat-input-bar {
     flex-shrink: 0;
-    padding: 24px 0; /* More vertical breathing room */
+    padding: 4px 0 12px 0; /* Minimized height */
     background: transparent;
     border-top: none;
     display: flex;
@@ -1168,10 +1168,12 @@ body {
     align-items: center;
     position: relative;
     z-index: 100;
+    pointer-events: none; /* Let clicks pass through empty spaces */
 }
 
 .input-wrap {
     display: flex;
+    pointer-events: auto; /* Re-enable clicks for input box */
     align-items: center;
     gap: 12px;
     background: #0c0c0e; /* Solid deep black */
@@ -2186,16 +2188,16 @@ body {
     color: var(--text-primary);
 }
 
-/* ── Floating New Chat Button ──────────────────────────────── */
 .floating-new-chat-container {
     position: absolute;
-    bottom: 125px;
-    /* Space out from input to avoid accidental clicks */
+    bottom: 100%; /* Floats above the top of the chat-input-bar contents */
     left: 50%;
     transform: translateX(-50%);
-    z-index: 100;
-    pointer-events: none;
-    /* Let clicks pass through to empty space if needed */
+    margin-bottom: 6px;
+    z-index: 110;
+    pointer-events: none; /* Let clicks pass through empty space around the button */
+    display: flex;
+    justify-content: center;
 }
 
 .floating-new-chat-btn {
@@ -2204,9 +2206,7 @@ body {
     align-items: center;
     gap: 8px;
     padding: 8px 14px;
-    background: rgba(30, 30, 30, 0.75);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    background: #000000; 
     border: 1px solid var(--border);
     border-radius: 99px;
     color: var(--text-primary);
@@ -2219,11 +2219,7 @@ body {
 }
 
 .floating-new-chat-btn:hover {
-    background: var(--surface-2);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-color: var(--border-2);
-    transform: scale(1.05);
+    border-color: var(--text-primary);
 }
 
 @keyframes slideUpFade {
@@ -2240,7 +2236,7 @@ body {
 
 @media (max-width: 768px) {
     .floating-new-chat-container {
-        bottom: 115px;
+        margin-bottom: 8px;
     }
 }
 
@@ -2744,4 +2740,74 @@ body {
 .mob-theme-btn {
     width: 32px;
     height: 32px;
+}
+/* ── Pre-Prompts Above Input ── */
+.chat-pre-prompts-container {
+    position: relative;
+    width: 90%;
+    max-width: 800px;
+    padding: 0 0 10px 0;
+    margin-bottom: 2px;
+    z-index: 90;
+    pointer-events: auto;
+}
+
+.chat-pre-prompts-scroll {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 2px 0 6px 0;
+}
+
+.chat-pre-prompts-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.pre-prompt-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 99px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.pre-prompt-chip svg {
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.pre-prompt-chip:hover {
+    background: var(--surface-2);
+    color: var(--text-primary);
+    border-color: var(--primary); /* Highlight border */
+}
+
+.pre-prompt-chip:hover svg {
+    color: var(--primary-hover);
+}
+
+.prompts-loader-placeholder {
+    grid-column: span 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    color: var(--text-muted);
+    font-size: 12px;
+    border-radius: var(--radius);
+    border: 1px dashed var(--border);
+    background: rgba(0, 0, 0, 0.2);
 }

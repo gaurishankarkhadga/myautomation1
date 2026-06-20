@@ -239,4 +239,19 @@ router.delete('/deals/:conversationId', async (req, res) => {
     }
 });
 
+// GET /api/chat/initial-prompts/:userId — Generate dynamic, AI-based initial suggestion prompts
+router.get('/initial-prompts/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'userId is required' });
+        }
+        const prompts = await chatService.generateDynamicPrompts(userId);
+        res.json({ success: true, prompts });
+    } catch (error) {
+        console.error('[ChatAPI] Error generating initial prompts:', error.message);
+        res.status(500).json({ success: false, error: 'Failed to generate initial prompts' });
+    }
+});
+
 module.exports = router;

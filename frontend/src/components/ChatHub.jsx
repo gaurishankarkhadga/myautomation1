@@ -21,14 +21,19 @@ import '../styles/ChatHub.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
-const INITIAL_PROMPTS = [
-    { icon: Sunrise, text: 'Good morning! Catch me up', label: 'Morning Briefing' },
-    { icon: MessageSquare, text: 'Turn on auto-reply for comments', label: 'Enable Replies' },
-    { icon: Mail, text: 'Enable smart DM auto-reply', label: 'Smart DMs' },
-    { icon: Sparkles, text: 'Never mention prices in DMs', label: 'Custom Rule' },
-    { icon: Handshake, text: 'Find brand deals for me', label: 'Brand Deals' },
-    { icon: Link2, text: 'Create a biolink with modern look with my social media and courses', label: 'Create BioLink' },
-];
+const ICON_MAP = {
+    Link2,
+    MessageSquare,
+    Mail,
+    Sparkles,
+    Handshake,
+    Sunrise,
+    Activity,
+    Settings,
+    Zap
+};
+
+const INITIAL_PROMPTS = [];
 
 function ChatHub() {
     const navigate = useNavigate();
@@ -62,28 +67,29 @@ function ChatHub() {
     
     const [dynamicPrompts, setDynamicPrompts] = useState(INITIAL_PROMPTS);
 
+    const fetchDynamicPrompts = async (uId) => {
+        const idToUse = uId || userId;
+        if (!idToUse) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/chat/initial-prompts/${idToUse}`);
+            const data = await res.json();
+            if (data.success && data.prompts) {
+                const mapped = data.prompts.map(p => ({
+                    ...p,
+                    icon: ICON_MAP[p.iconName] || Zap
+                }));
+                setDynamicPrompts(mapped);
+            }
+        } catch (e) {
+            console.error('[ChatHub] Failed to fetch dynamic prompts:', e);
+        }
+    };
+
     useEffect(() => {
-        const prompts = [];
-        if (activeAutomations.count === 0) {
-            prompts.push({ icon: MessageSquare, text: 'Turn on auto-reply for comments', label: 'Enable Replies' });
-            prompts.push({ icon: Mail, text: 'Enable smart DM auto-reply', label: 'Smart DMs' });
-        } else {
-            prompts.push({ icon: Activity, text: 'Show me my active automations', label: 'Check Status' });
+        if (userId) {
+            fetchDynamicPrompts(userId);
         }
-
-        if (crmData && crmData.drafted && crmData.drafted.length > 0) {
-            prompts.push({ icon: Handshake, text: 'Show me my pending brand deals', label: 'Pending Deals' });
-        } else {
-            prompts.push({ icon: Handshake, text: 'Find brand deals for me', label: 'Brand Deals' });
-        }
-
-        prompts.push({ icon: Link2, text: 'Create a biolink with modern look with my social media and courses', label: 'Create BioLink' });
-        prompts.push({ icon: Sunrise, text: 'Good morning! Catch me up', label: 'Morning Briefing' });
-        prompts.push({ icon: Sparkles, text: 'Never mention prices in DMs', label: 'Custom Rule' });
-        prompts.push({ icon: Settings, text: 'Show my advanced settings', label: 'Settings' });
-
-        setDynamicPrompts(prompts.slice(0, 6));
-    }, [activeAutomations, crmData]);
+    }, [userId]);
 
     // ── Auth & connection check ──────────────────────────────────────
     useEffect(() => {
@@ -326,6 +332,8 @@ function ChatHub() {
             if (data.toasts?.length) addToasts(data.toasts);
             // Refresh active count after any action
             fetchActiveCount();
+            // Fetch fresh dynamic prompts based on new context
+            fetchDynamicPrompts(userId);
         } catch {
             setMessages(prev => [...prev, {
                 role: 'assistant',
@@ -348,6 +356,7 @@ function ChatHub() {
         setInputValue('');
         inputRef.current?.focus();
         setSidebarOpen(false);
+        fetchDynamicPrompts(userId);
     };
 
     const handleDisconnect = async () => {
@@ -985,16 +994,23 @@ function ChatHub() {
                                 <h2 className="welcome-title">Welcome to Sotix AI</h2>
                                 {/* <p className="welcome-sub">Tell me what you need — I'll handle everything behind the scenes.</p> */}
                                 <div className="suggested-grid" id="suggested-prompts">
-                                    {dynamicPrompts.map(({ icon: Icon, text, label }, i) => (
-                                        <button key={i} className="suggest-btn anim-scale-in" style={{ animationDelay: `${i * 0.05}s` }} onClick={() => {
-                                            setInputValue(text);
-                                            inputRef.current?.focus();
-                                        }}
-                                            id={`sp-${i}`}>
-                                            <Icon size={16} strokeWidth={1.8} />
-                                            <span>{label}</span>
-                                        </button>
-                                    ))}
+                                    {dynamicPrompts.length === 0 ? (
+                                        <div className="prompts-loader-placeholder">
+                                            <Loader className="spin" size={16} />
+                                            <span>Analyzing capabilities & preparing actions...</span>
+                                        </div>
+                                    ) : (
+                                        dynamicPrompts.map(({ icon: Icon, text, label }, i) => (
+                                            <button key={i} className="suggest-btn anim-scale-in" style={{ animationDelay: `${i * 0.05}s` }} onClick={() => {
+                                                setInputValue(text);
+                                                inputRef.current?.focus();
+                                            }}
+                                                id={`sp-${i}`}>
+                                                <Icon size={16} strokeWidth={1.8} />
+                                                <span>{label}</span>
+                                            </button>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -1164,18 +1180,38 @@ function ChatHub() {
                     </div>
                 )}
 
-                {/* Floating New Chat Button (Conditional) */}
-                {messages.length > 2 && activeTab === 'current' && (
-                    <div className="floating-new-chat-container">
-                        <button className="floating-new-chat-btn" onClick={handleNewChat}>
-                            <Plus size={13} strokeWidth={2.5} />
-                            <span>New Chat</span>
-                        </button>
-                    </div>
-                )}
-
                 {/* Input bar */}
-                <div className={`chat-input-bar ${inputValue.trim() ? 'has-text' : ''} ${isTyping ? 'ai-typing' : ''}`} id="chat-input-container">
+                {(() => {
+                    const hasPrePrompts = activeTab === 'current' && messages.length > 0 && 
+                      (!messages[messages.length - 1]?.suggestions || messages[messages.length - 1].suggestions.length === 0);
+                    return (
+                        <div className={`chat-input-bar ${inputValue.trim() ? 'has-text' : ''} ${isTyping ? 'ai-typing' : ''} ${hasPrePrompts ? 'has-pre-prompts' : ''}`} id="chat-input-container">
+                            {/* Floating New Chat Button (Conditional) */}
+                            {messages.length > 2 && activeTab === 'current' && (
+                                <div className="floating-new-chat-container">
+                                    <button className="floating-new-chat-btn" onClick={handleNewChat}>
+                                        <Plus size={13} strokeWidth={2.5} />
+                                        <span>New Chat</span>
+                                    </button>
+                                </div>
+                            )}
+                            {/* Always-on quick pre-prompts when no active suggestions */}
+                            {hasPrePrompts && (
+                                <div className="chat-pre-prompts-container anim-slide-up">
+                                    <div className="chat-pre-prompts-scroll">
+                                        {dynamicPrompts.map(({ icon: Icon, text, label }, i) => (
+                                            <button key={i} className="pre-prompt-chip" onClick={() => {
+                                                setInputValue(text);
+                                                inputRef.current?.focus();
+                                            }}>
+                                                <Icon size={12} strokeWidth={2.5} />
+                                                <span>{text}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                     <div className={`input-wrap ${inputValue.trim() ? 'has-text' : ''} ${isTyping ? 'disabled' : ''}`}>
                         <textarea
                             ref={inputRef}
@@ -1200,6 +1236,8 @@ function ChatHub() {
                     </div>
                     <p className="input-hint">Enter to send · Shift+Enter for new line</p>
                 </div>
+                    );
+                })()}
                     </>
                 )}
             </main>

@@ -632,6 +632,100 @@ async function clearChatHistory(userId) {
     }
 }
 
+// ==================== GENERATE DYNAMIC PROMPTS ====================
+async function generateDynamicPrompts(userId) {
+    try {
+        // Fetch last 3 messages to avoid repetition
+        let recentMessages = [];
+        try {
+            const historyRes = await getChatHistory(userId, 3);
+            if (historyRes.success && historyRes.messages) {
+                recentMessages = historyRes.messages.map(m => m.content).filter(Boolean);
+            }
+        } catch (e) {
+            console.error('[ChatService] Failed to get chat history for prompts context:', e.message);
+        }
+
+        // Get user settings context for more tailored suggestions
+        const AutoReplySetting = require('../model/Instaautomation').AutoReplySetting;
+        const DmAutoReplySetting = require('../model/Instaautomation').DmAutoReplySetting;
+        const CommentToDmSetting = require('../model/Instaautomation').CommentToDmSetting;
+        const Biolink = require('../model/BioLink');
+
+        const [commentSettings, dmSettings, c2dSettings, biolink] = await Promise.all([
+            AutoReplySetting.findOne({ userId }).lean(),
+            DmAutoReplySetting.findOne({ userId }).lean(),
+            CommentToDmSetting.findOne({ userId }).lean(),
+            Biolink.findOne({ userId }).lean()
+        ]);
+
+        const hasBiolink = !!biolink;
+        const activeAutomationsCount = (commentSettings?.enabled ? 1 : 0) + (dmSettings?.enabled ? 1 : 0) + (c2dSettings?.enabled ? 1 : 0);
+
+        const contextInfo = `
+User Context:
+- Has BioLink: ${hasBiolink ? 'Yes' : 'No'}
+- Active Automations: ${activeAutomationsCount}
+- Recent messages from user: ${JSON.stringify(recentMessages)}
+`;
+
+        const prompt = `You are the AI brain of Sotix — a social media automation platform.
+Your job is to generate 6 completely dynamic, varied, and action-oriented suggestions/prompts for the creator.
+The prompts should represent actual platform capabilities, but MUST be different every time.
+
+Capabilities the platform supports:
+1. BioLink generation & custom themes (e.g. creating/updating biolinks, glass/neon/retro themes, adding products/courses/links, changing layout like socialsTop/socialsBottom).
+2. Comments/DMs automation (e.g. auto-reply to comments, auto-reply to DMs, setting up automated replies).
+3. Comment-to-DM funnels (e.g. auto-DMing commenters when they type a keyword like 'link' or 'interested').
+4. AI brand negotiator/inbox triage (automatically negotiating brand deals in DMs).
+5. Custom rules (adding rules like 'never mention price', 'reply in Hindi', etc.).
+6. Status, activity logs, and morning briefings.
+
+CURRENT USER STATE:
+${contextInfo}
+
+HARD RULES:
+1. Generate exactly 6 prompts.
+2. Return ONLY a JSON array of objects, like this:
+[
+  {"text": "Create a glassmorphic biolink for my profile", "label": "Design BioLink", "iconName": "Link2"},
+  {"text": "Turn on auto-reply for incoming comments", "label": "Auto-Reply", "iconName": "MessageSquare"}
+]
+3. Supported iconName values: "Link2", "MessageSquare", "Mail", "Sparkles", "Handshake", "Sunrise", "Activity", "Settings", "Zap". Choose the one that matches best.
+4. Keep the 'text' short (max 7-9 words) and 'label' very brief (1-2 words).
+5. CRITICAL: The suggestions must be highly diverse and NOT overlap with the recent messages from the user: ${JSON.stringify(recentMessages)}. Do NOT suggest things the user just did.
+6. Make them sound like a real creator talking: casual, modern, Hinglish/slang-friendly.
+7. Return ONLY the raw JSON array. No markdown, no explanation.`;
+
+        const result = await generateContentWithFallback(prompt);
+        let responseText = result.response.text().trim();
+        responseText = repairAIOutput(responseText);
+
+        let prompts = JSON.parse(responseText);
+        if (Array.isArray(prompts) && prompts.length > 0) {
+            return prompts.slice(0, 6);
+        }
+    } catch (error) {
+        console.error('[ChatService] Error generating dynamic prompts:', error.message);
+    }
+
+    // Fallback: A diverse list shuffled dynamically
+    const fallbackPool = [
+        { iconName: 'Link2', text: 'Create a biolink with modern layout', label: 'Create BioLink' },
+        { iconName: 'Link2', text: 'Change my biolink theme to glass', label: 'BioLink Theme' },
+        { iconName: 'Link2', text: 'Put my social icons on the top of bio', label: 'Socials Top' },
+        { iconName: 'MessageSquare', text: 'Automate replies for my latest reel', label: 'Latest Reel' },
+        { iconName: 'Mail', text: 'Enable smart DM auto-reply', label: 'DM Automation' },
+        { iconName: 'Sparkles', text: 'Add custom rule: never mention prices', label: 'Custom Rule' },
+        { iconName: 'Handshake', text: 'Turn on the AI brand negotiator bot', label: 'Negotiator' },
+        { iconName: 'Activity', text: 'Show me my active automations', label: 'Check Status' },
+        { iconName: 'Sunrise', text: 'Good morning! Give me a briefing', label: 'Briefing' },
+        { iconName: 'Mail', text: 'If DM fails send fallback message', label: 'DM Fallback' },
+        { iconName: 'Zap', text: 'Enable comment-to-DM for keyword link', label: 'Comment to DM' }
+    ];
+    return fallbackPool.sort(() => 0.5 - Math.random()).slice(0, 6);
+}
+
 // ==================== DELETE SINGLE MESSAGE ====================
 async function deleteMessage(userId, messageId) {
     try {
@@ -660,5 +754,6 @@ module.exports = {
     getChatHistory,
     clearChatHistory,
     deleteMessage,
+    generateDynamicPrompts,
     loadHandlers  // Exposed for testing/reloading
 };
