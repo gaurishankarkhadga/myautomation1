@@ -3660,37 +3660,9 @@
   -webkit-backdrop-filter: blur(12px);
 }
 
-.header-status-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 99px;
-  font-size: 13px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-}
 
-.header-status-item .status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #6b7280;
-  transition: all 0.3s ease;
-}
 
-.header-status-item .status-dot.saved {
-  background: #10b981;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
-}
 
-.header-status-item .status-dot.saving {
-  background: #3b82f6;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
-  animation: pulse 1s infinite alternate;
-}
 
 .header-pill-btn {
   padding: 6px 16px;

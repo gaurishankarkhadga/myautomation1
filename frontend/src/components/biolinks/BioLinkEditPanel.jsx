@@ -254,8 +254,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   const [biolinkData, setBiolinkData] = useState(normalizeBiolink(biolinkProp));
   const [isNew, setIsNew] = useState(false);
   const [isLoading, setIsLoading] = useState(!biolinkProp);
-  const [autoSaveStatus, setAutoSaveStatus] = useState('saved');
-  const [isSaving, setIsSaving] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
   const debouncedAutoSave = useRef(
     debounce(() => {
       autoSave();
@@ -574,8 +573,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
     localStorage.removeItem('selectedTemplate');
     appliedTemplateRef.current = true;
-    setAutoSaveStatus('saving');
-    debouncedAutoSave();
+        debouncedAutoSave();
   }, [isLoading]);
 
   // Apply template passed via navigation state (from template picker)
@@ -627,8 +625,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         setBiolinkData(prev => ({ ...normalizeBiolink(null), theme: prev.theme, settings: prev.settings }));
       }
     }
-    setAutoSaveStatus('saving');
-    debouncedAutoSave();
+        debouncedAutoSave();
   }, [location]);
 
   // Auto-save interval
@@ -823,8 +820,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       }
 
       // Ensure the very latest edits are saved before publishing
-      setAutoSaveStatus('saving');
-      await autoSave();
+            await autoSave();
 
       // Validate required data — must have a saved _id
       const currentId = biolinkData._id || editIdRef.current;
@@ -914,8 +910,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       };
       return next;
     });
-    setAutoSaveStatus('saving');
-    debouncedAutoSave(); // Changed from 1000 to 2000ms
+        debouncedAutoSave(); // Changed from 1000 to 2000ms
   };
 
   const handleGalleryUpload = async (elementId, files) => {
@@ -983,8 +978,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             source: 'upload'
           }
         });
-        setAutoSaveStatus('saving');
-        debouncedAutoSave();
+                debouncedAutoSave();
       } else {
         const errorData = await response.text();
         console.error('Video upload failed:', response.status, errorData);
@@ -1037,23 +1031,24 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       });
 
       if (response.ok) {
-        const data = await response.json();
-        if (data?.biolink?._id) {
-          // Store _id in ref immediately (synchronous) so next save uses it
-          editIdRef.current = data.biolink._id;
-          setBiolinkData(prev => ({ ...prev, _id: data.biolink._id, username: data.biolink.username || prev.username }));
-          setIsNew(false);
+        try {
+          const data = await response.json();
+          if (data?.biolink?._id) {
+            // Store _id in ref immediately (synchronous) so next save uses it
+            editIdRef.current = data.biolink._id;
+            setBiolinkData(prev => ({ ...prev, _id: data.biolink._id, username: data.biolink.username || prev.username }));
+            setIsNew(false);
+          }
+          console.log('Auto-save successful, _id:', data?.biolink?._id);
+        } catch (e) {
+          console.log('Auto-save successful (empty/non-JSON response)');
         }
-        setAutoSaveStatus('saved');
-        console.log('Auto-save successful, _id:', data?.biolink?._id);
       } else {
         const errorText = await response.text();
         console.error('Auto-save failed:', response.status, errorText);
-        setAutoSaveStatus('error');
       }
     } catch (error) {
       console.error('Error auto-saving:', error);
-      setAutoSaveStatus('error');
     } finally {
       savingRef.current = false;
     }
@@ -1072,8 +1067,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       const next = { ...prev, links: [...prev.links, newLink] };
       return next;
     });
-    setAutoSaveStatus('saving');
-    debouncedAutoSave();
+        debouncedAutoSave();
   };
 
   const handlePlatformChange = useCallback((linkId, platformId) => {
@@ -1097,8 +1091,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         };
         return next;
       });
-      setAutoSaveStatus('saving');
-      debouncedAutoSave();
+            debouncedAutoSave();
     }
   }, [socialPlatforms, debouncedAutoSave]);
 
@@ -1112,8 +1105,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       };
       return next;
     });
-    setAutoSaveStatus('saving');
-    debouncedAutoSave();
+        debouncedAutoSave();
   };
 
   const removeLink = (linkId) => {
@@ -1121,8 +1113,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       ...prev,
       links: (prev.links || []).filter(link => link.id !== linkId)
     }));
-    setAutoSaveStatus('saving');
-    debouncedAutoSave();
+        debouncedAutoSave();
   };
 
   const addProduct = () => {
@@ -1138,8 +1129,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         category: ''
       }]
     }));
-    setAutoSaveStatus('saving');
-    debouncedAutoSave();
+        debouncedAutoSave();
   };
 
   const updateProduct = (index, field, value) => {
@@ -1149,8 +1139,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         i === index ? { ...product, [field]: value } : product
       )
     }));
-    setAutoSaveStatus('saving');
-    debouncedAutoSave();
+        debouncedAutoSave();
   };
 
   const removeProduct = (index) => {
@@ -1158,8 +1147,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       ...prev,
       products: prev.products.filter((_, i) => i !== index)
     }));
-    setAutoSaveStatus('saving');
-    debouncedAutoSave();
+        debouncedAutoSave();
   };
 
   const handleProductImageUpload = async (index, file) => {
@@ -1234,8 +1222,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         };
         return next;
       });
-      setAutoSaveStatus('saving');
-      debouncedAutoSave();
+            debouncedAutoSave();
     }
   };
 
@@ -1252,8 +1239,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       return next;
     });
     setShowElementPopup(false);
-    setAutoSaveStatus('saving');
-    debouncedAutoSave();
+        debouncedAutoSave();
   };
 
   const getDefaultElementContent = (type) => {
@@ -1280,8 +1266,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       };
       return next;
     });
-    setAutoSaveStatus('saving');
-    debouncedAutoSave();
+        debouncedAutoSave();
   };
 
   const removeElement = (elementId) => {
@@ -1289,8 +1274,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       const next = { ...prev, elements: prev.elements.filter(element => element.id !== elementId) };
       return next;
     });
-    setAutoSaveStatus('saving');
-    debouncedAutoSave();
+        debouncedAutoSave();
   };
 
   const handleDragStart = (e, elementId, index) => {
@@ -1318,8 +1302,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         const next = { ...prev, elements: newElements };
         return next;
       });
-      setAutoSaveStatus('saving');
-      debouncedAutoSave();
+            debouncedAutoSave();
     }
   };
 
@@ -1347,8 +1330,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         const next = { ...prev, links: newLinks };
         return next;
       });
-      setAutoSaveStatus('saving');
-      debouncedAutoSave();
+            debouncedAutoSave();
     }
   };
 
@@ -1580,8 +1562,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             className={`layout-option ${biolinkData.settings.layoutStyle === 'default' || !biolinkData.settings.layoutStyle ? 'active' : ''}`}
             onClick={() => {
               setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'default' } }));
-              setAutoSaveStatus('saving');
-              debouncedAutoSave();
+                            debouncedAutoSave();
             }}
             style={{ 
               flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'default' || !biolinkData.settings.layoutStyle ? 'var(--primary-color)' : 'transparent'}`, 
@@ -1602,8 +1583,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             className={`layout-option ${biolinkData.settings.layoutStyle === 'socialsTop' ? 'active' : ''}`}
             onClick={() => {
               setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'socialsTop' } }));
-              setAutoSaveStatus('saving');
-              debouncedAutoSave();
+                            debouncedAutoSave();
             }}
             style={{ 
               flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsTop' ? 'var(--primary-color)' : 'transparent'}`, 
@@ -1628,8 +1608,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             className={`layout-option ${biolinkData.settings.layoutStyle === 'socialsBottom' ? 'active' : ''}`}
             onClick={() => {
               setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'socialsBottom' } }));
-              setAutoSaveStatus('saving');
-              debouncedAutoSave();
+                            debouncedAutoSave();
             }}
             style={{ 
               flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsBottom' ? 'var(--primary-color)' : 'transparent'}`, 
@@ -1654,8 +1633,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             className={`layout-option ${biolinkData.settings.layoutStyle === 'socialsTopBottom' ? 'active' : ''}`}
             onClick={() => {
               setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, layoutStyle: 'socialsTopBottom' } }));
-              setAutoSaveStatus('saving');
-              debouncedAutoSave();
+                            debouncedAutoSave();
             }}
             style={{ 
               flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsTopBottom' ? 'var(--primary-color)' : 'transparent'}`, 
@@ -1792,8 +1770,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                   setShowAddProductForm(false);
                   setEditingProductIndex(null);
                   setProductFormData({ name: '', description: '', price: '', image: '', url: '' });
-                  setAutoSaveStatus('saving');
-                  debouncedAutoSave();
+                                    debouncedAutoSave();
                 }}
                 disabled={!productFormData.name.trim()}
               >
@@ -1849,8 +1826,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                             ...prev,
                             products: prev.products.filter((_, i) => i !== idx)
                           }));
-                          setAutoSaveStatus('saving');
-                          debouncedAutoSave();
+                                                    debouncedAutoSave();
                         }}
                         title="Delete"
                       >
@@ -1895,8 +1871,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                       const data = await response.json();
                       const imageUrl = data.imageUrl;
                       setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundImage: imageUrl } }));
-                      setAutoSaveStatus('saving');
-                      debouncedAutoSave();
+                                            debouncedAutoSave();
                     } else {
                       alert('Failed to upload background image');
                     }
@@ -1917,8 +1892,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                   className="remove-bg-btn"
                   onClick={() => {
                      setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundImage: '' } }));
-                     setAutoSaveStatus('saving');
-                     debouncedAutoSave();
+                                          debouncedAutoSave();
                   }}
                 >
                   <X size={16} /> Remove
@@ -1953,8 +1927,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                     onChange={(e) => {
                       const value = e.target.value;
                       setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, accentColor: value } }));
-                      setAutoSaveStatus('saving');
-                      debouncedAutoSave();
+                                            debouncedAutoSave();
                     }}
                   />
                 </div>
@@ -1972,8 +1945,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                     onChange={(e) => {
                       const value = e.target.value;
                       setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, textColor: value } }));
-                      setAutoSaveStatus('saving');
-                      debouncedAutoSave();
+                                            debouncedAutoSave();
                     }}
                   />
                 </div>
@@ -1991,8 +1963,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                     onChange={(e) => {
                       const value = e.target.value;
                       setBiolinkData(prev => ({ ...prev, settings: { ...prev.settings, backgroundColor: value } }));
-                      setAutoSaveStatus('saving');
-                      debouncedAutoSave();
+                                            debouncedAutoSave();
                     }}
                   />
                 </div>
@@ -2067,8 +2038,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
           elements: [...prev.elements, newElement]
         }));
 
-        setAutoSaveStatus('saving');
-        debouncedAutoSave();
+                debouncedAutoSave();
       } else {
         const errorData = await response.text();
         console.error('Gallery upload failed:', response.status, errorData);
@@ -2682,15 +2652,9 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             <span>{sections[currentStep]?.label}</span>
           </div>
           <div className="header-combined-pill">
-            <div className="header-status-item">
-              <span className={`status-dot ${autoSaveStatus}`}></span>
-              <span className="status-text">
-                {autoSaveStatus === 'saving' ? 'Saving...' : 'Saved'}
-              </span>
-            </div>
             <button 
               className="header-pill-btn save-btn" 
-              onClick={async () => { setAutoSaveStatus('saving'); await autoSave(); alert('Saved'); }}
+              onClick={async () => { await autoSave(); }}
             >
               Save
             </button>

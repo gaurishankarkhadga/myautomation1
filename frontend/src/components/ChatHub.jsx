@@ -332,8 +332,6 @@ function ChatHub() {
             if (data.toasts?.length) addToasts(data.toasts);
             // Refresh active count after any action
             fetchActiveCount();
-            // Fetch fresh dynamic prompts based on new context
-            fetchDynamicPrompts(userId);
         } catch {
             setMessages(prev => [...prev, {
                 role: 'assistant',
@@ -1181,7 +1179,8 @@ function ChatHub() {
 
                 {/* Input bar */}
                 {(() => {
-                    const hasPrePrompts = false;
+                    const hasPrePrompts = activeTab === 'current' && messages.length > 0 && 
+                      (!messages[messages.length - 1]?.suggestions || messages[messages.length - 1].suggestions.length === 0);
                     return (
                         <div className={`chat-input-bar ${inputValue.trim() ? 'has-text' : ''} ${isTyping ? 'ai-typing' : ''} ${hasPrePrompts ? 'has-pre-prompts' : ''}`} id="chat-input-container">
                             {/* Floating New Chat Button (Conditional) */}

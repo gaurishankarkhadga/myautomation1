@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
+import './ToastNotification.css';
 
 // ==================== TOAST NOTIFICATION COMPONENT ====================
 // Premium glassmorphism toast: success, warning, error, info
@@ -45,14 +46,14 @@ function ToastItem({ toast, onRemove }) {
 
     return (
         <div className={`toast-item toast-${type} ${isExiting ? 'toast-exit' : 'toast-enter'}`}>
-            <div className={`toast-icon-wrap toast-icon-${type}`}>
+            <div className="toast-icon">
                 {iconMap[type] || iconMap.info}
             </div>
-            <div className="toast-body">
+            <div className="toast-content">
                 {toast.title && <span className="toast-title">{toast.title}</span>}
-                {toast.message && <span className="toast-msg">{toast.message}</span>}
+                {toast.message && <span className="toast-message">{toast.message}</span>}
             </div>
-            <button className="toast-dismiss" onClick={handleClose} aria-label="Dismiss">
+            <button className="toast-close" onClick={handleClose} aria-label="Dismiss">
                 <X size={14} strokeWidth={2.5} />
             </button>
         </div>
