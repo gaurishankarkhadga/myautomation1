@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import WaveBackground from './WaveBackground';
 import {
-    Zap, Send, SendHorizontal, Menu, X, Settings, LogOut, BarChart2,
+    Zap, Send, SendHorizontal, ArrowUp, Menu, X, Settings, LogOut, BarChart2,
     Package, User, MessageSquare, Mail, Handshake,
     Instagram, Youtube, CheckCircle, Circle, Loader,
     Bot, Activity, ChevronRight, RotateCcw, Link2, Trash2,
@@ -689,7 +689,7 @@ function ChatHub() {
                         {profile && location.pathname !== '/biolink/editor' && (
                             <div className="nav-profile-wrapper">
                                 <button
-                                    className="nav-profile-btn"
+                                    className={`nav-profile-btn ${messages.length > 0 ? 'collapsed' : ''}`}
                                     onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                                     id="desk-profile-trigger"
                                 >
@@ -1000,14 +1000,13 @@ function ChatHub() {
                                             <span>Analyzing capabilities & preparing actions...</span>
                                         </div>
                                     ) : (
-                                        dynamicPrompts.map(({ icon: Icon, text, label }, i) => (
+                                        dynamicPrompts.map(({ text }, i) => (
                                             <button key={i} className="suggest-btn anim-scale-in" style={{ animationDelay: `${i * 0.05}s` }} onClick={() => {
                                                 setInputValue(text);
                                                 inputRef.current?.focus();
                                             }}
                                                 id={`sp-${i}`}>
-                                                <Icon size={16} strokeWidth={1.8} />
-                                                <span>{label}</span>
+                                                <span className="suggest-btn-text">{text}</span>
                                             </button>
                                         ))
                                     )}
@@ -1218,7 +1217,7 @@ function ChatHub() {
                             value={inputValue}
                             onChange={e => setInputValue(e.target.value)}
                             onKeyDown={handleKeyPress}
-                            placeholder="Tell me what you need…"
+                            placeholder="Ask me anything..."
                             className="chat-input"
                             id="chat-input"
                             rows={1}
@@ -1231,7 +1230,7 @@ function ChatHub() {
                             id="chat-send-btn"
                             aria-label="Send message"
                         >
-                            {isTyping ? <Loader size={30} className="spin" /> : <SendHorizontal size={30} strokeWidth={2.5} />}
+                            {isTyping ? <Loader size={18} className="spin" /> : <ArrowUp size={18} strokeWidth={2.5} />}
                         </button>
                     </div>
                     <p className="input-hint">Enter to send · Shift+Enter for new line</p>
