@@ -1181,8 +1181,7 @@ function ChatHub() {
 
                 {/* Input bar */}
                 {(() => {
-                    const hasPrePrompts = activeTab === 'current' && messages.length > 0 && 
-                      (!messages[messages.length - 1]?.suggestions || messages[messages.length - 1].suggestions.length === 0);
+                    const hasPrePrompts = false;
                     return (
                         <div className={`chat-input-bar ${inputValue.trim() ? 'has-text' : ''} ${isTyping ? 'ai-typing' : ''} ${hasPrePrompts ? 'has-pre-prompts' : ''}`} id="chat-input-container">
                             {/* Floating New Chat Button (Conditional) */}

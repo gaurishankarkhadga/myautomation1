@@ -660,17 +660,39 @@ async function generateDynamicPrompts(userId) {
         ]);
 
         const hasBiolink = !!biolink;
-        const activeAutomationsCount = (commentSettings?.enabled ? 1 : 0) + (dmSettings?.enabled ? 1 : 0) + (c2dSettings?.enabled ? 1 : 0);
+
+        // Build stop prompts based on active automations
+        const stopPrompts = [];
+        if (commentSettings?.enabled) {
+            stopPrompts.push({ iconName: 'Zap', text: 'Stop auto-replying to comments', label: 'Stop Comments' });
+        }
+        if (dmSettings?.enabled) {
+            stopPrompts.push({ iconName: 'Zap', text: 'Disable automated DM replies', label: 'Stop DMs' });
+        }
+        if (dmSettings?.inboxTriageEnabled) {
+            stopPrompts.push({ iconName: 'Zap', text: 'Turn off the AI brand negotiator bot', label: 'Stop Negotiator' });
+        }
+        if (c2dSettings?.enabled) {
+            stopPrompts.push({ iconName: 'Zap', text: 'Stop my comment-to-DM automation', label: 'Stop Funnel' });
+        }
+
+        const neededCount = Math.max(0, 4 - stopPrompts.length);
+        if (neededCount === 0) {
+            return stopPrompts.slice(0, 4);
+        }
 
         const contextInfo = `
 User Context:
 - Has BioLink: ${hasBiolink ? 'Yes' : 'No'}
-- Active Automations: ${activeAutomationsCount}
+- Comment Auto-Reply Enabled: ${commentSettings?.enabled ? 'Yes' : 'No'}
+- DM Auto-Reply Enabled: ${dmSettings?.enabled ? 'Yes' : 'No'}
+- AI Brand Negotiator (Inbox Triage) Enabled: ${dmSettings?.inboxTriageEnabled ? 'Yes' : 'No'}
+- Comment-to-DM Automation Enabled: ${c2dSettings?.enabled ? 'Yes' : 'No'}
 - Recent messages from user: ${JSON.stringify(recentMessages)}
 `;
 
         const prompt = `You are the AI brain of Sotix — a social media automation platform.
-Your job is to generate exactly 4 highly-used, action-oriented suggestions/prompts for the creator, specifically focusing on Instagram automation and BioLink product setup.
+Your job is to generate exactly ${neededCount} highly-used, action-oriented suggestions/prompts for the creator, specifically focusing on Instagram automation and BioLink product setup.
 The prompts should represent actual platform capabilities, but MUST be different every time.
 
 Capabilities the platform supports:
@@ -684,16 +706,17 @@ CURRENT USER STATE:
 ${contextInfo}
 
 HARD RULES:
-1. Generate exactly 4 prompts.
+1. Generate exactly ${neededCount} prompts.
 2. Return ONLY a JSON array of objects, like this:
 [
-  {"text": "Create a glassmorphic biolink for my Instagram bio", "label": "BioLink", "iconName": "Link2"},
-  {"text": "Send my course link to anyone commenting 'link' on my latest post", "label": "Comment DM", "iconName": "Zap"}
+  {"text": "Create a glassmorphic biolink for my Instagram bio", "label": "BioLink", "iconName": "Link2"}
 ]
 3. Keep the 'text' short (max 7-10 words) and extremely action-oriented for Instagram/BioLink.
-4. CRITICAL: The suggestions must be highly diverse and NOT overlap with the recent messages from the user: ${JSON.stringify(recentMessages)}. Do NOT suggest things the user just did.
-5. Make them sound like a real creator talking: casual, modern, Hinglish/slang-friendly.
-6. Return ONLY the raw JSON array. No markdown, no explanation.`;
+4. CRITICAL: Do NOT suggest setting up or enabling any automation that is ALREADY enabled/running in the CURRENT USER STATE.
+5. CRITICAL: The suggestions must be highly diverse and NOT overlap with the recent messages from the user: ${JSON.stringify(recentMessages)}. Do NOT suggest things the user just did.
+6. EXCLUDE: Do NOT generate morning briefings, status checks, activity logs, greetings, or general check-ups. Only generate setup or management tasks.
+7. Make them sound like a real creator talking: casual, modern, Hinglish/slang-friendly.
+8. Return ONLY the raw JSON array. No markdown, no explanation.`;
 
         const result = await generateContentWithFallback(prompt);
         let responseText = result.response.text().trim();
@@ -701,7 +724,7 @@ HARD RULES:
 
         let prompts = JSON.parse(responseText);
         if (Array.isArray(prompts) && prompts.length > 0) {
-            return prompts.slice(0, 4);
+            return [...stopPrompts, ...prompts].slice(0, 4);
         }
     } catch (error) {
         console.error('[ChatService] Error generating dynamic prompts:', error.message);
@@ -716,7 +739,20 @@ HARD RULES:
         { iconName: 'MessageSquare', text: 'Automate smart replies for my latest reel comments', label: 'Reel Replies' },
         { iconName: 'Sparkles', text: 'Add rule: never mention prices in my DMs', label: 'Custom Rule' }
     ];
-    return fallbackPool.sort(() => 0.5 - Math.random()).slice(0, 4);
+
+    // Filter out fallbacks that correspond to already running automations
+    const filteredFallback = fallbackPool.filter(item => {
+        if (item.text.toLowerCase().includes('negotiator') && dmSettings?.inboxTriageEnabled) return false;
+        if (item.text.toLowerCase().includes('comments saying') && c2dSettings?.enabled) return false;
+        if (item.text.toLowerCase().includes('reel comments') && commentSettings?.enabled) return false;
+        if (item.text.toLowerCase().includes('dm') && dmSettings?.enabled) return false;
+        return true;
+    });
+
+    let finalFallback = [...stopPrompts];
+    const needed = Math.max(0, 4 - finalFallback.length);
+    finalFallback = [...finalFallback, ...filteredFallback.sort(() => 0.5 - Math.random()).slice(0, needed)];
+    return finalFallback.slice(0, 4);
 }
 
 // ==================== DELETE SINGLE MESSAGE ====================
