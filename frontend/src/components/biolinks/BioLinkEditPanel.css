@@ -778,26 +778,58 @@
   border-color: var(--primary-color);
 }
 
-/* Profile Section */
+/* ============================================================
+   Profile Section Redesign (Ultra Premium)
+   ============================================================ */
 .profile-edit-container {
-  background: var(--bg-color);
-  border-radius: 8px;
-  padding: 16px;
-  border: 1px solid var(--border-color);
-  margin-top: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02), 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .profile-form-grid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 12px;
+  gap: 24px;
 }
 
 .form-column {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 20px;
+}
+
+.profile-form-grid .form-group label,
+.bio-group .form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.form-group .profile-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--text-primary);
+  background: var(--surface-2);
+  transition: all 0.2s ease;
+}
+
+.form-group .profile-input:focus {
+  outline: none;
+  background: var(--surface-3);
+  border-color: var(--border-2);
+}
+
+.form-group .profile-input::placeholder {
+  color: var(--text-faint);
 }
 
 .avatar-upload-column {
@@ -805,27 +837,27 @@
   justify-content: center;
   align-items: center;
   order: -1;
-  /* Move avatar to the top on mobile/column view */
+  margin-bottom: 8px;
 }
 
 .avatar-upload {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .avatar-preview {
-  width: 90px;
-  height: 90px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
-  background: var(--hover-bg);
+  background: rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .avatar-image {
@@ -835,7 +867,7 @@
 }
 
 .avatar-placeholder {
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -847,44 +879,28 @@
   left: 0;
   right: 0;
   background: rgba(0, 0, 0, 0.6);
-  color: white;
+  color: #ffffff;
   border: none;
-  padding: 4px;
-  font-size: 10px;
-  font-weight: 500;
+  padding: 6px;
+  font-size: 11px;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
   cursor: pointer;
-  transition: all var(--transition-quick);
-  border-radius: 0 0 45px 45px;
+  border-radius: 0 0 50px 50px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: background 0.2s ease;
 }
 
 .change-avatar-btn:hover {
   background: rgba(0, 0, 0, 0.8);
 }
 
-.profile-input {
-  width: 100%;
-  padding: 6px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 14px;
-  color: var(--text-color);
-  background: var(--bg-color);
-  transition: all var(--transition-quick);
-}
-
-.profile-input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
-  background: var(--card-bg);
-}
-
 .bio-group {
-  margin-top: 8px;
+  margin-top: 20px;
 }
 
 .bio-input-container {
@@ -892,25 +908,28 @@
   width: 100%;
 }
 
-.bio-textarea {
+.form-group .bio-textarea {
   width: 100%;
-  padding: 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 14px;
-  color: var(--text-color);
-  background: var(--bg-color);
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--text-primary);
+  background: var(--surface-2);
   resize: vertical;
   min-height: 120px;
-  transition: all var(--transition-quick);
+  transition: all 0.2s ease;
   line-height: 1.5;
 }
 
-.bio-textarea:focus {
+.form-group .bio-textarea:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
-  background: var(--card-bg);
+  background: var(--surface-3);
+  border-color: var(--border-2);
+}
+
+.form-group .bio-textarea::placeholder {
+  color: var(--text-faint);
 }
 
 .char-count {
@@ -1037,7 +1056,7 @@
   justify-content: center;
   font-size: 1rem;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--border);
 }
 
 .default-icon {
@@ -2723,7 +2742,7 @@
   justify-content: space-between;
   padding: 12px 24px;
   background: rgba(10, 10, 10, 0.4);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   flex-shrink: 0;
@@ -2739,7 +2758,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   border-radius: 50%;
   color: #fff;
   cursor: pointer;
@@ -3007,7 +3026,7 @@
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border);
   border-radius: 10px;
   background: transparent;
   color: rgba(255, 255, 255, 0.7);
@@ -3108,7 +3127,7 @@
     border-radius: 12px;
     pointer-events: auto;
     background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -3122,7 +3141,7 @@
   .edit-toolbar-mobile .header-combined-pill {
     pointer-events: auto;
     background: rgba(18, 18, 18, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -3279,7 +3298,7 @@
   background: rgba(20, 20, 20, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
   border-radius: 100px;
   padding: 10px 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -3651,7 +3670,7 @@
   display: inline-flex;
   align-items: center;
   background: rgba(18, 18, 18, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   border-radius: 99px;
   padding: 4px;
   gap: 4px;
@@ -3681,7 +3700,7 @@
 /* Save button style - dark translucent */
 .header-pill-btn.save-btn {
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -3941,7 +3960,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border);
   position: relative;
   cursor: pointer;
   overflow: hidden;
