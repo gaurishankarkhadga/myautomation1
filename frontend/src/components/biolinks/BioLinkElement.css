@@ -64,8 +64,7 @@
 }
 
 .biolink-element-gallery-item-4x4:hover {
-  transform: scale(1.02);
-  box-shadow: var(--shadow-md);
+  opacity: 0.95;
 }
 
 .biolink-element-gallery-item img,
@@ -201,12 +200,11 @@
 }
 
 .biolink-element-image-modal-item:hover {
-  transform: scale(1.05);
+  opacity: 0.85;
 }
 
 .biolink-element-image-modal-item.active {
   border: 2px solid var(--accent-blue);
-  transform: scale(1.05);
 }
 
 .biolink-element-image-modal-item img {
@@ -242,7 +240,6 @@
 
 .biolink-element-nav-btn:hover:not(:disabled) {
   background: var(--primary-hover);
-  transform: scale(1.1);
 }
 
 .biolink-element-nav-btn:disabled {
@@ -341,8 +338,7 @@
 }
 
 .biolink-element-video-item-2x2:hover {
-  transform: scale(1.02) !important;
-  box-shadow: var(--shadow-md) !important;
+  opacity: 0.95 !important;
 }
 
 .biolink-element-video-item-2x2 video,
@@ -442,8 +438,7 @@
 }
 
 .biolink-element-cta-button:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  opacity: 0.95;
 }
 
 .biolink-element-cta-placeholder {

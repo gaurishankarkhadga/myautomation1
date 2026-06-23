@@ -67,7 +67,7 @@
 
 .assets-back-btn:hover {
     background: transparent;
-    transform: translateX(-4px); /* Smooth micro-interaction back */
+    opacity: 0.8;
 }
 
 .assets-panel-header h3 {
@@ -355,7 +355,6 @@ select.asset-input option {
 
 .asset-save-btn:hover:not(:disabled) {
     background: var(--primary-hover);
-    transform: scale(0.99);
 }
 
 .asset-save-btn:disabled {
@@ -417,7 +416,7 @@ select.asset-input option {
 }
 
 .asset-item.asset-card:hover .asset-card-image img {
-    transform: scale(1.05);
+    opacity: 0.9;
 }
 
 .asset-item:hover {
@@ -503,7 +502,6 @@ select.asset-input option {
 .asset-checkout-btn:hover {
     background: var(--green);
     color: var(--bg);
-    box-shadow: 0 0 12px var(--green);
 }
 
 .asset-item-actions {

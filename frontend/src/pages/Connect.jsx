@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Instagram, Youtube, ChevronRight, ShieldCheck, Zap, BarChart2, Lock, Cpu, Globe, HelpCircle, CheckCircle2, ArrowRight, Shield, Activity, Sparkles, ChevronDown } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { Instagram, Youtube, ChevronRight, ShieldCheck, Zap, BarChart2, Lock, Cpu, Globe, HelpCircle, CheckCircle2, ArrowRight, Shield, Activity, Sparkles, ChevronDown, Terminal } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import '../styles/Connect.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -13,6 +13,14 @@ function Connect() {
     const [faqOpenIndex, setFaqOpenIndex] = useState(null);
     const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' or 'yearly'
     const [visibleElements, setVisibleElements] = useState({});
+    const navigate = useNavigate();
+
+    // DEV ONLY: Admin bypass — sets fake tokens so all UI pages are accessible
+    const handleAdminAccess = () => {
+        localStorage.setItem('insta_token', 'dev_admin_bypass_token');
+        localStorage.setItem('insta_user_id', 'dev_admin_user');
+        navigate('/chat');
+    };
 
     useEffect(() => {
         const handleMouseMove = (e) => {
@@ -209,6 +217,24 @@ function Connect() {
                                     <div className="btn-content">
                                         <Youtube size={24} className="btn-icon" />
                                         <span>{loadingYT ? 'Connecting...' : 'Connect YouTube'}</span>
+                                    </div>
+                                    <ChevronRight size={20} className="btn-arrow" />
+                                    <span className="premium-shine-sweep"></span>
+                                </button>
+
+                                {/* DEV ONLY: Admin bypass button */}
+                                <div className="admin-divider">
+                                    <span className="admin-divider-line"></span>
+                                    <span className="admin-divider-text">DEV MODE</span>
+                                    <span className="admin-divider-line"></span>
+                                </div>
+                                <button
+                                    className="btn-premium admin-premium"
+                                    onClick={handleAdminAccess}
+                                >
+                                    <div className="btn-content">
+                                        <Terminal size={24} className="btn-icon" />
+                                        <span>Admin Access</span>
                                     </div>
                                     <ChevronRight size={20} className="btn-arrow" />
                                     <span className="premium-shine-sweep"></span>

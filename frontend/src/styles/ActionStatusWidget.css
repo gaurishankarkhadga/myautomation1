@@ -19,7 +19,7 @@ stitch/* ActionStatusWidget - Premium 2.dev Aesthetics */
     padding: 12px 16px;
     position: relative;
     overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: background 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.05);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     cursor: default;
@@ -27,7 +27,6 @@ stitch/* ActionStatusWidget - Premium 2.dev Aesthetics */
 }
 
 .action-status-card:hover {
-    transform: translateY(-2px);
     background: rgba(30, 30, 35, 0.8);
 }
 
@@ -120,16 +119,16 @@ stitch/* ActionStatusWidget - Premium 2.dev Aesthetics */
 
 /* Animation */
 .anim-slide-in {
-    animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation: slideInRight 0.4s ease forwards;
 }
 
 @keyframes slideInRight {
     0% {
         opacity: 0;
-        transform: translateX(30px) scale(0.95);
+        transform: translateX(20px);
     }
     100% {
         opacity: 1;
-        transform: translateX(0) scale(1);
+        transform: translateX(0);
     }
 }

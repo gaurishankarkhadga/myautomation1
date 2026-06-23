@@ -55,12 +55,12 @@
     font-weight: 700;
     font-size: 0.9375rem;
     cursor: pointer;
-    transition: transform 0.1s, filter 0.2s;
+    transition: opacity 0.1s, filter 0.2s;
     border: none;
     white-space: nowrap;
 }
 
-.dns-btn:active { transform: scale(0.98); }
+.dns-btn:active { opacity: 0.85; }
 .dns-btn-back { background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); }
 .dns-btn-save { background: var(--green); color: #000; }
 

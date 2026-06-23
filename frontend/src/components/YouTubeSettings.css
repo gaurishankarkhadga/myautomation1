@@ -127,7 +127,7 @@
 
 .yt-btn-connect:active,
 .yt-btn-instagram-connect:active {
-    transform: scale(0.97);
+    opacity: 0.85;
 }
 
 .yt-btn-instagram-connect {
@@ -413,7 +413,6 @@
 }
 
 .yt-btn-save:hover {
-    transform: scale(0.98);
     background: rgba(255, 255, 255, 0.15);
 }
 
@@ -608,7 +607,6 @@
 
 .yt-video-card:hover {
     background: rgba(255, 255, 255, 0.05);
-    transform: translateY(-2px);
 }
 
 .yt-video-card.selected {

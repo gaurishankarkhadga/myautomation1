@@ -51,8 +51,8 @@
 }
 
 @keyframes iconPulse {
-    0%, 100% { filter: drop-shadow(0 0 2px rgba(167, 139, 250, 0.4)); transform: scale(1); }
-    50% { filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.9)); transform: scale(1.1); }
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
 }
 
 .clarification-question {
@@ -115,12 +115,11 @@
 }
 
 .clarification-btn.active:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+    opacity: 0.95;
 }
 
 .clarification-btn.active:active {
-    transform: translateY(1px);
+    opacity: 0.85;
 }
 
 /* Submitted State */
@@ -144,16 +143,16 @@
 
 /* Animation */
 .anim-slide-up {
-    animation: slideUpFade 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation: slideUpFade 0.3s ease forwards;
 }
 
 @keyframes slideUpFade {
     0% {
         opacity: 0;
-        transform: translateY(15px) scale(0.98);
+        transform: translateY(10px);
     }
     100% {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
     }
 }

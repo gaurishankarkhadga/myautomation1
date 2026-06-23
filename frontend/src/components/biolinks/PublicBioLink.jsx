@@ -29,7 +29,7 @@ const formatPrice = (price) => {
   if (!price) return '';
   const str = String(price).trim();
   if (/^[\d.]+$/.test(str)) {
-    return `$${str}`;
+    return `Rs. ${str}`;
   }
   return str;
 };
@@ -284,9 +284,45 @@ const PublicBioLink = () => {
   // ── Derived values ──────────────────────────────────────
   const profile  = data.profile || {};
   const settings = data.settings || {};
-  const allLinks = (data.links || []).filter(l => l.isActive !== false);
-  const products = data.products || [];
-  const elements = (data.elements || []).filter(el => el.isActive !== false);
+  const allLinks = (data.links || [])
+    .filter(l => l.isActive !== false)
+    .filter(l => l.title && l.title.trim() && l.title !== 'New Link' && l.url && l.url.trim() && l.url !== 'https://');
+  const products = (data.products || [])
+    .filter(p => p.name && p.name.trim() && p.description && p.description.trim() && p.image && p.image.trim() && p.price && p.price.trim());
+  const elements = (data.elements || [])
+    .filter(el => el.isActive !== false)
+    .filter(el => {
+      const content = el.content || {};
+      if (el.type === 'cta' || el.type === 'button') {
+        return !!(content.text && content.text.trim() && content.text !== 'Click Here') && 
+               !!(content.url && content.url.trim() && content.url !== 'https://');
+      }
+      if (el.type === 'text') {
+        return !!(content.content && content.content.trim() && content.content !== 'Add your text here');
+      }
+      if (el.type === 'separator') {
+        return ['line', 'dots', 'dashed'].includes(content.style);
+      }
+      if (el.type === 'ticket') {
+        return !!(content.title && content.title.trim()) &&
+               !!(content.description && content.description.trim()) &&
+               !!(content.event_date && content.event_date.trim()) &&
+               !!(content.event_time && content.event_time.trim()) &&
+               !!(content.location && content.location.trim()) &&
+               !!(content.price && content.price.trim());
+      }
+      if (el.type === 'form') {
+        return !!(content.title && content.title.trim()) &&
+               !!(content.buttonText && content.buttonText.trim());
+      }
+      if (el.type === 'gallery' || el.type === 'image') {
+        return Array.isArray(content.images) && content.images.length > 0;
+      }
+      if (el.type === 'video') {
+        return !!(content.url && content.url.trim());
+      }
+      return true;
+    });
   const hasShop  = products.length > 0;
 
   // ── THEME: read stored settings from DB ─────────────────

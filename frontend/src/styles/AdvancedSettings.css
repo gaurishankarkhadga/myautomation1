@@ -23,7 +23,7 @@
     --adv-radius-lg: 16px;
     --adv-radius-xl: 20px;
     --adv-radius-full: 9999px;
-    --adv-transition-bounce: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --adv-transition-bounce: all 0.2s ease;
     --adv-transition-quick: all 0.2s ease;
 
     background-color: var(--adv-bg);
@@ -111,11 +111,10 @@
     background: var(--adv-surface-3);
     color: #ffffff;
     border-color: var(--adv-border-2);
-    transform: translateX(-4px);
 }
 
 .back-btn:active {
-    transform: translateX(-4px) scale(0.95);
+    opacity: 0.85;
 }
 
 .header-left h1 {
@@ -178,7 +177,7 @@
 }
 
 .tab-btn.active svg {
-    transform: scale(1.1);
+    opacity: 1;
 }
 
 .tab-render-area {

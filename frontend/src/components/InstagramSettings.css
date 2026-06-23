@@ -58,7 +58,7 @@
 }
 
 .btn-primary:active {
-  transform: scale(0.96);
+  opacity: 0.85;
 }
 
 .btn-primary:disabled {
@@ -139,7 +139,7 @@
 
 .btn-instagram-connect:active,
 .btn-youtube-connect:active {
-  transform: scale(0.97);
+  opacity: 0.85;
 }
 
 .btn-youtube-connect {
@@ -564,7 +564,6 @@
 }
 
 .btn-save:hover {
-    transform: scale(0.98);
     background: rgba(255, 255, 255, 0.15);
 }
 
@@ -835,7 +834,7 @@
 }
 
 .mode-card:active {
-  transform: scale(0.95);
+  opacity: 0.85;
 }
 
 .mode-card.active {
