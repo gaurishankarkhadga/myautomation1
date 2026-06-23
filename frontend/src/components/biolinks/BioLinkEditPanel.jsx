@@ -4,7 +4,7 @@ import { debounce } from 'lodash';
 import {
   Plus, Eye, Share2, User, FileText, Link, MousePointer,
   GripHorizontal, X, Palette, Upload, Camera, Video, Minus,
-  Edit2, Trash2, Calendar, Mail, Check, ArrowUpRight
+  Edit2, Trash2, Calendar, Mail, Check, ArrowUpRight, Smartphone
 } from 'lucide-react';
 import BioLinkElement from './BioLinkElement';
 import './BioLinkEditPanel.css';
@@ -1615,7 +1615,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                             debouncedAutoSave();
             }}
             style={{ 
-              flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'default' || !biolinkData.settings.layoutStyle ? 'var(--primary-color)' : 'transparent'}`, 
+              padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'default' || !biolinkData.settings.layoutStyle ? 'var(--primary-color)' : 'transparent'}`, 
               background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
               display: 'flex', flexDirection: 'column', alignItems: 'center'
             }}
@@ -1636,7 +1636,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                             debouncedAutoSave();
             }}
             style={{ 
-              flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsTop' ? 'var(--primary-color)' : 'transparent'}`, 
+              padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsTop' ? 'var(--primary-color)' : 'transparent'}`, 
               background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
               display: 'flex', flexDirection: 'column', alignItems: 'center'
             }}
@@ -1661,7 +1661,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                             debouncedAutoSave();
             }}
             style={{ 
-              flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsBottom' ? 'var(--primary-color)' : 'transparent'}`, 
+              padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsBottom' ? 'var(--primary-color)' : 'transparent'}`, 
               background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
               display: 'flex', flexDirection: 'column', alignItems: 'center'
             }}
@@ -1686,7 +1686,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                             debouncedAutoSave();
             }}
             style={{ 
-              flex: 1, padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsTopBottom' ? 'var(--primary-color)' : 'transparent'}`, 
+              padding: '16px', borderRadius: '12px', border: `2px solid ${biolinkData.settings.layoutStyle === 'socialsTopBottom' ? 'var(--primary-color)' : 'transparent'}`, 
               background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s ease',
               display: 'flex', flexDirection: 'column', alignItems: 'center'
             }}
@@ -2801,11 +2801,27 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
 
       <div className="desktop-edit-wrapper">
         {/* Top bar - clean: save status + preview + publish */}
-        <div className="edit-toolbar-mobile">
-          <div className="header-left-pill">
+        {/* Mobile Header View */}
+        <div className="edit-toolbar-mobile mobile-only-header">
+          <div className="header-center-title">
+            <span>{sections[currentStep]?.label}</span>
+          </div>
+          <div className="header-combined-pill">
             <button className="header-pill-btn preview-btn" onClick={() => setShowPreview(true)}>
-              Preview
+              <Smartphone size={14} />
             </button>
+            <button className="header-pill-btn publish-btn" onClick={publishBiolink}>
+              Publish
+            </button>
+            <button className="header-pill-btn copy-url-btn" onClick={handleUrlClick}>
+              {copied ? <Check size={14} style={{ color: 'var(--success-color)' }} /> : <Link size={14} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop Header View */}
+        <div className="edit-toolbar-mobile desktop-only-header">
+          <div className="header-left-pill">
             <button className="header-pill-btn publish-btn" onClick={publishBiolink}>
               Publish
             </button>
@@ -2819,13 +2835,13 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             <button className="header-pill-btn copy-url-btn" onClick={handleUrlClick}>
               {copied ? (
                 <>
-                  <Check size={14} style={{ color: 'var(--success-color)', marginRight: '4px' }} />
-                  Copied!
+                  <Check size={14} style={{ color: 'var(--success-color)' }} />
+                  <span style={{ marginLeft: '4px' }}>Copied!</span>
                 </>
               ) : (
                 <>
-                  <Link size={14} style={{ marginRight: '4px' }} />
-                  Copy URL
+                  <Link size={14} />
+                  <span style={{ marginLeft: '4px' }}>Copy URL</span>
                 </>
               )}
             </button>
