@@ -264,7 +264,9 @@ const PublicBioLink = () => {
       try {
         setLoading(true);
         setError(null);
-        const res  = await fetch(`${apiBase}/api/biolinks/public/${encodeURIComponent(username)}`);
+        const isPreview = window.location.search.includes('preview=true');
+        const url = `${apiBase}/api/biolinks/public/${encodeURIComponent(username)}${isPreview ? '?preview=true' : ''}`;
+        const res  = await fetch(url);
         if (!res.ok) throw new Error(`${res.status}`);
         const json = await res.json();
         if (!json.biolink) throw new Error('No data');
@@ -277,6 +279,19 @@ const PublicBioLink = () => {
     };
     load();
   }, [username]);
+
+  // Listen for real-time preview updates from parent editor window via postMessage
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data && event.data.type === 'BIOLINK_PREVIEW_UPDATE') {
+        setData(event.data.data);
+        setError(null);
+        setLoading(false);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   if (loading) return <LoadingScreen username={username} />;
   if (error || !data) return <ErrorScreen username={username} />;

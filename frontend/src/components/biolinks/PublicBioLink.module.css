@@ -9,7 +9,6 @@
 /* ── Google Font import (scoped effect only) ─────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-/* ── Page wrapper — full scroll ──────────────────────────── */
 .pbl-page {
   min-height: 100dvh;
   width: 100%;
@@ -20,6 +19,24 @@
   -webkit-overflow-scrolling: touch;
   -webkit-tap-highlight-color: transparent;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none;  /* IE/Edge */
+}
+
+.pbl-page::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+}
+
+/* Hide scrollbars on root HTML and body components inside the iframe */
+:global(html),
+:global(body) {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+:global(html)::-webkit-scrollbar,
+:global(body)::-webkit-scrollbar {
+  display: none !important;
 }
 
 /* Ambient mesh gradient background */

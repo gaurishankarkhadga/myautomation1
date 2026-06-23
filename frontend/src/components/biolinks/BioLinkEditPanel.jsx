@@ -4,7 +4,7 @@ import { debounce } from 'lodash';
 import {
   Plus, Eye, Share2, User, FileText, Link, MousePointer,
   GripHorizontal, X, Palette, Upload, Camera, Video, Minus,
-  Edit2, Trash2, Calendar, Mail
+  Edit2, Trash2, Calendar, Mail, Check, ArrowUpRight
 } from 'lucide-react';
 import BioLinkElement from './BioLinkElement';
 import './BioLinkEditPanel.css';
@@ -179,6 +179,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   const [currentStep, setCurrentStep] = useState(0);
   const [previewActiveView, setPreviewActiveView] = useState('links');
   const [showPreview, setShowPreview] = useState(false);
+  const [copied, setCopied] = useState(false);
   const stepIds = ['overview', 'profile', 'links', 'shop', 'themes', 'media', 'elements', 'leads'];
 
   const sliderRef = useRef(null);
@@ -259,6 +260,18 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
   // Keep ref in sync with state for accurate auto-saves
   useEffect(() => {
     biolinkDataRef.current = biolinkData;
+  }, [biolinkData]);
+
+  const iframeRef = useRef(null);
+
+  // Send real-time updates to the preview iframe whenever biolinkData changes
+  useEffect(() => {
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      iframeRef.current.contentWindow.postMessage({
+        type: 'BIOLINK_PREVIEW_UPDATE',
+        data: biolinkData
+      }, '*');
+    }
   }, [biolinkData]);
 
   const sections = [
@@ -2532,7 +2545,34 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     );
   };
 
+  const previewUsername = biolinkData?.username || user?.username;
+
   const livePreviewContent = (
+    <div className="mobile-preview" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#06040f' }}>
+      {previewUsername ? (
+        <iframe
+          ref={iframeRef}
+          src={`/p/${previewUsername}?preview=true`}
+          title="Biolink Live Preview"
+          style={{ width: '100%', height: '100%', border: 'none', background: 'transparent' }}
+          onLoad={() => {
+            if (iframeRef.current && iframeRef.current.contentWindow) {
+              iframeRef.current.contentWindow.postMessage({
+                type: 'BIOLINK_PREVIEW_UPDATE',
+                data: biolinkData
+              }, '*');
+            }
+          }}
+        />
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(255,255,255,0.4)', background: '#06040f' }}>
+          Loading Preview...
+        </div>
+      )}
+    </div>
+  );
+
+  const oldLivePreviewContent = (
     <div className="mobile-preview" style={{
       background: biolinkData.settings.backgroundImage 
         ? `url(${getMediaUrl(biolinkData.settings.backgroundImage)}) center / cover` 
@@ -2741,17 +2781,53 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     </div>
   );
 
+  const handleUrlClick = () => {
+    const fullUrl = `${window.location.origin}/p/${previewUsername}`;
+    navigator.clipboard.writeText(fullUrl)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch((err) => console.error('Failed to copy:', err));
+    window.open(fullUrl, '_blank');
+  };
+
   return (
     <div className="biolink-edit-panel mobile-first">
+      {/* Desktop permanent live preview */}
+      <div className="desktop-preview-wrapper">
+        {livePreviewContent}
+      </div>
+
       <div className="desktop-edit-wrapper">
         {/* Top bar - clean: save status + preview + publish */}
         <div className="edit-toolbar-mobile">
+          <div className="header-left-pill">
+            <button className="header-pill-btn preview-btn" onClick={() => setShowPreview(true)}>
+              Preview
+            </button>
+            <button className="header-pill-btn publish-btn" onClick={publishBiolink}>
+              Publish
+            </button>
+          </div>
+
           <div className="header-center-title">
             <span>{sections[currentStep]?.label}</span>
           </div>
-          <div className="header-combined-pill">
-            <button className="header-pill-btn publish-btn" onClick={publishBiolink}>
-              Publish
+
+          <div className="header-right-pill">
+            <button className="header-pill-btn copy-url-btn" onClick={handleUrlClick}>
+              {copied ? (
+                <>
+                  <Check size={14} style={{ color: 'var(--success-color)', marginRight: '4px' }} />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Link size={14} style={{ marginRight: '4px' }} />
+                  Copy URL
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -2762,15 +2838,6 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             {renderSectionContent()}
           </div>
         </div>
-      </div>
-      
-      {/* Desktop permanent live preview */}
-      <div className="desktop-preview-wrapper">
-        {livePreviewContent}
-        <button className="preview-open-external" onClick={() => window.open(`/p/${(biolinkData?.username || user?.username)}`, '_blank')} style={{ marginTop: '20px' }}>
-          <Eye size={16} />
-          Open in New Tab
-        </button>
       </div>
 
       {/* Full-screen preview overlay (Mobile only) */}
@@ -2786,9 +2853,14 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
               <X size={20} />
               Close Preview
             </button>
-            <button className="preview-open-external" onClick={() => window.open(`/p/${(biolinkData?.username || user?.username)}`, '_blank')}>
-              <Eye size={16} />
-              Open in New Tab
+            <button className="preview-open-external" onClick={handleUrlClick}>
+              {copied ? (
+                <Check size={16} style={{ color: 'var(--success-color)' }} />
+              ) : (
+                <Link size={16} />
+              )}
+              <span className="preview-url-text">{copied ? 'Copied URL!' : `${window.location.host}/p/${previewUsername}`}</span>
+              <ArrowUpRight size={16} className="preview-arrow-icon" />
             </button>
           </div>
         </div>

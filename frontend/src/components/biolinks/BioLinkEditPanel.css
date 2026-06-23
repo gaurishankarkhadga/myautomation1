@@ -3286,20 +3286,86 @@
   }
 }
 
-/* Desktop: centered editor, no side panel needed */
+/* Desktop: side-by-side edit panel and live preview */
 @media (min-width: 1024px) {
-  .edit-content-mobile .section-content-wrapper {
-    max-width: 100%;
-    padding: 0 40px 32px;
+  .biolink-edit-panel.mobile-first {
+    flex-direction: row !important;
+  }
+
+  .desktop-preview-wrapper {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 38%;
+    min-width: 360px;
+    max-width: 460px;
+    height: 100%;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    background: #000000;
+    padding: 32px 24px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+
+  .desktop-preview-wrapper .mobile-preview {
+    width: 100%;
+    max-width: 350px;
+    height: 100%;
+    max-height: 700px;
+    border-radius: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+    box-sizing: border-box;
+    overflow: hidden;
+    background: #06040f;
+  }
+
+  .desktop-preview-wrapper .preview-open-external {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 10px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .desktop-preview-wrapper .preview-open-external:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
   }
 
   .desktop-edit-wrapper {
-    width: 100%;
-    max-width: 768px;
-    margin: 0 auto;
-    align-self: center;
-    border-right: none;
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
     background: transparent;
+    overflow-y: auto;
+    position: relative;
+    max-width: none !important;
+    margin: 0 !important;
+    align-self: stretch !important;
+  }
+
+  .edit-content-mobile .section-content-wrapper {
+    max-width: 768px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 40px 32px;
+  }
+
+  .header-pill-btn.preview-btn {
+    display: none !important;
   }
 
 
@@ -3339,7 +3405,9 @@
     background: rgba(255, 255, 255, 0.12);
   }
 
-  .edit-toolbar-mobile .header-combined-pill {
+  .edit-toolbar-mobile .header-combined-pill,
+  .edit-toolbar-mobile .header-left-pill,
+  .edit-toolbar-mobile .header-right-pill {
     pointer-events: auto;
     background: rgba(18, 18, 18, 0.6);
     border: 1px solid var(--border);
@@ -3347,7 +3415,9 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .edit-toolbar-mobile .header-combined-pill:hover {
+  .edit-toolbar-mobile .header-combined-pill:hover,
+  .edit-toolbar-mobile .header-left-pill:hover,
+  .edit-toolbar-mobile .header-right-pill:hover {
     box-shadow: 0 8px 24px rgba(139, 92, 246, 0.35);
     border-color: rgba(255, 255, 255, 0.15);
   }
@@ -3865,7 +3935,9 @@
 }
 
 /* ── Header Combined Pill Styling (Inspired by Back/Next Segmented Control) ── */
-.header-combined-pill {
+.header-combined-pill,
+.header-left-pill,
+.header-right-pill {
   display: inline-flex;
   align-items: center;
   background: rgba(18, 18, 18, 0.6);
@@ -3904,6 +3976,33 @@
 }
 
 .header-pill-btn.save-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+/* Preview button style - dark translucent */
+.header-pill-btn.preview-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  color: rgba(255, 255, 255, 0.8);
+  margin-right: 6px;
+}
+
+.header-pill-btn.preview-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+/* Copy URL button style - dark translucent */
+.header-pill-btn.copy-url-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.header-pill-btn.copy-url-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.18);
   color: #ffffff;
@@ -4239,4 +4338,25 @@
 
 .slider-slide .layout-option > div:first-child {
   background: #191919 !important;
+}
+
+/* Real-time Link Preview Button Styles */
+.preview-url-text {
+  font-family: 'Inter', monospace;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+.preview-arrow-icon {
+  margin-left: auto;
+  opacity: 0.5;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.preview-open-external:hover .preview-arrow-icon {
+  transform: translate(2px, -2px);
+  opacity: 1;
 }

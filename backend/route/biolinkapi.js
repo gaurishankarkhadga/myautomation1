@@ -314,10 +314,16 @@ router.get('/stats', authenticateToken, async (req, res) => {
 router.get('/public/:username', async (req, res) => {
   try {
     const { username } = req.params;
-    const biolink = await BioLink.findOne({
-      username: { $regex: new RegExp(`^${escapeRegex(username)}$`, 'i') },
-      isPublished: true
-    });
+    const { preview } = req.query || {};
+
+    const query = {
+      username: { $regex: new RegExp(`^${escapeRegex(username)}$`, 'i') }
+    };
+    if (preview !== 'true') {
+      query.isPublished = true;
+    }
+
+    const biolink = await BioLink.findOne(query);
     if (!biolink) return res.status(404).json({ error: 'BioLink not found' });
 
     await ensureLocalAvatar(biolink);
