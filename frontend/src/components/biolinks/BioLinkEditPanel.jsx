@@ -1503,9 +1503,6 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                 className="reorder-item-wrapper"
                 style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}
               >
-                <div className="editor-drag-handle">
-                  <GripVertical size={20} />
-                </div>
                 <div style={{ flex: 1 }}>
                   <LinkRow
                     link={link}
@@ -1667,9 +1664,6 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             className="reorder-item-wrapper"
             style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}
           >
-            <div className="editor-drag-handle">
-              <GripVertical size={20} />
-            </div>
             <div style={{ flex: 1 }}>
               <LinkRow
                 link={link}
@@ -1928,9 +1922,6 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                   className="reorder-item-wrapper"
                   style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}
                 >
-                  <div className="editor-drag-handle">
-                    <GripVertical size={20} />
-                  </div>
                   <div style={{ flex: 1 }} className="asset-item asset-card">
                     {product.image && (
                       <div className="asset-card-image">
@@ -2259,9 +2250,6 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                 className="reorder-item-wrapper"
                 style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}
               >
-                <div className="editor-drag-handle">
-                  <GripVertical size={20} />
-                </div>
                 <div style={{ flex: 1 }} className="media-element-item">
                   <div className="element-header">
                     <span>Image Gallery</span>
@@ -2330,9 +2318,6 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                 className="reorder-item-wrapper"
                 style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}
               >
-                <div className="editor-drag-handle">
-                  <GripVertical size={20} />
-                </div>
                 <div style={{ flex: 1 }} className="media-element-item">
                   <div className="element-header">
                     <span>Video</span>
@@ -2441,9 +2426,6 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
               className="reorder-item-wrapper"
               style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}
             >
-              <div className="editor-drag-handle">
-                <GripVertical size={20} />
-              </div>
               <div style={{ flex: 1 }} className="element-item">
                 <div className="element-header">
                   <h4>{element.type === 'separator' ? 'Separator' : element.type === 'cta' ? 'Call to Action' : 'Text Block'}</h4>
@@ -2561,9 +2543,6 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
               className="reorder-item-wrapper"
               style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}
             >
-              <div className="editor-drag-handle">
-                <GripVertical size={20} />
-              </div>
               <div style={{ flex: 1 }} className="element-item">
                 <div className="element-header">
                   <h4>{element.type === 'ticket' ? 'Event Ticket' : 'Contact Form'}</h4>
