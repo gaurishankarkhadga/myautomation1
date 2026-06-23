@@ -4427,3 +4427,44 @@
     display: flex !important;
   }
 }
+
+/* Drag & Drop Reordering Styles */
+.editor-drag-handle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  cursor: grab;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 6px;
+  transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.editor-drag-handle:hover {
+  background: var(--hover-bg);
+  color: var(--text-color);
+}
+
+.editor-drag-handle:active {
+  cursor: grabbing;
+  opacity: 1;
+}
+
+.reorder-item-wrapper {
+  user-select: none;
+  width: 100%;
+  position: relative;
+}
+
+/* Also hide preview drag handles, show on hover */
+.pbl-preview-drag-handle {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}

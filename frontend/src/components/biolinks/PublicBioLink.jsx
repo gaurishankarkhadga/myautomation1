@@ -10,11 +10,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
   Instagram, Youtube, Twitter, Facebook, Linkedin, Twitch,
   Music2, Globe, Github, MessageCircle, Link2, ChevronRight,
-  User, PackageOpen, ShoppingBag, Sparkles, Send, Pin, Play
+  User, PackageOpen, ShoppingBag, Sparkles, Send, Pin, Play,
+  GripVertical
 } from 'lucide-react';
 import BioLinkElement from './BioLinkElement';
 import styles from './PublicBioLink.module.css';
@@ -296,6 +297,8 @@ const PublicBioLink = () => {
   if (loading) return <LoadingScreen username={username} />;
   if (error || !data) return <ErrorScreen username={username} />;
 
+  const isPreviewMode = window.location.search.includes('preview=true');
+
   // ── Derived values ──────────────────────────────────────
   const profile  = data.profile || {};
   const settings = data.settings || {};
@@ -555,9 +558,72 @@ const PublicBioLink = () => {
                 >
                   No links added yet.
                 </motion.p>
-              ) : displayLinks.map(link => (
-                <LinkRow key={link.id || link.url} link={link} onTrackClick={trackClick} themeStyle={linkCardTheme} />
-              ))}
+              ) : isPreviewMode ? (
+                <Reorder.Group
+                  axis="y"
+                  values={displayLinks}
+                  onReorder={(newDisplayLinks) => {
+                    const SOCIAL_IDS = ['instagram','youtube','twitter','tiktok','facebook','linkedin','twitch','spotify','discord','github','snapchat','pinterest','telegram'];
+                    const hasSocialLayout = ['socialsTop', 'socialsBottom', 'socialsTopBottom'].includes(layoutStyle);
+                    
+                    let finalLinks;
+                    if (hasSocialLayout) {
+                      // Social links are displayed separately as pills, so merge back
+                      const socialPills = allLinks.filter(l => 
+                        (l.icon === 'platform' || SOCIAL_IDS.includes(l.icon?.toLowerCase?.())) && 
+                        SOCIAL_IDS.includes(l.platform?.toLowerCase?.())
+                      );
+                      const mergedLinks = [];
+                      let displayIndex = 0;
+                      (data.links || []).forEach(link => {
+                        const isSocial = socialPills.some(sp => sp.id === link.id);
+                        if (isSocial) {
+                          mergedLinks.push(link);
+                        } else {
+                          if (newDisplayLinks[displayIndex]) {
+                            mergedLinks.push(newDisplayLinks[displayIndex]);
+                            displayIndex++;
+                          }
+                        }
+                      });
+                      while (displayIndex < newDisplayLinks.length) {
+                        mergedLinks.push(newDisplayLinks[displayIndex]);
+                        displayIndex++;
+                      }
+                      finalLinks = mergedLinks;
+                    } else {
+                      // No social separation — displayLinks IS allLinks, just use the new order directly
+                      finalLinks = newDisplayLinks;
+                    }
+                    
+                    finalLinks.forEach((l, pos) => {
+                      l.position = pos;
+                    });
+                    setData(prev => ({ ...prev, links: finalLinks }));
+                    window.parent.postMessage({ type: 'BIOLINK_REORDER', category: 'links', data: finalLinks }, '*');
+                  }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: 0, margin: 0, listStyle: 'none' }}
+                >
+                  {displayLinks.map(link => (
+                    <Reorder.Item
+                      key={link.id || link.url}
+                      value={link}
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', listStyle: 'none', position: 'relative' }}
+                    >
+                      <div className="pbl-preview-drag-handle">
+                        <GripVertical size={18} />
+                      </div>
+                      <div style={{ flex: 1 }} onClick={(e) => e.preventDefault()}>
+                        <LinkRow link={link} onTrackClick={trackClick} themeStyle={linkCardTheme} />
+                      </div>
+                    </Reorder.Item>
+                  ))}
+                </Reorder.Group>
+              ) : (
+                displayLinks.map(link => (
+                  <LinkRow key={link.id || link.url} link={link} onTrackClick={trackClick} themeStyle={linkCardTheme} />
+                ))
+              )}
             </motion.div>
           )}
 
@@ -570,14 +636,55 @@ const PublicBioLink = () => {
               exit={{ opacity: 0, y: -8, transition: { duration: 0.14 } }}
               variants={stagger}
             >
-              {products.map(product => (
-                <ProductCard
-                  key={product.id || product._id}
-                  product={product}
-                  apiBase={apiBase}
-                  themeStyle={linkCardTheme}
-                />
-              ))}
+              {products.length === 0 ? (
+                <motion.p
+                  variants={fadeUp}
+                  style={{ textAlign: 'center', color: 'rgba(255,255,255,0.22)', fontSize: 13, padding: '28px 0' }}
+                >
+                  No products added yet.
+                </motion.p>
+              ) : isPreviewMode ? (
+                <Reorder.Group
+                  axis="y"
+                  values={products}
+                  onReorder={(newProducts) => {
+                    newProducts.forEach((p, pos) => {
+                      p.position = pos;
+                    });
+                    setData(prev => ({ ...prev, products: newProducts }));
+                    window.parent.postMessage({ type: 'BIOLINK_REORDER', category: 'products', data: newProducts }, '*');
+                  }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: 0, margin: 0, width: '100%', listStyle: 'none' }}
+                >
+                  {products.map(product => (
+                    <Reorder.Item
+                      key={product.id || product._id}
+                      value={product}
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', listStyle: 'none', position: 'relative' }}
+                    >
+                      <div className="pbl-preview-drag-handle">
+                        <GripVertical size={18} />
+                      </div>
+                      <div style={{ flex: 1 }} onClick={(e) => e.preventDefault()}>
+                        <ProductCard
+                          product={product}
+                          apiBase={apiBase}
+                          themeStyle={linkCardTheme}
+                        />
+                      </div>
+                    </Reorder.Item>
+                  ))}
+                </Reorder.Group>
+              ) : (
+                products.map(product => (
+                  <ProductCard
+                    key={product.id || product._id}
+                    product={product}
+                    apiBase={apiBase}
+                    themeStyle={linkCardTheme}
+                  />
+                ))
+              )}
             </motion.div>
           )}
 
@@ -591,16 +698,53 @@ const PublicBioLink = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.38 }}
           >
-            {elements
-              .sort((a, b) => (a.position || 0) - (b.position || 0))
-              .map(el => (
-                <BioLinkElement
-                  key={el.id}
-                  element={el}
-                  isPreview={true}
-                  settings={settings}
-                />
-              ))}
+            {isPreviewMode ? (
+              <Reorder.Group
+                axis="y"
+                values={elements.sort((a, b) => (a.position || 0) - (b.position || 0))}
+                onReorder={(newElements) => {
+                  const updatedElements = newElements.map((el, pos) => ({
+                    ...el,
+                    position: pos
+                  }));
+                  setData(prev => ({ ...prev, elements: updatedElements }));
+                  window.parent.postMessage({ type: 'BIOLINK_REORDER', category: 'elements', data: updatedElements }, '*');
+                }}
+                style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: 0, margin: 0, listStyle: 'none' }}
+              >
+                {elements
+                  .sort((a, b) => (a.position || 0) - (b.position || 0))
+                  .map(el => (
+                    <Reorder.Item
+                      key={el.id}
+                      value={el}
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', listStyle: 'none', position: 'relative' }}
+                    >
+                      <div className="pbl-preview-drag-handle">
+                        <GripVertical size={18} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <BioLinkElement
+                          element={el}
+                          isPreview={true}
+                          settings={settings}
+                        />
+                      </div>
+                    </Reorder.Item>
+                  ))}
+              </Reorder.Group>
+            ) : (
+              elements
+                .sort((a, b) => (a.position || 0) - (b.position || 0))
+                .map(el => (
+                  <BioLinkElement
+                    key={el.id}
+                    element={el}
+                    isPreview={true}
+                    settings={settings}
+                  />
+                ))
+            )}
           </motion.div>
         )}
 

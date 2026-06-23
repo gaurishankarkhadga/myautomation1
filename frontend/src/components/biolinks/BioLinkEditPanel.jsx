@@ -3,9 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { debounce } from 'lodash';
 import {
   Plus, Eye, Share2, User, FileText, Link, MousePointer,
-  GripHorizontal, X, Palette, Upload, Camera, Video, Minus,
+  GripHorizontal, GripVertical, X, Palette, Upload, Camera, Video, Minus,
   Edit2, Trash2, Calendar, Mail, Check, ArrowUpRight, Smartphone
 } from 'lucide-react';
+import { motion, Reorder } from 'framer-motion';
 import BioLinkElement from './BioLinkElement';
 import './BioLinkEditPanel.css';
 
@@ -262,16 +263,17 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     biolinkDataRef.current = biolinkData;
   }, [biolinkData]);
 
-  const iframeRef = useRef(null);
-
   // Send real-time updates to the preview iframe whenever biolinkData changes
   useEffect(() => {
-    if (iframeRef.current && iframeRef.current.contentWindow) {
-      iframeRef.current.contentWindow.postMessage({
-        type: 'BIOLINK_PREVIEW_UPDATE',
-        data: biolinkData
-      }, '*');
-    }
+    const iframes = document.querySelectorAll('iframe[title="Biolink Live Preview"]');
+    iframes.forEach(iframe => {
+      if (iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'BIOLINK_PREVIEW_UPDATE',
+          data: biolinkData
+        }, '*');
+      }
+    });
   }, [biolinkData]);
 
   const sections = [
@@ -635,6 +637,22 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
       onUpdate(biolinkData);
     }
   }, [biolinkData]);
+
+  // Listen to reordering postMessages from live iframe preview
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data && event.data.type === 'BIOLINK_REORDER') {
+        const { category, data } = event.data;
+        setBiolinkData(prev => ({
+          ...prev,
+          [category]: data
+        }));
+        debouncedAutoSave();
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [debouncedAutoSave]);
 
   const fetchUserProfile = async () => {
     try {
@@ -1325,6 +1343,30 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
         debouncedAutoSave();
   };
 
+  const handleSectionElementsReorder = (sectionTypes, newElementsForSection) => {
+    const merged = [];
+    let sectionIdx = 0;
+    (biolinkData.elements || []).forEach(el => {
+      if (sectionTypes.includes(el.type)) {
+        if (newElementsForSection[sectionIdx]) {
+          merged.push(newElementsForSection[sectionIdx]);
+          sectionIdx++;
+        }
+      } else {
+        merged.push(el);
+      }
+    });
+    while (sectionIdx < newElementsForSection.length) {
+      merged.push(newElementsForSection[sectionIdx]);
+      sectionIdx++;
+    }
+    merged.forEach((el, index) => {
+      el.position = index;
+    });
+    setBiolinkData(prev => ({ ...prev, elements: merged }));
+    debouncedAutoSave();
+  };
+
   const handleDragStart = (e, elementId, index) => {
     e.dataTransfer.setData('elementId', elementId);
     e.dataTransfer.setData('elementIndex', index);
@@ -1444,17 +1486,37 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
           </button>
         </div>
         {renderLinksSection.__links ? renderLinksSection.__links() : (
-          <div className="links-list">
+          <Reorder.Group
+            axis="y"
+            values={biolinkData.links || []}
+            onReorder={(newLinks) => {
+              setBiolinkData(prev => ({ ...prev, links: newLinks }));
+              debouncedAutoSave();
+            }}
+            className="links-list"
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+          >
             {(biolinkData.links || []).map((link) => (
-              <LinkRow
+              <Reorder.Item
                 key={link.id}
-                link={link}
-                socialPlatforms={socialPlatforms}
-                handlePlatformChange={handlePlatformChange}
-                updateLink={updateLink}
-                removeLink={removeLink}
-                className="simple-link-row swipeable-row"
-              />
+                value={link}
+                className="reorder-item-wrapper"
+                style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}
+              >
+                <div className="editor-drag-handle">
+                  <GripVertical size={20} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <LinkRow
+                    link={link}
+                    socialPlatforms={socialPlatforms}
+                    handlePlatformChange={handlePlatformChange}
+                    updateLink={updateLink}
+                    removeLink={removeLink}
+                    className="simple-link-row swipeable-row"
+                  />
+                </div>
+              </Reorder.Item>
             ))}
 
             {(biolinkData.links || []).length === 0 && (
@@ -1465,7 +1527,7 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
                 </button>
               </div>
             )}
-          </div>
+          </Reorder.Group>
         )}
       </div>
 
@@ -1588,22 +1650,39 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             <span>Add New Link</span>
           </button>
         </div>
-
-      <div className="links-list">
+        <Reorder.Group 
+        axis="y" 
+        values={biolinkData.links || []} 
+        onReorder={(newLinks) => {
+          setBiolinkData(prev => ({ ...prev, links: newLinks }));
+          debouncedAutoSave();
+        }}
+        className="links-list"
+        style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+      >
         {(biolinkData.links || []).map((link) => (
-          <LinkRow
-            key={link.id}
-            link={link}
-            socialPlatforms={socialPlatforms}
-            handlePlatformChange={handlePlatformChange}
-            updateLink={updateLink}
-            removeLink={removeLink}
-            className="simple-link-row"
-          />
+          <Reorder.Item 
+            key={link.id} 
+            value={link}
+            className="reorder-item-wrapper"
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}
+          >
+            <div className="editor-drag-handle">
+              <GripVertical size={20} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <LinkRow
+                link={link}
+                socialPlatforms={socialPlatforms}
+                handlePlatformChange={handlePlatformChange}
+                updateLink={updateLink}
+                removeLink={removeLink}
+                className="simple-link-row"
+              />
+            </div>
+          </Reorder.Item>
         ))}
-
-        {/* Redundant 'First Link' button removed as the header button is now always visible and sticky */}
-      </div>
+      </Reorder.Group>
 
       <div className="layout-selection-card" style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '16px', marginTop: '24px', marginBottom: '24px', border: '1px solid var(--border-color)' }}>
         <h4 className="custom-theme-title" style={{ marginTop: 0, marginBottom: '16px', fontSize: '1rem' }}>Layout Style</h4>
@@ -1832,63 +1911,82 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
           )}
 
           {products.length === 0 && !showAddProductForm ? null : (
-            <div className="assets-list grid-layout">
+            <Reorder.Group
+              axis="y"
+              values={products}
+              onReorder={(newProducts) => {
+                setBiolinkData(prev => ({ ...prev, products: newProducts }));
+                debouncedAutoSave();
+              }}
+              className="assets-list grid-layout"
+              style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+            >
               {products.map((product, idx) => (
-                <div key={product.id || idx} className="asset-item asset-card">
-                  {product.image && (
-                    <div className="asset-card-image">
-                      <img src={getMediaUrl(product.image)} alt={product.name} />
-                    </div>
-                  )}
-                  <div className="asset-item-info">
-                    <span className="asset-item-title">{product.name || 'Product'}</span>
-                    {product.description && (
-                      <span className="asset-item-desc">{product.description}</span>
-                    )}
-                    {product.price && <span className="asset-item-price">{formatPrice(product.price)}</span>}
+                <Reorder.Item
+                  key={product.id || idx}
+                  value={product}
+                  className="reorder-item-wrapper"
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}
+                >
+                  <div className="editor-drag-handle">
+                    <GripVertical size={20} />
                   </div>
-                  <div className="asset-item-actions-bar">
-                    {product.url ? (
-                      <a href={product.url} target="_blank" rel="noopener noreferrer" className="asset-checkout-btn">
-                        Checkout
-                      </a>
-                    ) : (
-                      <span />
+                  <div style={{ flex: 1 }} className="asset-item asset-card">
+                    {product.image && (
+                      <div className="asset-card-image">
+                        <img src={getMediaUrl(product.image)} alt={product.name} />
+                      </div>
                     )}
-                    <div className="asset-item-actions">
-                      <button
-                        onClick={() => {
-                          setEditingProductIndex(idx);
-                          setProductFormData({
-                            name: product.name || '',
-                            description: product.description || '',
-                            price: product.price || '',
-                            image: product.image || '',
-                            url: product.url || ''
-                          });
-                          setShowAddProductForm(true);
-                        }}
-                        title="Edit"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setBiolinkData(prev => ({
-                            ...prev,
-                            products: prev.products.filter((_, i) => i !== idx)
-                          }));
-                                                    debouncedAutoSave();
-                        }}
-                        title="Delete"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                    <div className="asset-item-info">
+                      <span className="asset-item-title">{product.name || 'Product'}</span>
+                      {product.description && (
+                        <span className="asset-item-desc">{product.description}</span>
+                      )}
+                      {product.price && <span className="asset-item-price">{formatPrice(product.price)}</span>}
+                    </div>
+                    <div className="asset-item-actions-bar">
+                      {product.url ? (
+                        <a href={product.url} target="_blank" rel="noopener noreferrer" className="asset-checkout-btn">
+                          Checkout
+                        </a>
+                      ) : (
+                        <span />
+                      )}
+                      <div className="asset-item-actions">
+                        <button
+                          onClick={() => {
+                            setEditingProductIndex(idx);
+                            setProductFormData({
+                              name: product.name || '',
+                              description: product.description || '',
+                              price: product.price || '',
+                              image: product.image || '',
+                              url: product.url || ''
+                            });
+                            setShowAddProductForm(true);
+                          }}
+                          title="Edit"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setBiolinkData(prev => ({
+                              ...prev,
+                              products: prev.products.filter((_, i) => i !== idx)
+                            }));
+                            debouncedAutoSave();
+                          }}
+                          title="Delete"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Reorder.Item>
               ))}
-            </div>
+            </Reorder.Group>
           )}
         </div>
       </div>
@@ -2147,32 +2245,48 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             </label>
           </div>
 
-          <div className="media-elements-list">
-            {biolinkData.elements.filter(el => el.type === 'gallery').map((element) => (
-              <div key={element.id} className="media-element-item">
-                <div className="element-header">
-                  <span>Image Gallery</span>
-                  <button
-                    className="remove-btn"
-                    onClick={() => removeElement(element.id)}
-                  >
-                    <X size={14} />
-                  </button>
+          <Reorder.Group
+            axis="y"
+            values={biolinkData.elements.filter(el => el.type === 'gallery').sort((a, b) => (a.position || 0) - (b.position || 0))}
+            onReorder={(newElements) => handleSectionElementsReorder(['gallery'], newElements)}
+            className="media-elements-list"
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+          >
+            {biolinkData.elements.filter(el => el.type === 'gallery').sort((a, b) => (a.position || 0) - (b.position || 0)).map((element) => (
+              <Reorder.Item
+                key={element.id}
+                value={element}
+                className="reorder-item-wrapper"
+                style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}
+              >
+                <div className="editor-drag-handle">
+                  <GripVertical size={20} />
                 </div>
-                <div className="gallery-content">
-                  {element.content?.images && element.content.images.length > 0 && (
-                    <div className="gallery-preview">
-                      {element.content.images.map((image, index) => (
-                        <div key={index} className="gallery-preview-item">
-                          <img src={getMediaUrl(image)} alt={`Gallery ${index + 1}`} />
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <div style={{ flex: 1 }} className="media-element-item">
+                  <div className="element-header">
+                    <span>Image Gallery</span>
+                    <button
+                      className="remove-btn"
+                      onClick={() => removeElement(element.id)}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <div className="gallery-content">
+                    {element.content?.images && element.content.images.length > 0 && (
+                      <div className="gallery-preview">
+                        {element.content.images.map((image, index) => (
+                          <div key={index} className="gallery-preview-item">
+                            <img src={getMediaUrl(image)} alt={`Gallery ${index + 1}`} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </Reorder.Item>
             ))}
-          </div>
+          </Reorder.Group>
         </div>
 
         {/* Right Side - Videos */}
@@ -2202,302 +2316,332 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
             </label>
           </div>
 
-          <div className="media-elements-list">
-            {biolinkData.elements.filter(el => el.type === 'video').map((element) => (
-              <div key={element.id} className="media-element-item">
+          <Reorder.Group
+            axis="y"
+            values={biolinkData.elements.filter(el => el.type === 'video').sort((a, b) => (a.position || 0) - (b.position || 0))}
+            onReorder={(newElements) => handleSectionElementsReorder(['video'], newElements)}
+            className="media-elements-list"
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+          >
+            {biolinkData.elements.filter(el => el.type === 'video').sort((a, b) => (a.position || 0) - (b.position || 0)).map((element) => (
+              <Reorder.Item
+                key={element.id}
+                value={element}
+                className="reorder-item-wrapper"
+                style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}
+              >
+                <div className="editor-drag-handle">
+                  <GripVertical size={20} />
+                </div>
+                <div style={{ flex: 1 }} className="media-element-item">
+                  <div className="element-header">
+                    <span>Video</span>
+                    <button
+                      className="remove-btn"
+                      onClick={() => removeElement(element.id)}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <div className="video-content">
+                    {element.content.url && (
+                      <div className="video-preview">
+                        {element.content.displayMode === 'grid' ? (
+                          <div className="video-grid-2x2" style={{ maxHeight: '150px', height: '150px' }}>
+                            <div className="video-item-2x2">
+                              <video
+                                src={getMediaUrl(element.content.url)}
+                                controls
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
+                              />
+                            </div>
+                            <div className="video-item-2x2 video-empty"></div>
+                            <div className="video-item-2x2 video-empty"></div>
+                            <div className="video-item-2x2 video-empty"></div>
+                          </div>
+                        ) : (
+                          <video
+                            src={getMediaUrl(element.content.url)}
+                            controls
+                            style={{ width: '100%', maxHeight: '150px', borderRadius: '8px' }}
+                          />
+                        )}
+                        <small>Uploaded: {element.content.url.split('/').pop()}</small>
+                      </div>
+                    )}
+
+                    <div className="form-group">
+                      <label>Display Mode</label>
+                      <select
+                        value={element.content.displayMode || 'single'}
+                        onChange={(e) => updateElement(element.id, { content: { ...element.content, displayMode: e.target.value } })}
+                      >
+                        <option value="single">Single Video (Full Width)</option>
+                        <option value="grid">Grid Layout (2x2)</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Caption (optional)</label>
+                      <input
+                        type="text"
+                        value={element.content.caption || ''}
+                        onChange={(e) => updateElement(element.id, { content: { ...element.content, caption: e.target.value } })}
+                        placeholder="Add a caption"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Reorder.Item>
+            ))}
+          </Reorder.Group>
+        </div>
+      </div>
+    </div>
+  );
+
+
+
+  const renderLayoutElementsSection = () => {
+    const layoutTypes = ['separator', 'cta', 'text'];
+    const filteredElements = (biolinkData.elements || [])
+      .filter(el => layoutTypes.includes(el.type))
+      .sort((a, b) => (a.position || 0) - (b.position || 0));
+
+    return (
+      <div className="section-content">
+        <div className="content-elements-header">
+          <div className="content-action-buttons">
+            <button className="content-action-btn separator-btn" onClick={() => addElement('separator')}>
+              <Minus size={20} />
+              <span>Separator</span>
+            </button>
+            <button className="content-action-btn cta-btn" onClick={() => addElement('cta')}>
+              <MousePointer size={20} />
+              <span>CTA</span>
+            </button>
+            <button className="content-action-btn text-btn" onClick={() => addElement('text')}>
+              <FileText size={20} />
+              <span>Text</span>
+            </button>
+          </div>
+        </div>
+
+        <Reorder.Group
+          axis="y"
+          values={filteredElements}
+          onReorder={(newElements) => handleSectionElementsReorder(layoutTypes, newElements)}
+          className="elements-list"
+          style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+        >
+          {filteredElements.map((element) => (
+            <Reorder.Item
+              key={element.id}
+              value={element}
+              className="reorder-item-wrapper"
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}
+            >
+              <div className="editor-drag-handle">
+                <GripVertical size={20} />
+              </div>
+              <div style={{ flex: 1 }} className="element-item">
                 <div className="element-header">
-                  <span>Video</span>
+                  <h4>{element.type === 'separator' ? 'Separator' : element.type === 'cta' ? 'Call to Action' : 'Text Block'}</h4>
                   <button
                     className="remove-btn"
                     onClick={() => removeElement(element.id)}
                   >
-                    <X size={14} />
+                    <X size={16} />
                   </button>
                 </div>
-                <div className="video-content">
-                  {element.content.url && (
-                    <div className="video-preview">
-                      {element.content.displayMode === 'grid' ? (
-                        <div className="video-grid-2x2" style={{ maxHeight: '150px', height: '150px' }}>
-                          <div className="video-item-2x2">
-                            <video
-                              src={getMediaUrl(element.content.url)}
-                              controls
-                              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
-                            />
+                
+                {element.type === 'separator' && (
+                  <div className="separator-content">
+                    <div className="separator-style-selector">
+                      {[
+                        {
+                          id: 'line',
+                          label: 'Solid Line',
+                          preview: <div className="sep-preview-line" />
+                        },
+                        {
+                          id: 'dots',
+                          label: 'Dotted',
+                          preview: <div className="sep-preview-dots"><span>•</span><span>•</span><span>•</span></div>
+                        },
+                        {
+                          id: 'dashed',
+                          label: 'Dashed',
+                          preview: <div className="sep-preview-dashed" />
+                        }
+                      ].map((option) => (
+                        <button
+                          key={option.id}
+                          type="button"
+                          className={`separator-style-option ${element.content.style === option.id ? 'active' : ''}`}
+                          onClick={() => updateElement(element.id, { content: { ...element.content, style: option.id } })}
+                        >
+                          <div className="sep-preview-container">
+                            {option.preview}
                           </div>
-                          <div className="video-item-2x2 video-empty"></div>
-                          <div className="video-item-2x2 video-empty"></div>
-                          <div className="video-item-2x2 video-empty"></div>
-                        </div>
-                      ) : (
-                        <video
-                          src={getMediaUrl(element.content.url)}
-                          controls
-                          style={{ width: '100%', maxHeight: '150px', borderRadius: '8px' }}
-                        />
-                      )}
-                      <small>Uploaded: {element.content.url.split('/').pop()}</small>
+                          <span className="sep-preview-label">{option.label}</span>
+                        </button>
+                      ))}
                     </div>
-                  )}
-
-                  <div className="form-group">
-                    <label>Display Mode</label>
-                    <select
-                      value={element.content.displayMode || 'single'}
-                      onChange={(e) => updateElement(element.id, { content: { ...element.content, displayMode: e.target.value } })}
-                    >
-                      <option value="single">Single Video (Full Width)</option>
-                      <option value="grid">Grid Layout (2x2)</option>
-                    </select>
                   </div>
+                )}
 
-                  <div className="form-group">
-                    <label>Caption (optional)</label>
+                {element.type === 'cta' && (
+                  <div className="cta-content">
                     <input
                       type="text"
-                      value={element.content.caption || ''}
-                      onChange={(e) => updateElement(element.id, { content: { ...element.content, caption: e.target.value } })}
-                      placeholder="Add a caption"
+                      value={element.content.text}
+                      onChange={(e) => updateElement(element.id, { content: { ...element.content, text: e.target.value } })}
+                      placeholder="Button text"
+                    />
+                    <input
+                      type="url"
+                      value={element.content.url}
+                      onChange={(e) => updateElement(element.id, { content: { ...element.content, url: e.target.value } })}
+                      placeholder="Action URL"
                     />
                   </div>
-                </div>
+                )}
+
+                {element.type === 'text' && (
+                  <div className="text-content">
+                    <textarea
+                      value={element.content.content}
+                      onChange={(e) => updateElement(element.id, { content: { ...element.content, content: e.target.value } })}
+                      placeholder="Enter your text content"
+                      rows={4}
+                    />
+                  </div>
+                )}
               </div>
-            ))}
+            </Reorder.Item>
+          ))}
+        </Reorder.Group>
+      </div>
+    );
+  };
+
+  const renderLeadsElementsSection = () => {
+    const leadTypes = ['ticket', 'form'];
+    const filteredElements = (biolinkData.elements || [])
+      .filter(el => leadTypes.includes(el.type))
+      .sort((a, b) => (a.position || 0) - (b.position || 0));
+
+    return (
+      <div className="section-content">
+        <div className="content-elements-header">
+          <div className="content-action-buttons">
+            <button className="content-action-btn ticket-btn" onClick={() => addElement('ticket')}>
+              <Calendar size={20} />
+              <span>Ticket</span>
+            </button>
+            <button className="content-action-btn form-btn" onClick={() => addElement('form')}>
+              <Mail size={20} />
+              <span>Form</span>
+            </button>
           </div>
         </div>
-      </div>
-    </div>
-  );
 
-
-
-  const renderLayoutElementsSection = () => (
-    <div className="section-content">
-      <div className="content-elements-header">
-        <div className="content-action-buttons">
-          <button className="content-action-btn separator-btn" onClick={() => addElement('separator')}>
-            <Minus size={20} />
-            <span>Separator</span>
-          </button>
-          <button className="content-action-btn cta-btn" onClick={() => addElement('cta')}>
-            <MousePointer size={20} />
-            <span>CTA</span>
-          </button>
-          <button className="content-action-btn text-btn" onClick={() => addElement('text')}>
-            <FileText size={20} />
-            <span>Text</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="elements-list">
-        {/* Separator Elements */}
-        {biolinkData.elements.filter(el => el.type === 'separator').map((element) => (
-          <div key={element.id} className="element-item">
-            <div className="element-header">
-              <h4>Separator</h4>
-              <button
-                className="remove-btn"
-                onClick={() => removeElement(element.id)}
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div className="separator-content">
-              <div className="separator-style-selector">
-                {[
-                  {
-                    id: 'line',
-                    label: 'Solid Line',
-                    preview: <div className="sep-preview-line" />
-                  },
-                  {
-                    id: 'dots',
-                    label: 'Dotted',
-                    preview: <div className="sep-preview-dots"><span>•</span><span>•</span><span>•</span></div>
-                  },
-                  {
-                    id: 'dashed',
-                    label: 'Dashed',
-                    preview: <div className="sep-preview-dashed" />
-                  }
-                ].map((option) => (
+        <Reorder.Group
+          axis="y"
+          values={filteredElements}
+          onReorder={(newElements) => handleSectionElementsReorder(leadTypes, newElements)}
+          className="elements-list"
+          style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+        >
+          {filteredElements.map((element) => (
+            <Reorder.Item
+              key={element.id}
+              value={element}
+              className="reorder-item-wrapper"
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}
+            >
+              <div className="editor-drag-handle">
+                <GripVertical size={20} />
+              </div>
+              <div style={{ flex: 1 }} className="element-item">
+                <div className="element-header">
+                  <h4>{element.type === 'ticket' ? 'Event Ticket' : 'Contact Form'}</h4>
                   <button
-                    key={option.id}
-                    type="button"
-                    className={`separator-style-option ${element.content.style === option.id ? 'active' : ''}`}
-                    onClick={() => updateElement(element.id, { content: { ...element.content, style: option.id } })}
+                    className="remove-btn"
+                    onClick={() => removeElement(element.id)}
                   >
-                    <div className="sep-preview-container">
-                      {option.preview}
-                    </div>
-                    <span className="sep-preview-label">{option.label}</span>
+                    <X size={16} />
                   </button>
-                ))}
+                </div>
+                
+                {element.type === 'ticket' && (
+                  <div className="ticket-content">
+                    <input
+                      type="text"
+                      placeholder="Event Title"
+                      value={element.content.title || ''}
+                      onChange={(e) => updateElement(element.id, { content: { ...element.content, title: e.target.value } })}
+                    />
+                    <textarea
+                      placeholder="Event Description"
+                      value={element.content.description || ''}
+                      onChange={(e) => updateElement(element.id, { content: { ...element.content, description: e.target.value } })}
+                      rows={2}
+                    />
+                    <div className="ticket-date-time-row">
+                      <input
+                        type="date"
+                        value={element.content.event_date || ''}
+                        onChange={(e) => updateElement(element.id, { content: { ...element.content, event_date: e.target.value } })}
+                      />
+                      <input
+                        type="time"
+                        value={element.content.event_time || ''}
+                        onChange={(e) => updateElement(element.id, { content: { ...element.content, event_time: e.target.value } })}
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Location (e.g. Zoom, New York)"
+                      value={element.content.location || ''}
+                      onChange={(e) => updateElement(element.id, { content: { ...element.content, location: e.target.value } })}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Price (leave empty for Free)"
+                      value={element.content.price || ''}
+                      onChange={(e) => updateElement(element.id, { content: { ...element.content, price: e.target.value } })}
+                    />
+                  </div>
+                )}
+
+                {element.type === 'form' && (
+                  <div className="form-content">
+                    <input
+                      type="text"
+                      placeholder="Form Title"
+                      value={element.content.title || ''}
+                      onChange={(e) => updateElement(element.id, { content: { ...element.content, title: e.target.value } })}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Button Text"
+                      value={element.content.buttonText || ''}
+                      onChange={(e) => updateElement(element.id, { content: { ...element.content, buttonText: e.target.value } })}
+                    />
+                    <div className="form-fields-hint">
+                      Default fields: Name, Email. (Custom fields coming soon)
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Call to Action Elements */}
-        {biolinkData.elements.filter(el => el.type === 'cta').map((element) => (
-          <div key={element.id} className="element-item">
-            <div className="element-header">
-              <h4>Call to Action</h4>
-              <button
-                className="remove-btn"
-                onClick={() => removeElement(element.id)}
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div className="cta-content">
-              <input
-                type="text"
-                value={element.content.text}
-                onChange={(e) => updateElement(element.id, { content: { ...element.content, text: e.target.value } })}
-                placeholder="Button text"
-              />
-              <input
-                type="url"
-                value={element.content.url}
-                onChange={(e) => updateElement(element.id, { content: { ...element.content, url: e.target.value } })}
-                placeholder="Action URL"
-              />
-            </div>
-          </div>
-        ))}
-
-        {/* Text Block Elements */}
-        {biolinkData.elements.filter(el => el.type === 'text').map((element) => (
-          <div key={element.id} className="element-item">
-            <div className="element-header">
-              <h4>Text Block</h4>
-              <button
-                className="remove-btn"
-                onClick={() => removeElement(element.id)}
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div className="text-content">
-              <textarea
-                value={element.content.content}
-                onChange={(e) => updateElement(element.id, { content: { ...element.content, content: e.target.value } })}
-                placeholder="Enter your text content"
-                rows={4}
-              />
-            </div>
-          </div>
-        ))}
+            </Reorder.Item>
+          ))}
+        </Reorder.Group>
       </div>
-    </div>
-  );
-
-  const renderLeadsElementsSection = () => (
-    <div className="section-content">
-      <div className="content-elements-header">
-        <div className="content-action-buttons">
-          <button className="content-action-btn ticket-btn" onClick={() => addElement('ticket')}>
-            <Calendar size={20} />
-            <span>Ticket</span>
-          </button>
-          <button className="content-action-btn form-btn" onClick={() => addElement('form')}>
-            <Mail size={20} />
-            <span>Form</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="elements-list">
-        {/* Ticket Elements */}
-        {biolinkData.elements.filter(el => el.type === 'ticket').map((element) => (
-          <div key={element.id} className="element-item">
-            <div className="element-header">
-              <h4>Event Ticket</h4>
-              <button
-                className="remove-btn"
-                onClick={() => removeElement(element.id)}
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div className="ticket-content">
-              <input
-                type="text"
-                placeholder="Event Title"
-                value={element.content.title || ''}
-                onChange={(e) => updateElement(element.id, { content: { ...element.content, title: e.target.value } })}
-              />
-              <textarea
-                placeholder="Event Description"
-                value={element.content.description || ''}
-                onChange={(e) => updateElement(element.id, { content: { ...element.content, description: e.target.value } })}
-                rows={2}
-              />
-              <div className="ticket-date-time-row">
-                <input
-                  type="date"
-                  value={element.content.event_date || ''}
-                  onChange={(e) => updateElement(element.id, { content: { ...element.content, event_date: e.target.value } })}
-                />
-                <input
-                  type="time"
-                  value={element.content.event_time || ''}
-                  onChange={(e) => updateElement(element.id, { content: { ...element.content, event_time: e.target.value } })}
-                />
-              </div>
-              <input
-                type="text"
-                placeholder="Location (e.g. Zoom, New York)"
-                value={element.content.location || ''}
-                onChange={(e) => updateElement(element.id, { content: { ...element.content, location: e.target.value } })}
-              />
-              <input
-                type="number"
-                placeholder="Price (leave empty for Free)"
-                value={element.content.price || ''}
-                onChange={(e) => updateElement(element.id, { content: { ...element.content, price: e.target.value } })}
-              />
-            </div>
-          </div>
-        ))}
-
-        {/* Form Elements */}
-        {biolinkData.elements.filter(el => el.type === 'form').map((element) => (
-          <div key={element.id} className="element-item">
-            <div className="element-header">
-              <h4>Contact Form</h4>
-              <button
-                className="remove-btn"
-                onClick={() => removeElement(element.id)}
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div className="form-content">
-              <input
-                type="text"
-                placeholder="Form Title"
-                value={element.content.title || ''}
-                onChange={(e) => updateElement(element.id, { content: { ...element.content, title: e.target.value } })}
-              />
-              <input
-                type="text"
-                placeholder="Button Text"
-                value={element.content.buttonText || ''}
-                onChange={(e) => updateElement(element.id, { content: { ...element.content, buttonText: e.target.value } })}
-              />
-              <div className="form-fields-hint">
-                Default fields: Name, Email. (Custom fields coming soon)
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+    );
+  };
 
   if (isLoading) {
     return (
@@ -2551,13 +2695,12 @@ const BioLinkEditPanel = ({ user: userProp = null, biolink: biolinkProp = null, 
     <div className="mobile-preview" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#06040f' }}>
       {previewUsername ? (
         <iframe
-          ref={iframeRef}
           src={`/p/${previewUsername}?preview=true`}
           title="Biolink Live Preview"
           style={{ width: '100%', height: '100%', border: 'none', background: 'transparent' }}
-          onLoad={() => {
-            if (iframeRef.current && iframeRef.current.contentWindow) {
-              iframeRef.current.contentWindow.postMessage({
+          onLoad={(e) => {
+            if (e.target && e.target.contentWindow) {
+              e.target.contentWindow.postMessage({
                 type: 'BIOLINK_PREVIEW_UPDATE',
                 data: biolinkData
               }, '*');
