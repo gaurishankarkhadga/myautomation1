@@ -391,8 +391,7 @@ const PublicBioLink = () => {
     color: textColor,
   };
 
-  // System username hiding
-  const showUsernameHandle = !isSystemUsername(username);
+
 
   // Avatar URL
   const avatarSrc = profile.avatar ? getMediaUrl(profile.avatar) : null;
@@ -493,12 +492,7 @@ const PublicBioLink = () => {
             {profile.displayName || username}
           </motion.h1>
 
-          {/* @username handle — hidden if system-generated */}
-          {showUsernameHandle && (
-            <motion.p variants={fadeUp} className={styles['pbl-username']} style={{ color: `${textColor}60` }}>
-              @{username}
-            </motion.p>
-          )}
+
 
           {/* Tagline — hidden if system username */}
           {safeTagline && (

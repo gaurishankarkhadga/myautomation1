@@ -243,6 +243,10 @@ const biolinkSchema = new mongoose.Schema({
       type: String,
       default: 'default',
       enum: ['default', 'glass', 'timeline', 'perspective']
+    },
+    hideUsername: {
+      type: Boolean,
+      default: false
     }
   },
   analytics: {
