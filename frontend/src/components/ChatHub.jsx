@@ -7,7 +7,7 @@ import {
     Instagram, Youtube, CheckCircle, Circle, Loader,
     Bot, Activity, ChevronRight, RotateCcw, Link2, Trash2,
     Sunrise, Sparkles, DollarSign, AlertTriangle, Scale,
-    TrendingUp, Eye, BarChart, Plus, Sun, Moon
+    TrendingUp, Eye, BarChart, Plus, Sun, Moon, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 import { useTheme } from '../Base';
 import ToastNotification, { useToasts } from './ToastNotification';
@@ -55,6 +55,7 @@ function ChatHub() {
     const [showNegotiatorRules, setShowNegotiatorRules] = useState(false);
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
     const [connections, setConnections] = useState({ instagram: false, youtube: false });
     const [connectingPlatform, setConnectingPlatform] = useState(null);
     const [activeAutomations, setActiveAutomations] = useState({ count: 0, list: [] });
@@ -512,7 +513,7 @@ function ChatHub() {
             {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
 
             {/* ─── Sidebar ─── */}
-            <aside className={`chathub-sidebar ${sidebarOpen ? 'open' : ''}`} id="chathub-sidebar">
+            <aside className={`chathub-sidebar ${sidebarOpen ? 'open' : ''} ${isDesktopCollapsed ? 'collapsed' : ''}`} id="chathub-sidebar">
                 {/* Sidebar top */}
                 <div className="sidebar-top">
                     <div className="sidebar-brand">
@@ -526,6 +527,9 @@ function ChatHub() {
                         </div>
                         <span>Sotix AI</span>
                     </div>
+                    <button className="desk-sidebar-toggle" onClick={() => setIsDesktopCollapsed(v => !v)} aria-label="Toggle sidebar" title="Toggle Sidebar">
+                        {isDesktopCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+                    </button>
                     <button className="mob-icon-btn close-btn" onClick={() => setSidebarOpen(false)} id="mob-sidebar-close" aria-label="Close sidebar">
                         <X size={18} />
                     </button>
@@ -575,7 +579,6 @@ function ChatHub() {
                             { icon: BarChart2, label: 'View Status', msg: "What's my current setup?" },
                             { icon: Package, label: 'My Assets', action: 'assets' },
                             { icon: User, label: 'Profile', action: 'navigate', path: '/profile' },
-                            { icon: RotateCcw, label: 'Preferences', msg: 'Show my preferences' },
                         ].map(({ icon: Icon, label, msg, action, path, state }) => (
                             <button key={label} className="sidebar-action-btn"
                                 onClick={() => {
@@ -651,10 +654,6 @@ function ChatHub() {
 
                 {/* Bottom */}
                 <div className="sidebar-footer">
-                    <button className="footer-btn" onClick={() => navigate('/settings')} id="btn-advanced-settings">
-                        <Settings size={14} />
-                        <span>Advanced Settings</span>
-                    </button>
                     <button className="footer-btn danger" onClick={handleDisconnect} id="btn-disconnect">
                         <LogOut size={14} />
                         <span>Disconnect</span>
@@ -667,9 +666,6 @@ function ChatHub() {
                 {/* Desktop header */}
                 <header className="chat-header" id="chat-header">
                     <div className="chat-header-left">
-                        <button className="desk-menu-btn" onClick={() => setSidebarOpen(v => !v)} aria-label="Toggle sidebar">
-                            <Menu size={18} />
-                        </button>
                         <div style={{ position: 'relative', display: 'inline-block', flexShrink: 0, marginRight: '12px' }}>
                             <img src="/assets/logo-icon-transparent.png" alt="Sotix Logo" style={{ width: '36px', height: '36px', objectFit: 'contain', display: 'block' }} />
                             {isTyping && (
